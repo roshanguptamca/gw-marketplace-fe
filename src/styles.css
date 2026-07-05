@@ -582,6 +582,24 @@ nav {
   color: #a34e3a;
 }
 
+.cart-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 14px 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.cart-cta .button {
+  min-height: 40px;
+  padding: 0 18px;
+}
+
 .category-filter {
   margin-bottom: 34px;
   display: flex;

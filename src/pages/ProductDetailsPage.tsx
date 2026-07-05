@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { CartCallToAction } from '../components/CartCallToAction'
 import { useCart } from '../cart/CartContext'
 import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
@@ -41,6 +42,7 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
       <Link className="back-link" to={shopPath(shopSlug, '/products')}>
         ← Back to all products
       </Link>
+      <CartCallToAction />
       <div className="product-detail">
         <div className="gallery">
           <div className="gallery__main">

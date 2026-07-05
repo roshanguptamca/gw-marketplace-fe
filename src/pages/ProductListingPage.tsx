@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { CartCallToAction } from '../components/CartCallToAction'
 import { LoadingState } from '../components/LoadingState'
 import { ProductGrid } from '../components/ProductGrid'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
@@ -39,6 +40,7 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
         </div>
         <p>{products?.length ?? 0} items</p>
       </div>
+      <CartCallToAction />
       <div className="category-filter" aria-label="Filter by category">
         {['All', ...shop.categories].map((item) => (
           <button

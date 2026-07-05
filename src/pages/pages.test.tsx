@@ -77,10 +77,18 @@ describe('marketplace pages', () => {
     service.getShopProducts.mockResolvedValueOnce([productFixture, other])
     renderPage(<ProductListingPage resolvedSlug="test-shop" />)
     expect(await screen.findByText('Test Product')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /go to cart/i })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Home' }))
     expect(screen.queryByText('Other Product')).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'All' }))
     expect(screen.getByText('Other Product')).toBeInTheDocument()
+  })
+
+  it('shows a go-to-cart CTA on the listing page once an item is added', async () => {
+    renderPage(<ProductListingPage resolvedSlug="test-shop" />)
+    await screen.findByText('Test Product')
+    await userEvent.click(screen.getByRole('button', { name: /add to cart: test product/i }))
+    expect(screen.getByRole('link', { name: /go to cart/i })).toHaveAttribute('href', '/cart')
   })
 
   it('handles listing errors and missing sellers', async () => {
@@ -96,9 +104,11 @@ describe('marketplace pages', () => {
   it('shows the product gallery and adds to cart', async () => {
     renderPage(<ProductDetailsPage resolvedSlug="test-shop" />)
     expect(await screen.findByRole('heading', { name: 'Test Product' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /go to cart/i })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Show image 2' }))
     await userEvent.click(screen.getByRole('button', { name: 'Add to cart' }))
     expect(screen.getByRole('button', { name: /added to cart/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /go to cart/i })).toHaveAttribute('href', '/cart')
   })
 
   it('shows unavailable and missing product states', async () => {
