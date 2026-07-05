@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { env } from '../config/env'
 import { marketplaceService } from '../services/marketplaceService'
 import { productFixture, shopFixture } from '../test/fixtures'
 import { renderPage } from '../test/renderPage'
@@ -156,7 +157,7 @@ describe('marketplace pages', () => {
     await userEvent.type(screen.getByLabelText('Postal code'), '1000 AA')
     await userEvent.type(screen.getByLabelText('City'), 'Amsterdam')
     await userEvent.type(screen.getByLabelText('Notes to seller'), 'Please call me.')
-    await userEvent.click(screen.getByLabelText(/i confirm these order details/i))
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
     expect(
@@ -199,7 +200,7 @@ describe('marketplace pages', () => {
     await userEvent.type(screen.getByLabelText('Full name'), 'Guest Buyer')
     await userEvent.type(screen.getByLabelText('Email'), 'guest@example.com')
     await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
-    await userEvent.click(screen.getByLabelText(/i confirm these order details/i))
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
     expect(
@@ -229,12 +230,90 @@ describe('marketplace pages', () => {
     await userEvent.type(screen.getByLabelText('Full name'), 'Logged Buyer')
     await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
     await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
-    await userEvent.click(screen.getByLabelText(/i confirm these order details/i))
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
     expect(await screen.findByRole('link', { name: 'View order' })).toBeInTheDocument()
     expect(
       screen.queryByRole('link', { name: 'Create account to track your order' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('prompts guests at checkout to create an account or continue as guest', () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+
+    expect(
+      screen.getByRole('heading', { name: 'Save your orders & track deliveries' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Create a free account to view order history, request cancellations, and get faster checkout next time.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Create free account' })).toHaveAttribute(
+      'href',
+      env.checkoutSignupUrl,
+    )
+  })
+
+  it('dismisses the account prompt when a guest chooses to continue without an account', async () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+
+    expect(
+      screen.getByRole('heading', { name: 'Save your orders & track deliveries' }),
+    ).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Continue as guest' }))
+    expect(
+      screen.queryByRole('heading', { name: 'Save your orders & track deliveries' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('does not show the account prompt to already logged-in buyers', () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />, '/', {
+      user: {
+        id: 1,
+        username: 'buyer',
+        email: 'buyer@example.com',
+        first_name: 'Buyer',
+        last_name: 'One',
+        avatar_url: '',
+        is_seller: false,
+      },
+      loading: false,
+      logout: async () => {},
+    })
+    expect(
+      screen.queryByRole('heading', { name: 'Save your orders & track deliveries' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('links the terms checkbox copy to the Terms & Conditions and Privacy Policy pages', () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+
+    expect(screen.getByLabelText(/i have read and agree/i)).toBeRequired()
+    expect(screen.getByRole('link', { name: 'Terms & Conditions' })).toHaveAttribute(
+      'href',
+      env.termsUrl,
+    )
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute(
+      'href',
+      env.privacyUrl,
+    )
   })
 })

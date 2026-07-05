@@ -883,6 +883,42 @@ nav {
   font-size: 1.35rem;
 }
 
+.checkout-account-prompt {
+  margin-bottom: 28px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.08);
+  display: grid;
+  gap: 14px;
+}
+
+.checkout-account-prompt h2 {
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+
+.checkout-account-prompt p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.checkout-account-prompt__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.checkout-account-prompt__actions .button {
+  padding-block: 10px;
+}
+
+:root[data-theme='light'] .checkout-account-prompt {
+  background: #eef2ff;
+}
+
 .form-grid {
   display: grid;
   gap: 18px;
@@ -1006,6 +1042,12 @@ nav {
   color: var(--muted);
   font-size: 0.76rem;
   line-height: 1.5;
+}
+
+.terms-check a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 .terms-check input {

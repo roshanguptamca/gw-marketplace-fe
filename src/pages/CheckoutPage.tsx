@@ -39,7 +39,9 @@ export function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [confirmations, setConfirmations] = useState<OrderConfirmation[]>([])
+  const [continuingAsGuest, setContinuingAsGuest] = useState(false)
   const currency = items[0]?.product.currency ?? 'EUR'
+  const showAccountPrompt = !user && !continuingAsGuest
 
   const update = <Key extends keyof CheckoutFields>(key: Key, value: CheckoutFields[Key]) => {
     setFields((current) => ({ ...current, [key]: value }))
@@ -156,6 +158,30 @@ export function CheckoutPage() {
       </div>
       <form className="checkout-layout" onSubmit={(event) => void submit(event)}>
         <section className="checkout-form">
+          {showAccountPrompt && (
+            <div className="checkout-account-prompt" role="note">
+              <div>
+                <h2>Save your orders &amp; track deliveries</h2>
+                <p>
+                  Create a free account to view order history, request cancellations, and get faster
+                  checkout next time.
+                </p>
+              </div>
+              <div className="checkout-account-prompt__actions">
+                <a className="button" href={env.checkoutSignupUrl}>
+                  Create free account
+                </a>
+                <button
+                  type="button"
+                  className="button button--ghost"
+                  onClick={() => setContinuingAsGuest(true)}
+                >
+                  Continue as guest
+                </button>
+              </div>
+            </div>
+          )}
+
           <h2>Contact details</h2>
           <div className="form-grid">
             <label className="form-field form-field--wide">
@@ -283,7 +309,17 @@ export function CheckoutPage() {
               onChange={(event) => update('termsAccepted', event.target.checked)}
               required
             />
-            I confirm these order details and understand no payment is collected now.
+            <span>
+              I have read and agree to the{' '}
+              <a href={env.termsUrl} target="_blank" rel="noreferrer">
+                Terms &amp; Conditions
+              </a>{' '}
+              and{' '}
+              <a href={env.privacyUrl} target="_blank" rel="noreferrer">
+                Privacy Policy
+              </a>{' '}
+              of GuideWisey Marketplace. <span aria-hidden="true">*</span>
+            </span>
           </label>
           {error && (
             <p className="inline-error" role="alert">

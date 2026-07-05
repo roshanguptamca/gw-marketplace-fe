@@ -17,6 +17,9 @@ export interface EnvironmentConfig {
   loginUrl: string
   sellerLoginUrl: string
   sellerSignupUrl: string
+  checkoutSignupUrl: string
+  termsUrl: string
+  privacyUrl: string
 }
 
 function stripTrailingSlash(value: string): string {
@@ -57,6 +60,10 @@ export function createEnvironmentConfig(
   const signupBaseUrl = `${mainFrontendUrl}/#signup`
   const sellerNextUrl = `${marketplaceUrl}/seller`
   const sellerOnboardingNextUrl = `${marketplaceUrl}/seller/onboarding`
+  // Buyer account-creation prompt shown during checkout returns the
+  // shopper straight back to checkout (the cart persists in
+  // localStorage, so nothing is lost by leaving to sign up).
+  const checkoutNextUrl = `${marketplaceUrl}/checkout`
 
   return {
     appEnv,
@@ -67,6 +74,9 @@ export function createEnvironmentConfig(
     loginUrl: `${loginBaseUrl}?next=${encodeURIComponent(marketplaceUrl)}`,
     sellerLoginUrl: `${loginBaseUrl}?next=${encodeURIComponent(sellerNextUrl)}`,
     sellerSignupUrl: `${signupBaseUrl}?next=${encodeURIComponent(sellerOnboardingNextUrl)}&intent=seller`,
+    checkoutSignupUrl: `${signupBaseUrl}?next=${encodeURIComponent(checkoutNextUrl)}`,
+    termsUrl: `${mainFrontendUrl}/#terms`,
+    privacyUrl: `${mainFrontendUrl}/#privacy`,
   }
 }
 

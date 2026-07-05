@@ -19,6 +19,11 @@ describe('environment URL configuration', () => {
     expect(config.sellerSignupUrl).toBe(
       'http://localhost:3000/#signup?next=http%3A%2F%2Flocalhost%3A3002%2Fseller%2Fonboarding&intent=seller',
     )
+    expect(config.checkoutSignupUrl).toBe(
+      'http://localhost:3000/#signup?next=http%3A%2F%2Flocalhost%3A3002%2Fcheckout',
+    )
+    expect(config.termsUrl).toBe('http://localhost:3000/#terms')
+    expect(config.privacyUrl).toBe('http://localhost:3000/#privacy')
   })
 
   it('builds production GuideWisey URLs and avoids duplicate API suffixes', () => {
@@ -39,6 +44,11 @@ describe('environment URL configuration', () => {
     expect(config.sellerSignupUrl).toBe(
       'https://www.guidewisey.com/#signup?next=https%3A%2F%2Fmarketplace.guidewisey.com%2Fseller%2Fonboarding&intent=seller',
     )
+    expect(config.checkoutSignupUrl).toBe(
+      'https://www.guidewisey.com/#signup?next=https%3A%2F%2Fmarketplace.guidewisey.com%2Fcheckout',
+    )
+    expect(config.termsUrl).toBe('https://www.guidewisey.com/#terms')
+    expect(config.privacyUrl).toBe('https://www.guidewisey.com/#privacy')
   })
 
   it('uses mode-aware defaults and validates mock configuration', () => {
