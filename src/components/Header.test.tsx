@@ -80,7 +80,7 @@ describe('Header authentication menu', () => {
     expect(logout).toHaveBeenCalledOnce()
   })
 
-  it('offers seller onboarding to logged-in buyers', async () => {
+  it('hides Become a Seller and Seller Portal from logged-in normal users', async () => {
     mockedUseAuth.mockReturnValue({
       user: { ...seller, is_seller: false },
       loading: false,
@@ -88,7 +88,7 @@ describe('Header authentication menu', () => {
     })
     renderHeader()
     await userEvent.click(screen.getByRole('button', { name: 'User menu' }))
-    expect(screen.getByRole('menuitem', { name: 'Become a Seller' })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Become a Seller' })).not.toBeInTheDocument()
     expect(screen.queryByRole('menuitem', { name: 'Seller Portal' })).not.toBeInTheDocument()
   })
 

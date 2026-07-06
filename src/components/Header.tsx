@@ -68,14 +68,10 @@ export function Header() {
                     <a role="menuitem" href={`${env.mainFrontendUrl}/#buyer-dashboard`}>
                       My Orders
                     </a>
-                    {user.is_seller ? (
+                    {user.is_seller && (
                       <Link role="menuitem" to="/seller" onClick={() => setMenuOpen(false)}>
                         Seller Portal
                       </Link>
-                    ) : (
-                      <a role="menuitem" href={`${env.mainFrontendUrl}/#register?type=seller`}>
-                        Become a Seller
-                      </a>
                     )}
                     <button role="menuitem" onClick={() => void logout()}>
                       Logout
