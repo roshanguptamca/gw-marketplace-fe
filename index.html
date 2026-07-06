@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Discover independent sellers and thoughtfully made products on GuideWisey Market."
+    />
+    <meta name="theme-color" content="#173f35" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/GuideWisey_circular_favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/GuideWisey_circular_favicon-16x16.png" />
+    <link rel="shortcut icon" href="/GuideWisey_circular_favicon.ico" />
+    <title>GuideMarketplace | GuideWisey</title>
+    <script>
+      try {
+        const saved = localStorage.getItem('guidewisey-marketplace-theme')
+        const theme =
+          saved === 'light' || saved === 'dark'
+            ? saved
+            : matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+        document.documentElement.dataset.theme = theme
+        document.documentElement.style.colorScheme = theme
+      } catch {
+        document.documentElement.dataset.theme = 'dark'
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
