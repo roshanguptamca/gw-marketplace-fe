@@ -1755,6 +1755,31 @@ nav {
   background: rgba(239, 68, 68, 0.22);
 }
 
+.checkout-cancel-order {
+  margin-top: 1rem;
+}
+
+.checkout-cancel-order__hint {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.link-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (min-width: 640px) {
   .seller-form-grid {
     grid-template-columns: repeat(2, 1fr);

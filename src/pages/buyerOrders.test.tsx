@@ -1,7 +1,9 @@
 import { screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { marketplaceService } from '../services/marketplaceService'
+import { ApiError } from '../services/apiClient'
 import { renderPage } from '../test/renderPage'
 import type { BuyerOrder } from '../types/marketplace'
 import { ProtectedBuyerRoute } from '../auth/ProtectedBuyerRoute'
@@ -13,6 +15,7 @@ vi.mock('../services/marketplaceService', () => ({
   marketplaceService: {
     getBuyerOrders: vi.fn(),
     getBuyerOrder: vi.fn(),
+    cancelBuyerOrder: vi.fn(),
   },
 }))
 
@@ -147,5 +150,75 @@ describe('buyer orders (My Orders inside marketplace)', () => {
       { user: loggedInUser, loading: false, logout: async () => {} },
     )
     expect(await screen.findByRole('heading', { name: 'Order GW-55' })).toBeInTheDocument()
+  })
+
+  it('shows a Cancel order button for a pending order and cancels it on confirm', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    service.cancelBuyerOrder.mockResolvedValue({ ...order, status: 'cancelled' })
+    renderPage(<BuyerOrderDetailPage />, '/account/orders/55', {
+      user: loggedInUser,
+      loading: false,
+      logout: async () => {},
+    })
+    const cancelButton = await screen.findByRole('button', { name: 'Cancel order' })
+    await userEvent.click(cancelButton)
+    await waitFor(() => expect(service.cancelBuyerOrder).toHaveBeenCalledWith(55))
+    expect(await screen.findByText(/cancelled/)).toBeInTheDocument()
+    confirmSpy.mockRestore()
+  })
+
+  it('does not cancel when the confirmation dialog is dismissed', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    renderPage(<BuyerOrderDetailPage />, '/account/orders/55', {
+      user: loggedInUser,
+      loading: false,
+      logout: async () => {},
+    })
+    const cancelButton = await screen.findByRole('button', { name: 'Cancel order' })
+    await userEvent.click(cancelButton)
+    expect(service.cancelBuyerOrder).not.toHaveBeenCalled()
+    confirmSpy.mockRestore()
+  })
+
+  it('shows an error message if cancelling fails', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    service.cancelBuyerOrder.mockRejectedValue(
+      new ApiError('This order can no longer be cancelled directly.', 400),
+    )
+    renderPage(<BuyerOrderDetailPage />, '/account/orders/55', {
+      user: loggedInUser,
+      loading: false,
+      logout: async () => {},
+    })
+    const cancelButton = await screen.findByRole('button', { name: 'Cancel order' })
+    await userEvent.click(cancelButton)
+    expect(await screen.findByText('This order can no longer be cancelled directly.')).toBeInTheDocument()
+    confirmSpy.mockRestore()
+  })
+
+  it('does not show a Cancel order button for an already-accepted order', async () => {
+    service.getBuyerOrder.mockResolvedValue({ ...order, status: 'accepted' })
+    renderPage(<BuyerOrderDetailPage />, '/account/orders/55', {
+      user: loggedInUser,
+      loading: false,
+      logout: async () => {},
+    })
+    await screen.findByRole('heading', { name: 'Order GW-55' })
+    expect(screen.queryByRole('button', { name: 'Cancel order' })).not.toBeInTheDocument()
+  })
+
+  it('shows a Cancel link on the orders list for pending orders and cancels on click', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    service.cancelBuyerOrder.mockResolvedValue({ ...order, status: 'cancelled' })
+    renderPage(<BuyerOrdersPage />, '/account/orders', {
+      user: loggedInUser,
+      loading: false,
+      logout: async () => {},
+    })
+    const cancelButton = await screen.findByRole('button', { name: 'Cancel' })
+    await userEvent.click(cancelButton)
+    await waitFor(() => expect(service.cancelBuyerOrder).toHaveBeenCalledWith(55))
+    expect(await screen.findByText('cancelled')).toBeInTheDocument()
+    confirmSpy.mockRestore()
   })
 })

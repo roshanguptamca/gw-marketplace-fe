@@ -316,6 +316,12 @@ export const marketplaceService = {
   getBuyerOrders: () => apiRequest<BuyerOrder[]>('/buyer/orders/'),
   getBuyerOrder: (id: number | string) =>
     apiRequest<BuyerOrder>(`/buyer/orders/${encodeURIComponent(String(id))}/`),
+  // Instant self-serve cancel — only allowed while the order is still
+  // "pending" (the seller hasn't accepted it yet), so no approval is needed.
+  cancelBuyerOrder: (id: number | string) =>
+    apiRequest<BuyerOrder>(`/buyer/orders/${encodeURIComponent(String(id))}/cancel/`, {
+      method: 'POST',
+    }),
 
   getSellerDashboard: () => apiRequest<SellerDashboard>('/seller/dashboard/'),
   getSellerProducts: () => apiRequest<ApiProduct[]>('/seller/products/'),
