@@ -18,6 +18,9 @@ interface CheckoutFields {
   city: string
   notes: string
   termsAccepted: boolean
+  createAccount: boolean
+  password: string
+  passwordConfirm: string
 }
 
 const initialFields: CheckoutFields = {
@@ -30,7 +33,12 @@ const initialFields: CheckoutFields = {
   city: '',
   notes: '',
   termsAccepted: false,
+  createAccount: false,
+  password: '',
+  passwordConfirm: '',
 }
+
+const MIN_PASSWORD_LENGTH = 8
 
 export function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart()
@@ -39,6 +47,7 @@ export function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [confirmations, setConfirmations] = useState<OrderConfirmation[]>([])
+  const [accountCreated, setAccountCreated] = useState(false)
   const [continuingAsGuest, setContinuingAsGuest] = useState(false)
   const currency = items[0]?.product.currency ?? 'EUR'
   const showAccountPrompt = !user && !continuingAsGuest
@@ -50,6 +59,23 @@ export function CheckoutPage() {
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     setError('')
+
+    const requestingAccount = !user && fields.createAccount
+    if (requestingAccount) {
+      if (!fields.password || !fields.passwordConfirm) {
+        setError('Please enter and confirm a password to create your account.')
+        return
+      }
+      if (fields.password.length < MIN_PASSWORD_LENGTH) {
+        setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`)
+        return
+      }
+      if (fields.password !== fields.passwordConfirm) {
+        setError('Passwords do not match.')
+        return
+      }
+    }
+
     const groups = new Map<string, typeof items>()
     for (const item of items) {
       if (!item.product.shopId || !Number.isFinite(Number(item.product.shopId))) {
@@ -65,7 +91,7 @@ export function CheckoutPage() {
         fields.deliveryMethod === 'delivery'
           ? [fields.street, fields.postalCode, fields.city].filter(Boolean).join(', ')
           : ''
-      const requests = [...groups.entries()].map(([shopId, shopItems]) => {
+      const requests = [...groups.entries()].map(([shopId, shopItems], index) => {
         const order: OrderRequest = {
           shop_id: Number(shopId),
           customer_name: fields.fullName,
@@ -80,11 +106,21 @@ export function CheckoutPage() {
             product_id: Number(item.product.id),
             quantity: item.quantity,
           })),
+          // Only request account creation on the first order — a shopper
+          // checking out across multiple shops should only get one account.
+          ...(requestingAccount && index === 0
+            ? {
+                create_account: true,
+                password: fields.password,
+                password_confirm: fields.passwordConfirm,
+              }
+            : {}),
         }
         return marketplaceService.createOrderRequest(order)
       })
       const created = await Promise.all(requests)
       setConfirmations(created)
+      setAccountCreated(requestingAccount)
       clearCart()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'The order request could not be sent.')
@@ -116,6 +152,11 @@ export function CheckoutPage() {
           <a className="button" href={`${env.mainFrontendUrl}/#buyer-dashboard`}>
             View order
           </a>
+        ) : accountCreated ? (
+          <p className="confirmation-verify-note">
+            We&apos;ve created your account. Check <strong>{fields.email}</strong> for a
+            verification email to confirm it and start tracking your orders.
+          </p>
         ) : (
           <a
             className="button"
@@ -167,18 +208,48 @@ export function CheckoutPage() {
                   checkout next time.
                 </p>
               </div>
-              <div className="checkout-account-prompt__actions">
-                <a className="button" href={env.checkoutSignupUrl}>
-                  Create free account
-                </a>
-                <button
-                  type="button"
-                  className="button button--ghost"
-                  onClick={() => setContinuingAsGuest(true)}
-                >
-                  Continue as guest
-                </button>
-              </div>
+              <label className="checkout-account-prompt__checkbox">
+                <input
+                  type="checkbox"
+                  checked={fields.createAccount}
+                  onChange={(event) => update('createAccount', event.target.checked)}
+                />
+                <span>Create an account to track my order</span>
+              </label>
+              {fields.createAccount ? (
+                <div className="form-grid">
+                  <label className="form-field">
+                    Password
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      value={fields.password}
+                      onChange={(event) => update('password', event.target.value)}
+                      required
+                    />
+                  </label>
+                  <label className="form-field">
+                    Confirm password
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      value={fields.passwordConfirm}
+                      onChange={(event) => update('passwordConfirm', event.target.value)}
+                      required
+                    />
+                  </label>
+                </div>
+              ) : (
+                <div className="checkout-account-prompt__actions">
+                  <button
+                    type="button"
+                    className="button button--ghost"
+                    onClick={() => setContinuingAsGuest(true)}
+                  >
+                    Continue as guest
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

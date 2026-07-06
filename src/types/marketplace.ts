@@ -72,6 +72,9 @@ export interface OrderRequest {
   payment_method: 'cash'
   terms_accepted: true
   items: Array<{ product_id: number; quantity: number }>
+  create_account?: boolean
+  password?: string
+  password_confirm?: string
 }
 
 export interface OrderConfirmation {

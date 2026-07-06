@@ -254,10 +254,121 @@ describe('marketplace pages', () => {
         'Create a free account to view order history, request cancellations, and get faster checkout next time.',
       ),
     ).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Create free account' })).toHaveAttribute(
-      'href',
-      env.checkoutSignupUrl,
+    expect(screen.getByLabelText('Create an account to track my order')).not.toBeChecked()
+    expect(screen.queryByLabelText('Password')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Continue as guest' })).toBeInTheDocument()
+  })
+
+  it('shows password fields once a guest opts to create an account', async () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
     )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+
+    await userEvent.click(screen.getByLabelText('Create an account to track my order'))
+
+    expect(screen.getByLabelText('Password')).toBeInTheDocument()
+    expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Continue as guest' })).not.toBeInTheDocument()
+  })
+
+  it('blocks submit when the create-account passwords do not match', async () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+
+    await userEvent.type(screen.getByLabelText('Full name'), 'Guest Buyer')
+    await userEvent.type(screen.getByLabelText('Email'), 'guest@example.com')
+    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+    await userEvent.click(screen.getByLabelText('Create an account to track my order'))
+    await userEvent.type(screen.getByLabelText('Password'), 'StrongPass123!')
+    await userEvent.type(screen.getByLabelText('Confirm password'), 'Different123!')
+    await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Passwords do not match.')
+    expect(service.createOrderRequest).not.toHaveBeenCalled()
+  })
+
+  it('sends the create_account payload with password fields when requested', async () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    service.createOrderRequest.mockResolvedValue({
+      id: 1,
+      order_number: 'GW-TEST-102',
+      shop_name: 'Test Shop',
+      total: '12.50',
+      status: 'pending',
+    })
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+
+    await userEvent.type(screen.getByLabelText('Full name'), 'Guest Buyer')
+    await userEvent.type(screen.getByLabelText('Email'), 'guest@example.com')
+    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+    await userEvent.click(screen.getByLabelText('Create an account to track my order'))
+    await userEvent.type(screen.getByLabelText('Password'), 'StrongPass123!')
+    await userEvent.type(screen.getByLabelText('Confirm password'), 'StrongPass123!')
+    await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+
+    await screen.findByRole('heading', { name: 'Your order request has been sent to the seller.' })
+    expect(service.createOrderRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create_account: true,
+        password: 'StrongPass123!',
+        password_confirm: 'StrongPass123!',
+      }),
+    )
+    expect(screen.getByText(/We've created your account\. Check/)).toBeInTheDocument()
+    expect(screen.getByText('guest@example.com')).toBeInTheDocument()
+  })
+
+  it('does not require a password for guest checkout without account creation', async () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+
+    await userEvent.type(screen.getByLabelText('Full name'), 'Guest Buyer')
+    await userEvent.type(screen.getByLabelText('Email'), 'guest@example.com')
+    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+
+    await screen.findByRole('heading', { name: 'Your order request has been sent to the seller.' })
+    expect(service.createOrderRequest).toHaveBeenCalledWith(
+      expect.not.objectContaining({ create_account: true }),
+    )
+    expect(
+      await screen.findByRole('link', { name: 'Create account to track your order' }),
+    ).toBeInTheDocument()
+  })
+
+  it('hides the create-account option for already logged-in buyers', () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />, '/', {
+      user: {
+        id: 1,
+        username: 'buyer',
+        email: 'buyer@example.com',
+        first_name: 'Buyer',
+        last_name: 'One',
+        avatar_url: '',
+        is_seller: false,
+      },
+      loading: false,
+      logout: async () => {},
+    })
+    expect(screen.queryByLabelText('Create an account to track my order')).not.toBeInTheDocument()
   })
 
   it('dismisses the account prompt when a guest chooses to continue without an account', async () => {
