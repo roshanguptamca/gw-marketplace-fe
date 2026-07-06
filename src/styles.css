@@ -948,6 +948,38 @@ nav {
   text-align: right;
 }
 
+.cart-shop-group + .cart-shop-group {
+  margin-top: 28px;
+  padding-top: 4px;
+  border-top: 2px solid var(--line);
+}
+
+.cart-shop-group__header {
+  padding-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.cart-shop-group__header h2 {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.cart-shop-group__header span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.cart-continue-shopping {
+  margin-top: 14px;
+  display: block;
+  text-align: center;
+}
+
 .order-summary {
   align-self: start;
   padding: 28px;
@@ -1183,6 +1215,33 @@ nav {
   margin: -4px 0 12px;
   color: var(--muted);
   font-size: 0.72rem;
+}
+
+.checkout-shop-group + .checkout-shop-group {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 2px solid var(--line);
+}
+
+.checkout-shop-group__name {
+  padding-top: 14px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.checkout-total--shop-total {
+  border-top: 1px dashed var(--line);
+  font-weight: 600;
+}
+
+.checkout-multi-shop-note {
+  margin: 0 0 8px;
+}
+
+.checkout-continue-shopping {
+  margin-top: 6px;
 }
 
 .address-lookup {

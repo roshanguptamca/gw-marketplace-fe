@@ -35,3 +35,37 @@ export const productFixture: Product = {
     whatsapp: '+31 6 1234 5678',
   },
 }
+
+export const secondShopFixture: Shop = {
+  id: 'shop-2',
+  slug: 'other-shop',
+  name: 'Other Shop',
+  tagline: 'A second seller',
+  description: 'Another test seller description.',
+  logoUrl: '/logo2.jpg',
+  bannerUrl: '/banner2.jpg',
+  categories: ['Food'],
+  location: 'Other City',
+  pickupAvailable: true,
+  deliveryAvailable: true,
+  localDeliveryFee: 3,
+  internationalDeliveryFee: 8,
+  freeDeliveryAbove: 30,
+}
+
+export const secondProductFixture: Product = {
+  id: 'product-2',
+  shopId: '2',
+  shopSlug: 'other-shop',
+  name: 'Other Product',
+  description: 'A product from a different shop.',
+  price: 8,
+  currency: 'EUR',
+  category: 'Food',
+  stock: 5,
+  images: ['/three.jpg'],
+  featured: false,
+  sellerContact: {
+    email: 'other-seller@example.com',
+  },
+}

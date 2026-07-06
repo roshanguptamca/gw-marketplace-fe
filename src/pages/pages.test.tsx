@@ -3,7 +3,12 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { env } from '../config/env'
 import { marketplaceService } from '../services/marketplaceService'
-import { productFixture, shopFixture } from '../test/fixtures'
+import {
+  productFixture,
+  secondProductFixture,
+  secondShopFixture,
+  shopFixture,
+} from '../test/fixtures'
 import { renderPage } from '../test/renderPage'
 import { CartPage } from './CartPage'
 import { CheckoutPage } from './CheckoutPage'
@@ -288,9 +293,7 @@ describe('marketplace pages', () => {
 
     await userEvent.click(screen.getByLabelText(/delivery/i))
     await waitFor(() => {
-      expect(screen.getByText('Delivery fee').closest('.checkout-total')).toHaveTextContent(
-        '€5.00',
-      )
+      expect(screen.getByText('Delivery fee').closest('.checkout-total')).toHaveTextContent('€5.00')
     })
   })
 
@@ -558,6 +561,121 @@ describe('marketplace pages', () => {
     expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute(
       'href',
       env.privacyUrl,
+    )
+  })
+
+  it('links "Continue shopping" back to the single shop when the cart has one shop', () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+    expect(screen.getByRole('link', { name: /continue shopping/i })).toHaveAttribute(
+      'href',
+      '/shop/test-shop/',
+    )
+    expect(screen.getByRole('link', { name: /back to cart/i })).toHaveAttribute('href', '/cart')
+  })
+
+  it('links "Continue shopping" to the marketplace home when the cart has multiple shops', () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({
+        items: [
+          { product: productFixture, quantity: 1 },
+          { product: secondProductFixture, quantity: 1 },
+        ],
+      }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+    expect(screen.getByRole('link', { name: /continue shopping/i })).toHaveAttribute('href', '/')
+  })
+
+  it('groups the checkout order summary by shop for a multi-shop cart', async () => {
+    service.getShopBySlug.mockImplementation((slug: string) =>
+      Promise.resolve(slug === secondShopFixture.slug ? secondShopFixture : shopFixture),
+    )
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({
+        items: [
+          { product: productFixture, quantity: 1 },
+          { product: secondProductFixture, quantity: 1 },
+        ],
+      }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+
+    expect(await screen.findByText('Test Shop')).toBeInTheDocument()
+    expect(await screen.findByText('Other Shop')).toBeInTheDocument()
+    expect(screen.getAllByText('Shop subtotal').length).toBe(2)
+    expect(screen.getByText('Grand total')).toBeInTheDocument()
+    expect(screen.queryByText('Estimated total')).not.toBeInTheDocument()
+  })
+
+  it('submits one order per shop when the cart has multiple shops', async () => {
+    service.getShopBySlug.mockImplementation((slug: string) =>
+      Promise.resolve(slug === secondShopFixture.slug ? secondShopFixture : shopFixture),
+    )
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({
+        items: [
+          { product: productFixture, quantity: 1 },
+          { product: secondProductFixture, quantity: 1 },
+        ],
+      }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+    await userEvent.type(screen.getByLabelText('Full name'), 'Multi Shop Buyer')
+    await userEvent.type(screen.getByLabelText('Email'), 'multishop@example.com')
+    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+
+    await screen.findByRole('heading', {
+      name: 'Your order request has been sent to the seller.',
+    })
+    expect(service.createOrderRequest).toHaveBeenCalledTimes(2)
+    expect(service.createOrderRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ shop_id: Number(productFixture.shopId) }),
+    )
+    expect(service.createOrderRequest).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ shop_id: Number(secondProductFixture.shopId) }),
+    )
+  })
+
+  it('groups the cart page items by shop and shows per-shop subtotals for a multi-shop cart', async () => {
+    service.getShopBySlug.mockImplementation((slug: string) =>
+      Promise.resolve(slug === secondShopFixture.slug ? secondShopFixture : shopFixture),
+    )
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({
+        items: [
+          { product: productFixture, quantity: 1 },
+          { product: secondProductFixture, quantity: 1 },
+        ],
+      }),
+    )
+    renderPage(<CartPage />)
+
+    expect((await screen.findAllByText('Test Shop')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Other Shop').length).toBeGreaterThan(0)
+    expect(screen.getByRole('link', { name: /continue shopping/i })).toHaveAttribute('href', '/')
+  })
+
+  it('links "Continue shopping" back to the single shop on the cart page', () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CartPage />)
+    expect(screen.getByRole('link', { name: /continue shopping/i })).toHaveAttribute(
+      'href',
+      '/shop/test-shop/',
     )
   })
 })
