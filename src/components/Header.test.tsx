@@ -64,7 +64,10 @@ describe('Header authentication menu', () => {
     await userEvent.click(screen.getByRole('button', { name: 'User menu' }))
 
     expect(screen.getByRole('menuitem', { name: 'My Account' })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: 'My Orders' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'My Orders' })).toHaveAttribute(
+      'href',
+      '/account/orders',
+    )
     expect(screen.getByRole('menuitem', { name: 'Seller Portal' })).toHaveAttribute(
       'href',
       '/seller',

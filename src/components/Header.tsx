@@ -65,9 +65,9 @@ export function Header() {
                     <a role="menuitem" href={`${env.mainFrontendUrl}/#profile`}>
                       My Account
                     </a>
-                    <a role="menuitem" href={`${env.mainFrontendUrl}/#buyer-dashboard`}>
+                    <Link role="menuitem" to="/account/orders" onClick={() => setMenuOpen(false)}>
                       My Orders
-                    </a>
+                    </Link>
                     {user.is_seller && (
                       <Link role="menuitem" to="/seller" onClick={() => setMenuOpen(false)}>
                         Seller Portal
