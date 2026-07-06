@@ -242,8 +242,8 @@ nav {
 }
 
 .market-hero {
-  min-height: 320px;
-  padding: 48px max(20px, calc((100vw - 1200px) / 2));
+  min-height: 220px;
+  padding: 32px max(20px, calc((100vw - 1200px) / 2));
   display: grid;
   align-items: center;
   gap: 24px;
@@ -262,26 +262,26 @@ nav {
      generic h1 clamp (which tops out at 5rem) so it never overflows into the
      ".market-hero__art" column on wide screens, and allow a mid-word break as
      a last-resort safety net on very narrow viewports. */
-  font-size: clamp(2rem, 4.4vw, 3.2rem);
+  font-size: clamp(1.7rem, 3.4vw, 2.5rem);
   overflow-wrap: break-word;
 }
 
 .market-hero__content > p:not(.eyebrow) {
   max-width: 540px;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
   color: #d6e1dd;
-  font-size: 1.1rem;
-  line-height: 1.7;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .market-hero__art {
   position: relative;
-  min-height: 320px;
+  min-height: 220px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   font-family: 'Inter', sans-serif;
-  font-size: clamp(3rem, 10vw, 7rem);
+  font-size: clamp(2.2rem, 7vw, 4.6rem);
   line-height: 0.75;
   transform: rotate(-4deg);
 }
@@ -1400,7 +1400,7 @@ nav {
   }
 
   .market-hero {
-    min-height: 420px;
+    min-height: 300px;
   }
 
   .shop-hero__content {
