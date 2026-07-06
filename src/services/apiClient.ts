@@ -1,5 +1,9 @@
 import { env } from '../config/env'
 
+// Fired whenever an authenticated-style API call comes back 401/403 —
+// signals the session was invalidated (e.g. logged out elsewhere).
+export const SESSION_EXPIRED_EVENT = 'marketplace:session-expired'
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -81,6 +85,17 @@ export async function apiRequest<T>(
         else if (Array.isArray(body.code) && typeof body.code[0] === 'string') code = body.code[0]
       } catch {
         // Keep the status-based message when the response is not JSON.
+      }
+      // A 401/403 on any authenticated-style call (not the "who am I" probe
+      // itself, which is expected to fail when logged out) usually means the
+      // session was invalidated elsewhere — e.g. the shopper logged out on
+      // the main GuideWisey site in another tab, but this marketplace tab
+      // still has a stale "logged in" header from its initial page load.
+      // Notify listeners (AuthContext) so the UI can resync immediately.
+      if ((response.status === 401 || response.status === 403) && path !== '/auth/me') {
+        window.dispatchEvent(
+          new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { status: response.status, path } }),
+        )
       }
       throw new ApiError(message, response.status, code)
     }
