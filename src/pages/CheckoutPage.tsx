@@ -1,11 +1,12 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { useCart } from '../cart/CartContext'
 import { env } from '../config/env'
 import { EmptyState } from '../components/EmptyState'
+import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
-import type { OrderConfirmation, OrderRequest } from '../types/marketplace'
+import type { OrderConfirmation, OrderRequest, Shop } from '../types/marketplace'
 import { formatPrice } from '../utils/shopLinks'
 
 interface CheckoutFields {
@@ -14,8 +15,11 @@ interface CheckoutFields {
   phone: string
   deliveryMethod: 'pickup' | 'delivery'
   street: string
+  houseNumber: string
+  houseNumberAddition: string
   postalCode: string
   city: string
+  country: string
   notes: string
   termsAccepted: boolean
   createAccount: boolean
@@ -29,8 +33,11 @@ const initialFields: CheckoutFields = {
   phone: '',
   deliveryMethod: 'pickup',
   street: '',
+  houseNumber: '',
+  houseNumberAddition: '',
   postalCode: '',
   city: '',
+  country: 'Netherlands',
   notes: '',
   termsAccepted: false,
   createAccount: false,
@@ -39,6 +46,25 @@ const initialFields: CheckoutFields = {
 }
 
 const MIN_PASSWORD_LENGTH = 8
+// Fallback delivery fee used only if a shop hasn't configured its own fee —
+// mirrors the legacy gw-frontend marketplace defaults.
+const DEFAULT_LOCAL_DELIVERY_FEE = 5
+
+// Mirrors computeDeliveryFee() from the legacy gw-frontend marketplace:
+// pickup is always free; delivery is free above the shop's threshold,
+// otherwise the shop's local delivery fee (falling back to a sane default).
+function computeShopDeliveryFee(
+  shop: Shop | undefined,
+  orderType: 'pickup' | 'delivery',
+  shopSubtotal: number,
+): number {
+  if (orderType === 'pickup') return 0
+  const freeAbove = shop?.freeDeliveryAbove
+  if (freeAbove !== undefined && freeAbove !== null && shopSubtotal >= freeAbove) {
+    return 0
+  }
+  return shop?.localDeliveryFee ?? DEFAULT_LOCAL_DELIVERY_FEE
+}
 
 export function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart()
@@ -46,19 +72,76 @@ export function CheckoutPage() {
   const [fields, setFields] = useState(initialFields)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [errorCode, setErrorCode] = useState('')
   const [confirmations, setConfirmations] = useState<OrderConfirmation[]>([])
   const [accountCreated, setAccountCreated] = useState(false)
   const [continuingAsGuest, setContinuingAsGuest] = useState(false)
+  const [shopsBySlug, setShopsBySlug] = useState<Record<string, Shop>>({})
+  const [lookupState, setLookupState] = useState<'idle' | 'loading' | 'found' | 'not-found'>('idle')
   const currency = items[0]?.product.currency ?? 'EUR'
   const showAccountPrompt = !user && !continuingAsGuest
+
+  // Load shop settings (delivery fees, free-delivery threshold) for every
+  // shop represented in the cart so we can preview an accurate delivery fee
+  // before the order is submitted. The backend recomputes this fee
+  // authoritatively on submission — this is a preview only.
+  useEffect(() => {
+    const slugs = [...new Set(items.map((item) => item.product.shopSlug).filter(Boolean))]
+    const missing = slugs.filter((slug) => !(slug in shopsBySlug))
+    if (missing.length === 0) return
+    let active = true
+    void Promise.all(missing.map((slug) => marketplaceService.getShopBySlug(slug))).then((shops) => {
+      if (!active) return
+      setShopsBySlug((current) => {
+        const next = { ...current }
+        missing.forEach((slug, index) => {
+          const shop = shops[index]
+          if (shop) next[slug] = shop
+        })
+        return next
+      })
+    })
+    return () => {
+      active = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items])
+
+  const shopSubtotals = new Map<string, number>()
+  for (const item of items) {
+    const key = item.product.shopSlug
+    shopSubtotals.set(key, (shopSubtotals.get(key) ?? 0) + item.product.price * item.quantity)
+  }
+  const estimatedDeliveryFee = [...shopSubtotals.entries()].reduce((total, [slug, shopSubtotal]) => {
+    return total + computeShopDeliveryFee(shopsBySlug[slug], fields.deliveryMethod, shopSubtotal)
+  }, 0)
+  const estimatedTotal = subtotal + estimatedDeliveryFee
 
   const update = <Key extends keyof CheckoutFields>(key: Key, value: CheckoutFields[Key]) => {
     setFields((current) => ({ ...current, [key]: value }))
   }
 
+  const findAddress = async () => {
+    if (!fields.postalCode || !fields.houseNumber) return
+    setLookupState('loading')
+    const result = await marketplaceService.lookupAddress(fields.postalCode, fields.houseNumber)
+    if (result) {
+      setFields((current) => ({
+        ...current,
+        street: result.street,
+        city: result.city,
+        country: result.country || current.country,
+      }))
+      setLookupState('found')
+    } else {
+      setLookupState('not-found')
+    }
+  }
+
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     setError('')
+    setErrorCode('')
 
     const requestingAccount = !user && fields.createAccount
     if (requestingAccount) {
@@ -89,9 +172,23 @@ export function CheckoutPage() {
     try {
       const deliveryAddress =
         fields.deliveryMethod === 'delivery'
-          ? [fields.street, fields.postalCode, fields.city].filter(Boolean).join(', ')
+          ? [
+              [fields.street, fields.houseNumber].filter(Boolean).join(' ') +
+                (fields.houseNumberAddition ? ` ${fields.houseNumberAddition}` : ''),
+              fields.postalCode,
+              fields.city,
+              fields.country,
+            ]
+              .filter(Boolean)
+              .join(', ')
           : ''
-      const requests = [...groups.entries()].map(([shopId, shopItems], index) => {
+      // Submit one shop's order at a time (not Promise.all): SQLite only
+      // allows a single writer, so firing all shop orders in parallel from a
+      // multi-shop cart raced against each other and intermittently raised
+      // "database is locked". Sequential awaits also let the account-creation
+      // request (always first) fully commit before any other order write.
+      const created: OrderConfirmation[] = []
+      for (const [index, [shopId, shopItems]] of [...groups.entries()].entries()) {
         const order: OrderRequest = {
           shop_id: Number(shopId),
           customer_name: fields.fullName,
@@ -99,6 +196,7 @@ export function CheckoutPage() {
           customer_phone: fields.phone,
           delivery_address: deliveryAddress,
           order_type: fields.deliveryMethod,
+          delivery_zone: 'local',
           customer_note: fields.notes,
           payment_method: 'cash',
           terms_accepted: true,
@@ -116,14 +214,20 @@ export function CheckoutPage() {
               }
             : {}),
         }
-        return marketplaceService.createOrderRequest(order)
-      })
-      const created = await Promise.all(requests)
+        created.push(await marketplaceService.createOrderRequest(order))
+      }
       setConfirmations(created)
       setAccountCreated(requestingAccount)
       clearCart()
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'The order request could not be sent.')
+      if (caught instanceof ApiError && caught.code === 'ACCOUNT_ALREADY_EXISTS') {
+        setErrorCode('ACCOUNT_ALREADY_EXISTS')
+        setError(
+          'An account already exists with this email. Please log in to continue and track your order.',
+        )
+      } else {
+        setError(caught instanceof Error ? caught.message : 'The order request could not be sent.')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -149,9 +253,9 @@ export function CheckoutPage() {
           ))}
         </div>
         {user ? (
-          <a className="button" href={`${env.mainFrontendUrl}/#buyer-dashboard`}>
+          <Link className="button" to="/account/orders">
             View order
-          </a>
+          </Link>
         ) : accountCreated ? (
           <p className="confirmation-verify-note">
             We&apos;ve created your account. Check <strong>{fields.email}</strong> for a
@@ -212,7 +316,19 @@ export function CheckoutPage() {
                 <input
                   type="checkbox"
                   checked={fields.createAccount}
-                  onChange={(event) => update('createAccount', event.target.checked)}
+                  onChange={(event) => {
+                    const checked = event.target.checked
+                    update('createAccount', checked)
+                    // Unchecking "create an account" means the shopper decided to
+                    // continue as a guest instead — any stale
+                    // ACCOUNT_ALREADY_EXISTS error/"Log in to continue" CTA from a
+                    // previous submit attempt no longer applies, so clear it
+                    // immediately rather than leaving it stuck until next submit.
+                    if (!checked && errorCode === 'ACCOUNT_ALREADY_EXISTS') {
+                      setError('')
+                      setErrorCode('')
+                    }
+                  }}
                 />
                 <span>Create an account to track my order</span>
               </label>
@@ -315,34 +431,105 @@ export function CheckoutPage() {
           </fieldset>
 
           {fields.deliveryMethod === 'delivery' && (
-            <div className="form-grid delivery-address">
-              <label className="form-field form-field--wide">
-                Street and house number
-                <input
-                  autoComplete="street-address"
-                  value={fields.street}
-                  onChange={(event) => update('street', event.target.value)}
-                  required
-                />
-              </label>
-              <label className="form-field">
-                Postal code
-                <input
-                  autoComplete="postal-code"
-                  value={fields.postalCode}
-                  onChange={(event) => update('postalCode', event.target.value)}
-                  required
-                />
-              </label>
-              <label className="form-field">
-                City
-                <input
-                  autoComplete="address-level2"
-                  value={fields.city}
-                  onChange={(event) => update('city', event.target.value)}
-                  required
-                />
-              </label>
+            <div className="delivery-address">
+              {env.addressLookupEnabled && (
+                <div className="form-grid address-lookup">
+                  <label className="form-field">
+                    Postcode
+                    <input
+                      autoComplete="postal-code"
+                      placeholder="1234AB"
+                      value={fields.postalCode}
+                      onChange={(event) => {
+                        setLookupState('idle')
+                        update('postalCode', event.target.value)
+                      }}
+                    />
+                  </label>
+                  <label className="form-field">
+                    House number
+                    <input
+                      value={fields.houseNumber}
+                      onChange={(event) => {
+                        setLookupState('idle')
+                        update('houseNumber', event.target.value)
+                      }}
+                    />
+                  </label>
+                  <label className="form-field">
+                    Addition
+                    <input
+                      value={fields.houseNumberAddition}
+                      onChange={(event) => update('houseNumberAddition', event.target.value)}
+                    />
+                  </label>
+                  <div className="form-field form-field--action">
+                    <button
+                      type="button"
+                      className="button button--ghost"
+                      onClick={() => void findAddress()}
+                      disabled={lookupState === 'loading' || !fields.postalCode || !fields.houseNumber}
+                    >
+                      {lookupState === 'loading' ? 'Looking up address…' : 'Find address'}
+                    </button>
+                  </div>
+                  {lookupState === 'not-found' && (
+                    <p className="inline-note form-field--wide">
+                      We could not find the address automatically. Please enter it manually.
+                    </p>
+                  )}
+                </div>
+              )}
+              <div className="form-grid">
+                <label className="form-field form-field--wide">
+                  Street and house number
+                  <input
+                    autoComplete="street-address"
+                    value={fields.street}
+                    onChange={(event) => update('street', event.target.value)}
+                    required
+                  />
+                </label>
+                {!env.addressLookupEnabled && (
+                  <>
+                    <label className="form-field">
+                      House number
+                      <input
+                        value={fields.houseNumber}
+                        onChange={(event) => update('houseNumber', event.target.value)}
+                        required
+                      />
+                    </label>
+                    <label className="form-field">
+                      Postal code
+                      <input
+                        autoComplete="postal-code"
+                        value={fields.postalCode}
+                        onChange={(event) => update('postalCode', event.target.value)}
+                        required
+                      />
+                    </label>
+                  </>
+                )}
+                <label className="form-field">
+                  City
+                  <input
+                    autoComplete="address-level2"
+                    value={fields.city}
+                    onChange={(event) => update('city', event.target.value)}
+                    required
+                  />
+                </label>
+                <label className="form-field">
+                  Country
+                  <input
+                    autoComplete="country-name"
+                    value={fields.country}
+                    onChange={(event) => update('country', event.target.value)}
+                    required
+                  />
+                </label>
+              </div>
             </div>
           )}
 
@@ -369,10 +556,29 @@ export function CheckoutPage() {
               <strong>{formatPrice(product.price * quantity, product.currency)}</strong>
             </div>
           ))}
-          <div className="checkout-total">
-            <span>Total before seller-confirmed fees</span>
+          <div className="checkout-total checkout-total--subtotal">
+            <span>Subtotal</span>
             <strong>{formatPrice(subtotal, currency)}</strong>
           </div>
+          <div className="checkout-total checkout-total--delivery">
+            <span>Delivery method</span>
+            <strong>{fields.deliveryMethod === 'pickup' ? 'Pickup' : 'Delivery'}</strong>
+          </div>
+          <div className="checkout-total checkout-total--delivery">
+            <span>Delivery fee</span>
+            <strong>
+              {fields.deliveryMethod === 'pickup'
+                ? 'Free'
+                : estimatedDeliveryFee > 0
+                  ? formatPrice(estimatedDeliveryFee, currency)
+                  : 'Free'}
+            </strong>
+          </div>
+          <div className="checkout-total">
+            <span>Estimated total</span>
+            <strong>{formatPrice(estimatedTotal, currency)}</strong>
+          </div>
+          <p className="checkout-total-note">Final delivery fee is confirmed by the seller.</p>
           <label className="terms-check">
             <input
               type="checkbox"
@@ -396,6 +602,11 @@ export function CheckoutPage() {
             <p className="inline-error" role="alert">
               {error}
             </p>
+          )}
+          {errorCode === 'ACCOUNT_ALREADY_EXISTS' && (
+            <a className="button button--wide" href={env.loginUrlWithNext('/checkout')}>
+              Log in to continue
+            </a>
           )}
           <button className="button button--wide" type="submit" disabled={submitting}>
             {submitting ? 'Sending order request…' : 'Submit order request'}

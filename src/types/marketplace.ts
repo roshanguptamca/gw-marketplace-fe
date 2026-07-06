@@ -33,6 +33,11 @@ export interface Shop {
   contactEmail?: string
   contactPhone?: string
   whatsapp?: string
+  pickupAvailable?: boolean
+  deliveryAvailable?: boolean
+  localDeliveryFee?: number
+  internationalDeliveryFee?: number
+  freeDeliveryAbove?: number | null
 }
 
 export interface User {
@@ -183,6 +188,7 @@ export interface OrderRequest {
   customer_phone: string
   delivery_address: string
   order_type: 'pickup' | 'delivery'
+  delivery_zone?: 'local' | 'international'
   customer_note: string
   payment_method: 'cash'
   terms_accepted: true
@@ -198,6 +204,43 @@ export interface OrderConfirmation {
   shop_name: string
   total: string
   status: string
+  subtotal?: string
+  delivery_fee?: string
+  order_type?: 'pickup' | 'delivery'
+}
+
+export interface BuyerOrderItem {
+  id: number
+  product: number | null
+  product_name: string
+  unit_price: string
+  quantity: number
+  line_total: string
+}
+
+export interface BuyerOrder {
+  id: number
+  order_number: string
+  shop_name: string
+  shop_slug: string
+  customer_name: string
+  customer_email: string
+  customer_phone: string
+  delivery_address: string
+  order_type: 'pickup' | 'delivery'
+  delivery_zone?: string
+  status: string
+  payment_method: string
+  payment_status: string
+  subtotal: string
+  discount_total: string
+  delivery_fee: string
+  total: string
+  customer_note: string
+  seller_note: string
+  items: BuyerOrderItem[]
+  created_at: string
+  updated_at: string
 }
 
 export interface CartItem {
@@ -212,4 +255,10 @@ export interface CartSnapshot {
 export interface ApiErrorShape {
   message: string
   status: number
+}
+
+export interface AddressLookupResult {
+  street: string
+  city: string
+  country: string
 }

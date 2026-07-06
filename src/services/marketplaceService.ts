@@ -1,12 +1,14 @@
 import { env } from '../config/env'
 import { mockProducts, mockShops } from '../data/mockData'
 import type {
+  AddressLookupResult,
   Campaign,
   CampaignInput,
   CartSnapshot,
   Category,
   Coupon,
   CouponInput,
+  BuyerOrder,
   MarketplaceSearchFilters,
   MarketplaceSearchResult,
   OrderConfirmation,
@@ -19,7 +21,7 @@ import type {
   SellerProductImage,
   Shop,
 } from '../types/marketplace'
-import { apiRequest } from './apiClient'
+import { ApiError, apiRequest } from './apiClient'
 
 const MOCK_DELAY_MS = 30
 
@@ -33,7 +35,15 @@ interface ApiShop {
   city: string
   contact_email?: string
   contact_phone?: string
-  settings?: { currency?: string; whatsapp_number?: string }
+  pickup_available?: boolean
+  delivery_available?: boolean
+  settings?: {
+    currency?: string
+    whatsapp_number?: string
+    local_delivery_fee?: string
+    international_delivery_fee?: string
+    free_delivery_above?: string | null
+  }
 }
 
 interface ApiProductImage {
@@ -129,6 +139,17 @@ function normalizeShop(shop: ApiShop): Shop {
     contactEmail: shop.contact_email,
     contactPhone: shop.contact_phone,
     whatsapp: shop.settings?.whatsapp_number,
+    pickupAvailable: shop.pickup_available,
+    deliveryAvailable: shop.delivery_available,
+    localDeliveryFee: shop.settings?.local_delivery_fee
+      ? Number(shop.settings.local_delivery_fee)
+      : undefined,
+    internationalDeliveryFee: shop.settings?.international_delivery_fee
+      ? Number(shop.settings.international_delivery_fee)
+      : undefined,
+    freeDeliveryAbove: shop.settings?.free_delivery_above
+      ? Number(shop.settings.free_delivery_above)
+      : null,
   }
 }
 
@@ -290,6 +311,18 @@ export const marketplaceService = {
       () => ({ items: [] }),
     ),
 
+  // "My Orders" (buyer-facing) — lives inside the marketplace frontend so
+  // customers never have to leave marketplace.guidewisey.com to track orders.
+  getBuyerOrders: () => apiRequest<BuyerOrder[]>('/buyer/orders/'),
+  getBuyerOrder: (id: number | string) =>
+    apiRequest<BuyerOrder>(`/buyer/orders/${encodeURIComponent(String(id))}/`),
+  // Instant self-serve cancel — only allowed while the order is still
+  // "pending" (the seller hasn't accepted it yet), so no approval is needed.
+  cancelBuyerOrder: (id: number | string) =>
+    apiRequest<BuyerOrder>(`/buyer/orders/${encodeURIComponent(String(id))}/cancel/`, {
+      method: 'POST',
+    }),
+
   getSellerDashboard: () => apiRequest<SellerDashboard>('/seller/dashboard/'),
   getSellerProducts: () => apiRequest<ApiProduct[]>('/seller/products/'),
   getSellerOrders: () => apiRequest<SellerOrder[]>('/seller/orders/'),
@@ -362,4 +395,19 @@ export const marketplaceService = {
         status: 'pending',
       }),
     ),
+
+  // Optional Dutch postcode + house number lookup used by checkout's "Find
+  // address" button. Returns null on any failure (not found, disabled,
+  // offline, etc.) so callers can always fall back to manual entry — this
+  // must never throw and never block checkout.
+  async lookupAddress(postcode: string, houseNumber: string): Promise<AddressLookupResult | null> {
+    if (env.useMockApi) return null
+    try {
+      const params = new URLSearchParams({ postcode, house_number: houseNumber })
+      return await apiRequest<AddressLookupResult>(`/marketplace/address-lookup/?${params}`)
+    } catch (error) {
+      if (error instanceof ApiError) return null
+      return null
+    }
+  },
 }

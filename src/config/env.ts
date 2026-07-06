@@ -6,6 +6,7 @@ export interface EnvironmentInput {
   VITE_MAIN_FRONTEND_URL?: string
   VITE_MARKETPLACE_URL?: string
   VITE_USE_MOCK_API?: string
+  VITE_ADDRESS_LOOKUP_ENABLED?: string
 }
 
 export interface EnvironmentConfig {
@@ -14,11 +15,13 @@ export interface EnvironmentConfig {
   mainFrontendUrl: string
   marketplaceUrl: string
   useMockApi: boolean
+  addressLookupEnabled: boolean
   loginUrl: string
   sellerLoginUrl: string
   sellerSignupUrl: string
   termsUrl: string
   privacyUrl: string
+  loginUrlWithNext: (marketplacePath: string) => string
 }
 
 function stripTrailingSlash(value: string): string {
@@ -30,11 +33,11 @@ function apiRoot(value: string): string {
   return origin.endsWith('/api') ? origin : `${origin}/api`
 }
 
-function parseBoolean(value: string | undefined): boolean {
+function parseBoolean(value: string | undefined, flagName = 'VITE_USE_MOCK_API'): boolean {
   if (value === undefined || value === '') return false
   if (value === 'true') return true
   if (value === 'false') return false
-  throw new Error('VITE_USE_MOCK_API must be "true" or "false"')
+  throw new Error(`${flagName} must be "true" or "false"`)
 }
 
 export function createEnvironmentConfig(
@@ -66,11 +69,20 @@ export function createEnvironmentConfig(
     mainFrontendUrl,
     marketplaceUrl,
     useMockApi: parseBoolean(input.VITE_USE_MOCK_API),
+    addressLookupEnabled: parseBoolean(
+      input.VITE_ADDRESS_LOOKUP_ENABLED,
+      'VITE_ADDRESS_LOOKUP_ENABLED',
+    ),
     loginUrl: `${loginBaseUrl}?next=${encodeURIComponent(marketplaceUrl)}`,
     sellerLoginUrl: `${loginBaseUrl}?next=${encodeURIComponent(sellerNextUrl)}`,
     sellerSignupUrl: `${signupBaseUrl}?next=${encodeURIComponent(sellerOnboardingNextUrl)}&intent=seller`,
     termsUrl: `${mainFrontendUrl}/#terms`,
     privacyUrl: `${mainFrontendUrl}/#privacy`,
+    // Builds a main-site login link that returns the shopper to a specific
+    // marketplace route (e.g. /checkout or /account/orders) after login,
+    // instead of always dropping them back on the marketplace home page.
+    loginUrlWithNext: (marketplacePath: string) =>
+      `${loginBaseUrl}?next=${encodeURIComponent(`${marketplaceUrl}${marketplacePath}`)}`,
   }
 }
 

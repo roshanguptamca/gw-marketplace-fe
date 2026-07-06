@@ -10,6 +10,11 @@ export const shopFixture: Shop = {
   bannerUrl: '/banner.jpg',
   categories: ['Home'],
   location: 'Test City',
+  pickupAvailable: true,
+  deliveryAvailable: true,
+  localDeliveryFee: 5,
+  internationalDeliveryFee: 10,
+  freeDeliveryAbove: 50,
 }
 
 export const productFixture: Product = {

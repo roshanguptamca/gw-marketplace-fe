@@ -1,9 +1,14 @@
 import { env } from '../config/env'
 
+// Fired whenever an authenticated-style API call comes back 401/403 —
+// signals the session was invalidated (e.g. logged out elsewhere).
+export const SESSION_EXPIRED_EVENT = 'marketplace:session-expired'
+
 export class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    public readonly code?: string,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -62,13 +67,37 @@ export async function apiRequest<T>(
 
     if (!response.ok) {
       let message = `Request failed with status ${response.status}`
+      let code: string | undefined
       try {
-        const body = (await response.json()) as { message?: string }
-        if (body.message) message = body.message
+        const body = (await response.json()) as Record<string, unknown>
+        if (typeof body.message === 'string') {
+          message = body.message
+        } else {
+          // DRF validation errors look like { "field_name": "text" | ["text"], "code": "..." }.
+          // Surface the first field error as a human-readable message.
+          const firstFieldError = Object.entries(body).find(([key]) => key !== 'code')?.[1]
+          if (typeof firstFieldError === 'string') message = firstFieldError
+          else if (Array.isArray(firstFieldError) && typeof firstFieldError[0] === 'string') {
+            message = firstFieldError[0]
+          }
+        }
+        if (typeof body.code === 'string') code = body.code
+        else if (Array.isArray(body.code) && typeof body.code[0] === 'string') code = body.code[0]
       } catch {
         // Keep the status-based message when the response is not JSON.
       }
-      throw new ApiError(message, response.status)
+      // A 401/403 on any authenticated-style call (not the "who am I" probe
+      // itself, which is expected to fail when logged out) usually means the
+      // session was invalidated elsewhere — e.g. the shopper logged out on
+      // the main GuideWisey site in another tab, but this marketplace tab
+      // still has a stale "logged in" header from its initial page load.
+      // Notify listeners (AuthContext) so the UI can resync immediately.
+      if ((response.status === 401 || response.status === 403) && path !== '/auth/me') {
+        window.dispatchEvent(
+          new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { status: response.status, path } }),
+        )
+      }
+      throw new ApiError(message, response.status, code)
     }
 
     if (response.status === 204) return undefined as T

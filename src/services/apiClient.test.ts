@@ -4,7 +4,7 @@ vi.mock('../config/env', () => ({
   env: { apiBaseUrl: 'https://api.example.test', useMockApi: false },
 }))
 
-import { ApiError, apiRequest } from './apiClient'
+import { ApiError, apiRequest, SESSION_EXPIRED_EVENT } from './apiClient'
 
 describe('apiRequest', () => {
   beforeEach(() => vi.useRealTimers())
@@ -70,6 +70,36 @@ describe('apiRequest', () => {
     await expect(apiRequest('/down', {}, fetcher)).rejects.toThrow('Request failed with status 502')
   })
 
+  it('extracts DRF-style field errors and a stable error code', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          customer_email: 'An account already exists with this email.',
+          code: 'ACCOUNT_ALREADY_EXISTS',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
+      ),
+    )
+    await expect(apiRequest('/marketplace/orders/', {}, fetcher)).rejects.toMatchObject({
+      message: 'An account already exists with this email.',
+      status: 400,
+      code: 'ACCOUNT_ALREADY_EXISTS',
+    })
+  })
+
+  it('extracts the first item of a DRF array-style field error', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ password_confirm: ['Passwords must match.'] }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    await expect(apiRequest('/marketplace/orders/', {}, fetcher)).rejects.toMatchObject({
+      message: 'Passwords must match.',
+      status: 400,
+    })
+  })
+
   it('normalizes network and unknown errors', async () => {
     await expect(
       apiRequest('/down', {}, vi.fn().mockRejectedValue(new Error('offline'))),
@@ -94,5 +124,33 @@ describe('apiRequest', () => {
     await vi.advanceTimersByTimeAsync(11)
     await promise
     vi.useRealTimers()
+  })
+
+  it('dispatches SESSION_EXPIRED_EVENT on 401/403 from an authenticated call', async () => {
+    const handler = vi.fn()
+    window.addEventListener(SESSION_EXPIRED_EVENT, handler)
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: 'Forbidden' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    await expect(apiRequest('/buyer/orders/1/cancel/', {}, fetcher)).rejects.toThrow()
+    expect(handler).toHaveBeenCalledTimes(1)
+    window.removeEventListener(SESSION_EXPIRED_EVENT, handler)
+  })
+
+  it('does not dispatch SESSION_EXPIRED_EVENT for the /auth/me probe itself', async () => {
+    const handler = vi.fn()
+    window.addEventListener(SESSION_EXPIRED_EVENT, handler)
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: 'Not authenticated' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    await expect(apiRequest('/auth/me', {}, fetcher)).rejects.toThrow()
+    expect(handler).not.toHaveBeenCalled()
+    window.removeEventListener(SESSION_EXPIRED_EVENT, handler)
   })
 })

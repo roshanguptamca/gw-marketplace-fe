@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authService } from '../services/authService'
+import { SESSION_EXPIRED_EVENT } from '../services/apiClient'
 import { AuthProvider, useAuth } from './AuthContext'
 
 vi.mock('../services/authService', () => ({
@@ -66,5 +67,54 @@ describe('AuthProvider', () => {
 
   it('requires its provider', () => {
     expect(() => render(<Consumer />)).toThrow('useAuth must be used within AuthProvider')
+  })
+
+  it('clears the cached user and reloads once when a 401/403 signals the session expired elsewhere', async () => {
+    window.sessionStorage.clear()
+    const reloadSpy = vi.fn()
+    const originalLocation = window.location
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...originalLocation, reload: reloadSpy },
+    })
+
+    render(
+      <AuthProvider>
+        <Consumer />
+      </AuthProvider>,
+    )
+    await screen.findByText('seller')
+
+    window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { status: 403, path: '/x' } }))
+
+    await screen.findByText('anonymous')
+    expect(reloadSpy).toHaveBeenCalledTimes(1)
+
+    Object.defineProperty(window, 'location', { configurable: true, value: originalLocation })
+  })
+
+  it('does not reload again within the guard window if 403s keep recurring', async () => {
+    window.sessionStorage.clear()
+    const reloadSpy = vi.fn()
+    const originalLocation = window.location
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...originalLocation, reload: reloadSpy },
+    })
+
+    render(
+      <AuthProvider>
+        <Consumer />
+      </AuthProvider>,
+    )
+    await screen.findByText('seller')
+
+    window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { status: 403, path: '/x' } }))
+    await screen.findByText('anonymous')
+    window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { status: 403, path: '/y' } }))
+
+    expect(reloadSpy).toHaveBeenCalledTimes(1)
+
+    Object.defineProperty(window, 'location', { configurable: true, value: originalLocation })
   })
 })
