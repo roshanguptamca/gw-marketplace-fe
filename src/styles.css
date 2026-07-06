@@ -1174,6 +1174,34 @@ nav {
   font-size: 0.8rem;
 }
 
+.checkout-total--subtotal,
+.checkout-total--delivery {
+  padding-block: 10px;
+}
+
+.checkout-total-note {
+  margin: -4px 0 12px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.address-lookup {
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+}
+
+.form-field--action {
+  display: flex;
+  align-items: flex-end;
+}
+
+.inline-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .terms-check {
   margin-bottom: 20px;
   display: flex;

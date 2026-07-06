@@ -13,6 +13,9 @@ import { ShopStorefrontPage } from './pages/ShopStorefrontPage'
 import { getShopSlugFromHostname } from './utils/shopResolver'
 import { AuthProvider } from './auth/AuthContext'
 import { ProtectedSellerRoute } from './auth/ProtectedSellerRoute'
+import { ProtectedBuyerRoute } from './auth/ProtectedBuyerRoute'
+import { BuyerOrdersPage } from './pages/BuyerOrdersPage'
+import { BuyerOrderDetailPage } from './pages/BuyerOrderDetailPage'
 import { SellerLayout } from './seller/SellerLayout'
 import { SellerDashboardPage } from './seller/SellerDashboardPage'
 import { SellerProductsPage } from './seller/SellerProductsPage'
@@ -59,6 +62,22 @@ export function App() {
                 )}
                 <Route path="cart" element={<CartPage />} />
                 <Route path="checkout" element={<CheckoutPage />} />
+                <Route
+                  path="account/orders"
+                  element={
+                    <ProtectedBuyerRoute nextPath="/account/orders">
+                      <BuyerOrdersPage />
+                    </ProtectedBuyerRoute>
+                  }
+                />
+                <Route
+                  path="account/orders/:orderId"
+                  element={
+                    <ProtectedBuyerRoute nextPath="/account/orders">
+                      <BuyerOrderDetailPage />
+                    </ProtectedBuyerRoute>
+                  }
+                />
                 <Route
                   path="seller"
                   element={

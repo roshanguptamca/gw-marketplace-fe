@@ -70,6 +70,36 @@ describe('apiRequest', () => {
     await expect(apiRequest('/down', {}, fetcher)).rejects.toThrow('Request failed with status 502')
   })
 
+  it('extracts DRF-style field errors and a stable error code', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          customer_email: 'An account already exists with this email.',
+          code: 'ACCOUNT_ALREADY_EXISTS',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
+      ),
+    )
+    await expect(apiRequest('/marketplace/orders/', {}, fetcher)).rejects.toMatchObject({
+      message: 'An account already exists with this email.',
+      status: 400,
+      code: 'ACCOUNT_ALREADY_EXISTS',
+    })
+  })
+
+  it('extracts the first item of a DRF array-style field error', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ password_confirm: ['Passwords must match.'] }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    await expect(apiRequest('/marketplace/orders/', {}, fetcher)).rejects.toMatchObject({
+      message: 'Passwords must match.',
+      status: 400,
+    })
+  })
+
   it('normalizes network and unknown errors', async () => {
     await expect(
       apiRequest('/down', {}, vi.fn().mockRejectedValue(new Error('offline'))),

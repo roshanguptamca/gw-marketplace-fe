@@ -4,6 +4,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    public readonly code?: string,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -62,13 +63,26 @@ export async function apiRequest<T>(
 
     if (!response.ok) {
       let message = `Request failed with status ${response.status}`
+      let code: string | undefined
       try {
-        const body = (await response.json()) as { message?: string }
-        if (body.message) message = body.message
+        const body = (await response.json()) as Record<string, unknown>
+        if (typeof body.message === 'string') {
+          message = body.message
+        } else {
+          // DRF validation errors look like { "field_name": "text" | ["text"], "code": "..." }.
+          // Surface the first field error as a human-readable message.
+          const firstFieldError = Object.entries(body).find(([key]) => key !== 'code')?.[1]
+          if (typeof firstFieldError === 'string') message = firstFieldError
+          else if (Array.isArray(firstFieldError) && typeof firstFieldError[0] === 'string') {
+            message = firstFieldError[0]
+          }
+        }
+        if (typeof body.code === 'string') code = body.code
+        else if (Array.isArray(body.code) && typeof body.code[0] === 'string') code = body.code[0]
       } catch {
         // Keep the status-based message when the response is not JSON.
       }
-      throw new ApiError(message, response.status)
+      throw new ApiError(message, response.status, code)
     }
 
     if (response.status === 204) return undefined as T

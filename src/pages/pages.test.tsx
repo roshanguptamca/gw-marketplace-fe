@@ -24,6 +24,9 @@ vi.mock('../services/marketplaceService', () => ({
     getCategories: vi.fn(),
     search: vi.fn(),
     createOrderRequest: vi.fn(),
+    lookupAddress: vi.fn(),
+    getBuyerOrders: vi.fn(),
+    getBuyerOrder: vi.fn(),
   },
 }))
 
@@ -50,6 +53,8 @@ describe('marketplace pages', () => {
       total: '12.50',
       status: 'pending',
     })
+    service.lookupAddress.mockResolvedValue(null)
+    service.getBuyerOrders.mockResolvedValue([])
   })
 
   it('renders marketplace shops', async () => {
@@ -179,7 +184,8 @@ describe('marketplace pages', () => {
     await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
     await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
     await userEvent.click(screen.getByLabelText(/delivery/i))
-    await userEvent.type(screen.getByLabelText('Street and house number'), 'Main Street 1')
+    await userEvent.type(screen.getByLabelText('Street and house number'), 'Main Street')
+    await userEvent.type(screen.getByLabelText('House number'), '1')
     await userEvent.type(screen.getByLabelText('Postal code'), '1000 AA')
     await userEvent.type(screen.getByLabelText('City'), 'Amsterdam')
     await userEvent.type(screen.getByLabelText('Notes to seller'), 'Please call me.')
@@ -196,7 +202,7 @@ describe('marketplace pages', () => {
       expect.objectContaining({
         customer_name: 'Test Buyer',
         order_type: 'delivery',
-        delivery_address: 'Main Street 1, 1000 AA, Amsterdam',
+        delivery_address: 'Main Street 1, 1000 AA, Amsterdam, Netherlands',
       }),
     )
   })
@@ -259,10 +265,111 @@ describe('marketplace pages', () => {
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
-    expect(await screen.findByRole('link', { name: 'View order' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'View order' })).toHaveAttribute(
+      'href',
+      '/account/orders',
+    )
     expect(
       screen.queryByRole('link', { name: 'Create account to track your order' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('shows a delivery fee for delivery based on shop settings, and none for pickup', async () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+
+    // Pickup is the default delivery method — no delivery fee should be charged.
+    expect(screen.getAllByText('Pickup').length).toBeGreaterThan(0)
+    const deliveryFeeRow = screen.getByText('Delivery fee').closest('.checkout-total')
+    expect(deliveryFeeRow).toHaveTextContent('Free')
+
+    await userEvent.click(screen.getByLabelText(/delivery/i))
+    await waitFor(() => {
+      expect(screen.getByText('Delivery fee').closest('.checkout-total')).toHaveTextContent(
+        '€5.00',
+      )
+    })
+  })
+
+  it('shows the estimated total including the delivery fee', async () => {
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+    await userEvent.click(screen.getByLabelText(/delivery/i))
+    await waitFor(() => {
+      expect(screen.getByText('Estimated total').closest('.checkout-total')).toHaveTextContent(
+        '€17.50',
+      )
+    })
+  })
+
+  it('shows a friendly message and login CTA when the account already exists', async () => {
+    const { ApiError } = await import('../services/apiClient')
+    service.createOrderRequest.mockRejectedValueOnce(
+      new ApiError('duplicate', 400, 'ACCOUNT_ALREADY_EXISTS'),
+    )
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+    await userEvent.type(screen.getByLabelText('Full name'), 'Guest Buyer')
+    await userEvent.type(screen.getByLabelText('Email'), 'existing@example.com')
+    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+
+    expect(
+      await screen.findByText(/an account already exists with this email/i),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Log in to continue' })).toHaveAttribute(
+      'href',
+      env.loginUrlWithNext('/checkout'),
+    )
+  })
+
+  it('finds an address via postcode lookup when enabled, with manual fallback on failure', async () => {
+    const original = env.addressLookupEnabled
+    env.addressLookupEnabled = true
+    try {
+      localStorage.setItem(
+        'guidewisey-marketplace-cart',
+        JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+      )
+      renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
+      await userEvent.click(screen.getByLabelText(/delivery/i))
+
+      service.lookupAddress.mockResolvedValueOnce({
+        street: 'Main Street',
+        city: 'Amsterdam',
+        country: 'Netherlands',
+      })
+      await userEvent.type(screen.getByLabelText('Postcode'), '1000AA')
+      await userEvent.type(screen.getByLabelText('House number'), '1')
+      await userEvent.click(screen.getByRole('button', { name: 'Find address' }))
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Street and house number')).toHaveValue('Main Street')
+      })
+      expect(screen.getByLabelText('City')).toHaveValue('Amsterdam')
+
+      service.lookupAddress.mockResolvedValueOnce(null)
+      await userEvent.click(screen.getByRole('button', { name: 'Find address' }))
+      expect(
+        await screen.findByText(/we could not find the address automatically/i),
+      ).toBeInTheDocument()
+      // Manual entry must still be possible.
+      await userEvent.clear(screen.getByLabelText('Street and house number'))
+      await userEvent.type(screen.getByLabelText('Street and house number'), 'Manual Street 5')
+      expect(screen.getByLabelText('Street and house number')).toHaveValue('Manual Street 5')
+    } finally {
+      env.addressLookupEnabled = original
+    }
   })
 
   it('prompts guests at checkout to create an account or continue as guest', () => {
