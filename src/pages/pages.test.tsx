@@ -54,7 +54,7 @@ describe('marketplace pages', () => {
 
   it('renders marketplace shops', async () => {
     renderPage(<MarketplaceHomePage />)
-    expect(screen.getByRole('heading', { name: 'GuideMarketplace' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'GuideWisey Market' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Test Shop' })).toBeInTheDocument()
   })
 
@@ -72,6 +72,15 @@ describe('marketplace pages', () => {
     renderPage(<ShopStorefrontPage resolvedSlug="test-shop" />)
     expect(await screen.findByRole('heading', { name: 'Test Shop' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Test Product' })).toBeInTheDocument()
+  })
+
+  it('shows ships-from info but no longer the categories block on the shop storefront', async () => {
+    const { container } = renderPage(<ShopStorefrontPage resolvedSlug="test-shop" />)
+    const shopMeta = await screen.findByText('Ships from')
+    expect(shopMeta.closest('.shop-meta')).toBeInTheDocument()
+    expect(container.querySelector('.shop-meta')).toHaveTextContent('Test City')
+    expect(screen.queryByText('Categories')).not.toBeInTheDocument()
+    expect(container.querySelector('.shop-meta')).not.toHaveTextContent('Home')
   })
 
   it('renders seller not found when shop is absent or errors', async () => {
@@ -94,6 +103,12 @@ describe('marketplace pages', () => {
     expect(screen.queryByText('Other Product')).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'All' }))
     expect(screen.getByText('Other Product')).toBeInTheDocument()
+  })
+
+  it('shows a back-to-shop link on the products listing page', async () => {
+    renderPage(<ProductListingPage resolvedSlug="test-shop" />)
+    const backLink = await screen.findByRole('link', { name: /back to test shop/i })
+    expect(backLink).toHaveAttribute('href', '/shop/test-shop/')
   })
 
   it('shows a go-to-cart CTA on the listing page once an item is added', async () => {

@@ -30,9 +30,9 @@ describe('marketplace search and filters', () => {
     })
   })
 
-  it('sets the page title to GuideMarketplace', async () => {
+  it('sets the page title to GuideWisey Market', async () => {
     renderPage(<MarketplaceHomePage />)
-    await waitFor(() => expect(document.title).toBe('GuideMarketplace | GuideWisey'))
+    await waitFor(() => expect(document.title).toBe('GuideWisey Market | GuideWisey'))
   })
 
   it('renders the search input, category, shop, price and in-stock filters', async () => {
