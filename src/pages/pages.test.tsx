@@ -20,6 +20,9 @@ vi.mock('../services/marketplaceService', () => ({
     getShopBySlug: vi.fn(),
     getShopProducts: vi.fn(),
     getProductDetails: vi.fn(),
+    getProducts: vi.fn(),
+    getCategories: vi.fn(),
+    search: vi.fn(),
     createOrderRequest: vi.fn(),
   },
 }))
@@ -32,6 +35,14 @@ describe('marketplace pages', () => {
     service.getShopBySlug.mockResolvedValue(shopFixture)
     service.getShopProducts.mockResolvedValue([productFixture])
     service.getProductDetails.mockResolvedValue(productFixture)
+    service.getProducts.mockResolvedValue([productFixture])
+    service.getCategories.mockResolvedValue([{ slug: 'spices', name: 'Spices', productCount: 3 }])
+    service.search.mockResolvedValue({
+      shops: [],
+      products: [],
+      totalShops: 0,
+      totalProducts: 0,
+    })
     service.createOrderRequest.mockResolvedValue({
       id: 101,
       order_number: 'GW-TEST-101',
@@ -43,7 +54,7 @@ describe('marketplace pages', () => {
 
   it('renders marketplace shops', async () => {
     renderPage(<MarketplaceHomePage />)
-    expect(screen.getByRole('heading', { name: /good things/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'GuideMarketplace' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Test Shop' })).toBeInTheDocument()
   })
 

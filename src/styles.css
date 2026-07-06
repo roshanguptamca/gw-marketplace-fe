@@ -242,11 +242,11 @@ nav {
 }
 
 .market-hero {
-  min-height: 620px;
-  padding: 70px max(20px, calc((100vw - 1200px) / 2));
+  min-height: 320px;
+  padding: 48px max(20px, calc((100vw - 1200px) / 2));
   display: grid;
   align-items: center;
-  gap: 40px;
+  gap: 24px;
   color: white;
   background: linear-gradient(135deg, #111827, #090d1a);
   overflow: hidden;
@@ -255,6 +255,15 @@ nav {
 .market-hero__content {
   z-index: 1;
   max-width: 680px;
+}
+
+.market-hero__title {
+  /* "GuideMarketplace" is a single unbroken word — cap the size well below the
+     generic h1 clamp (which tops out at 5rem) so it never overflows into the
+     ".market-hero__art" column on wide screens, and allow a mid-word break as
+     a last-resort safety net on very narrow viewports. */
+  font-size: clamp(2rem, 4.4vw, 3.2rem);
+  overflow-wrap: break-word;
 }
 
 .market-hero__content > p:not(.eyebrow) {
@@ -381,6 +390,111 @@ nav {
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.market-search-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 32px;
+}
+
+/* Mobile-first: single stacked column by default. */
+.market-search-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.market-search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.market-search-field input,
+.market-search-field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--cream);
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.market-search-field--checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.market-search-field--checkbox input {
+  min-height: auto;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.market-search-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.market-search-actions .button {
+  min-height: 44px;
+  padding: 0 16px;
+  width: 100%;
+}
+
+.market-search-summary {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Small tablets: two fields per row, search box spans full width. */
+@media (min-width: 560px) {
+  .market-search-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .market-search-field--query {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Larger tablets/desktop: fields share one row, actions align to the end. */
+@media (min-width: 900px) {
+  .market-search-row {
+    grid-template-columns: 2fr 1fr 1fr 0.7fr 0.7fr auto auto;
+    gap: 14px;
+  }
+
+  .market-search-field--query {
+    grid-column: auto;
+  }
+
+  .market-search-field--checkbox {
+    padding-bottom: 10px;
+  }
+
+  .market-search-actions {
+    grid-template-columns: auto auto;
+  }
+
+  .market-search-actions .button {
+    width: auto;
+  }
 }
 
 .shop-hero {
@@ -1286,7 +1400,7 @@ nav {
   }
 
   .market-hero {
-    min-height: 690px;
+    min-height: 420px;
   }
 
   .shop-hero__content {

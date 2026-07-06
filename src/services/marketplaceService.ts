@@ -2,6 +2,9 @@ import { env } from '../config/env'
 import { mockProducts, mockShops } from '../data/mockData'
 import type {
   CartSnapshot,
+  Category,
+  MarketplaceSearchFilters,
+  MarketplaceSearchResult,
   OrderConfirmation,
   OrderRequest,
   Product,
@@ -46,6 +49,63 @@ export interface ApiProduct {
   is_active: boolean
   is_approved: boolean
   sku?: string | null
+}
+
+interface ApiCategory {
+  slug: string
+  name: string
+  product_count?: number
+}
+
+function normalizeCategory(category: ApiCategory): Category {
+  return {
+    slug: category.slug,
+    name: category.name,
+    productCount: category.product_count,
+  }
+}
+
+function buildSearchQuery(filters: MarketplaceSearchFilters): string {
+  const params = new URLSearchParams()
+  if (filters.q) params.set('q', filters.q)
+  if (filters.category) params.set('category', filters.category)
+  if (filters.shop) params.set('shop', filters.shop)
+  if (filters.minPrice) params.set('min_price', filters.minPrice)
+  if (filters.maxPrice) params.set('max_price', filters.maxPrice)
+  if (filters.inStock) params.set('in_stock', 'true')
+  const qs = params.toString()
+  return qs ? `?${qs}` : ''
+}
+
+function mockSearch(filters: MarketplaceSearchFilters): MarketplaceSearchResult {
+  const q = (filters.q ?? '').trim().toLowerCase()
+  const minPrice = filters.minPrice ? Number(filters.minPrice) : undefined
+  const maxPrice = filters.maxPrice ? Number(filters.maxPrice) : undefined
+
+  const shops = mockShops.filter((shop) => {
+    if (filters.shop && shop.slug !== filters.shop) return false
+    if (q && !shop.name.toLowerCase().includes(q) && !shop.description.toLowerCase().includes(q))
+      return false
+    return true
+  })
+
+  const products = mockProducts.filter((product) => {
+    if (filters.shop && product.shopSlug !== filters.shop) return false
+    if (filters.category && product.category.toLowerCase() !== filters.category.toLowerCase())
+      return false
+    if (
+      q &&
+      !product.name.toLowerCase().includes(q) &&
+      !product.description.toLowerCase().includes(q)
+    )
+      return false
+    if (minPrice !== undefined && product.price < minPrice) return false
+    if (maxPrice !== undefined && product.price > maxPrice) return false
+    if (filters.inStock && product.stock <= 0) return false
+    return true
+  })
+
+  return { shops, products, totalShops: shops.length, totalProducts: products.length }
 }
 
 function normalizeShop(shop: ApiShop): Shop {
@@ -112,11 +172,59 @@ export const marketplaceService = {
     )
   },
 
+  async getCategories(): Promise<Category[]> {
+    return withDevelopmentFallback(
+      async () =>
+        (await apiRequest<ApiCategory[]>('/marketplace/categories/')).map(normalizeCategory),
+      () => {
+        const seen = new Map<string, number>()
+        mockProducts.forEach((product) => {
+          seen.set(product.category, (seen.get(product.category) ?? 0) + 1)
+        })
+        return [...seen.entries()].map(([name, productCount]) => ({
+          slug: name.toLowerCase(),
+          name,
+          productCount,
+        }))
+      },
+    )
+  },
+
+  async search(filters: MarketplaceSearchFilters): Promise<MarketplaceSearchResult> {
+    return withDevelopmentFallback(
+      async () => {
+        const response = await apiRequest<{
+          shops: ApiShop[]
+          products: ApiProduct[]
+          total_shops: number
+          total_products: number
+        }>(`/marketplace/search/${buildSearchQuery(filters)}`)
+        return {
+          shops: response.shops.map(normalizeShop),
+          products: response.products.map((product) => normalizeProduct(product)),
+          totalShops: response.total_shops,
+          totalProducts: response.total_products,
+        }
+      },
+      () => mockSearch(filters),
+    )
+  },
+
   async getShopBySlug(slug: string): Promise<Shop | null> {
     return withDevelopmentFallback(
       async () =>
         normalizeShop(await apiRequest<ApiShop>(`/marketplace/shops/${encodeURIComponent(slug)}/`)),
       () => mockShops.find((shop) => shop.slug === slug) ?? null,
+    )
+  },
+
+  async getProducts(): Promise<Product[]> {
+    return withDevelopmentFallback(
+      async () =>
+        (await apiRequest<ApiProduct[]>('/marketplace/products/')).map((product) =>
+          normalizeProduct(product),
+        ),
+      () => mockProducts,
     )
   },
 

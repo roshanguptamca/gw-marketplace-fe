@@ -1,3 +1,25 @@
+export interface Category {
+  slug: string
+  name: string
+  productCount?: number
+}
+
+export interface MarketplaceSearchFilters {
+  q?: string
+  category?: string
+  shop?: string
+  minPrice?: string
+  maxPrice?: string
+  inStock?: boolean
+}
+
+export interface MarketplaceSearchResult {
+  shops: Shop[]
+  products: Product[]
+  totalShops: number
+  totalProducts: number
+}
+
 export interface Shop {
   id: string
   slug: string
