@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom'
 import { useCart } from '../cart/CartContext'
+import { groupItemsByShop } from '../cart/groupByShop'
+import { useShopsForItems } from '../cart/useShopsForItems'
 import { EmptyState } from '../components/EmptyState'
-import { formatPrice } from '../utils/shopLinks'
+import { continueShoppingPath, formatPrice } from '../utils/shopLinks'
 
 export function CartPage() {
   const { items, subtotal, updateQuantity, removeItem } = useCart()
+  const shopsBySlug = useShopsForItems(items)
 
   if (items.length === 0) {
     return (
@@ -23,6 +26,9 @@ export function CartPage() {
   }
 
   const currency = items[0].product.currency
+  const shopGroups = groupItemsByShop(items)
+  const isMultiShop = shopGroups.length > 1
+  const continuePath = continueShoppingPath(shopGroups.map((group) => group.shopSlug))
 
   return (
     <main className="page-shell section">
@@ -35,38 +41,55 @@ export function CartPage() {
       </div>
       <div className="cart-layout">
         <section className="cart-items" aria-label="Cart items">
-          {items.map(({ product, quantity }) => (
-            <article className="cart-item" key={product.id}>
-              <img src={product.images[0]} alt={product.name} />
-              <div className="cart-item__details">
-                <p className="eyebrow">{product.shopSlug}</p>
-                <h2>{product.name}</h2>
-                <p>{formatPrice(product.price, product.currency)}</p>
-                <button className="text-button" onClick={() => removeItem(product.id)}>
-                  Remove
-                </button>
+          {shopGroups.map((group) => {
+            const shop = shopsBySlug[group.shopSlug]
+            return (
+              <div className="cart-shop-group" key={group.shopSlug}>
+                {isMultiShop && (
+                  <div className="cart-shop-group__header">
+                    <h2>{shop?.name ?? group.shopSlug}</h2>
+                    <span>{formatPrice(group.subtotal, currency)}</span>
+                  </div>
+                )}
+                {group.items.map(({ product, quantity }) => (
+                  <article className="cart-item" key={product.id}>
+                    <img src={product.images[0]} alt={product.name} />
+                    <div className="cart-item__details">
+                      <p className="eyebrow">{shop?.name ?? product.shopSlug}</p>
+                      <h2>{product.name}</h2>
+                      <p>{formatPrice(product.price, product.currency)}</p>
+                      <button className="text-button" onClick={() => removeItem(product.id)}>
+                        Remove
+                      </button>
+                    </div>
+                    <label className="quantity">
+                      <span>Quantity</span>
+                      <select
+                        value={quantity}
+                        onChange={(event) => updateQuantity(product.id, Number(event.target.value))}
+                      >
+                        {Array.from(
+                          { length: Math.min(product.stock, 10) },
+                          (_, index) => index + 1,
+                        ).map((value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <strong>{formatPrice(product.price * quantity, product.currency)}</strong>
+                  </article>
+                ))}
               </div>
-              <label className="quantity">
-                <span>Quantity</span>
-                <select
-                  value={quantity}
-                  onChange={(event) => updateQuantity(product.id, Number(event.target.value))}
-                >
-                  {Array.from({ length: Math.min(product.stock, 10) }, (_, index) => index + 1).map(
-                    (value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ),
-                  )}
-                </select>
-              </label>
-              <strong>{formatPrice(product.price * quantity, product.currency)}</strong>
-            </article>
-          ))}
+            )
+          })}
         </section>
         <aside className="order-summary">
           <h2>Order summary</h2>
+          {isMultiShop && (
+            <p className="inline-note">Items from {shopGroups.length} shops ship separately.</p>
+          )}
           <div>
             <span>Subtotal</span>
             <strong>{formatPrice(subtotal, currency)}</strong>
@@ -78,6 +101,9 @@ export function CartPage() {
           <p>Taxes, shipping and seller-specific delivery options are confirmed next.</p>
           <Link className="button button--wide" to="/checkout">
             Proceed to checkout
+          </Link>
+          <Link className="back-link cart-continue-shopping" to={continuePath}>
+            ← Continue shopping
           </Link>
         </aside>
       </div>

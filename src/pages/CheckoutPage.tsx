@@ -1,13 +1,15 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { useCart } from '../cart/CartContext'
+import { groupItemsByShop } from '../cart/groupByShop'
+import { useShopsForItems } from '../cart/useShopsForItems'
 import { env } from '../config/env'
 import { EmptyState } from '../components/EmptyState'
 import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
 import type { OrderConfirmation, OrderRequest, Shop } from '../types/marketplace'
-import { formatPrice } from '../utils/shopLinks'
+import { continueShoppingPath, formatPrice } from '../utils/shopLinks'
 
 interface CheckoutFields {
   fullName: string
@@ -76,7 +78,6 @@ export function CheckoutPage() {
   const [confirmations, setConfirmations] = useState<OrderConfirmation[]>([])
   const [accountCreated, setAccountCreated] = useState(false)
   const [continuingAsGuest, setContinuingAsGuest] = useState(false)
-  const [shopsBySlug, setShopsBySlug] = useState<Record<string, Shop>>({})
   const [lookupState, setLookupState] = useState<'idle' | 'loading' | 'found' | 'not-found'>('idle')
   const currency = items[0]?.product.currency ?? 'EUR'
   const showAccountPrompt = !user && !continuingAsGuest
@@ -85,36 +86,23 @@ export function CheckoutPage() {
   // shop represented in the cart so we can preview an accurate delivery fee
   // before the order is submitted. The backend recomputes this fee
   // authoritatively on submission — this is a preview only.
-  useEffect(() => {
-    const slugs = [...new Set(items.map((item) => item.product.shopSlug).filter(Boolean))]
-    const missing = slugs.filter((slug) => !(slug in shopsBySlug))
-    if (missing.length === 0) return
-    let active = true
-    void Promise.all(missing.map((slug) => marketplaceService.getShopBySlug(slug))).then((shops) => {
-      if (!active) return
-      setShopsBySlug((current) => {
-        const next = { ...current }
-        missing.forEach((slug, index) => {
-          const shop = shops[index]
-          if (shop) next[slug] = shop
-        })
-        return next
-      })
-    })
-    return () => {
-      active = false
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items])
+  const shopsBySlug = useShopsForItems(items)
 
-  const shopSubtotals = new Map<string, number>()
-  for (const item of items) {
-    const key = item.product.shopSlug
-    shopSubtotals.set(key, (shopSubtotals.get(key) ?? 0) + item.product.price * item.quantity)
-  }
-  const estimatedDeliveryFee = [...shopSubtotals.entries()].reduce((total, [slug, shopSubtotal]) => {
-    return total + computeShopDeliveryFee(shopsBySlug[slug], fields.deliveryMethod, shopSubtotal)
-  }, 0)
+  const shopGroups = groupItemsByShop(items)
+  const isMultiShop = shopGroups.length > 1
+  const continueShoppingLink = continueShoppingPath(shopGroups.map((group) => group.shopSlug))
+  const shopGroupsWithFees = shopGroups.map((group) => ({
+    ...group,
+    deliveryFee: computeShopDeliveryFee(
+      shopsBySlug[group.shopSlug],
+      fields.deliveryMethod,
+      group.subtotal,
+    ),
+  }))
+  const estimatedDeliveryFee = shopGroupsWithFees.reduce(
+    (total, group) => total + group.deliveryFee,
+    0,
+  )
   const estimatedTotal = subtotal + estimatedDeliveryFee
 
   const update = <Key extends keyof CheckoutFields>(key: Key, value: CheckoutFields[Key]) => {
@@ -468,7 +456,9 @@ export function CheckoutPage() {
                       type="button"
                       className="button button--ghost"
                       onClick={() => void findAddress()}
-                      disabled={lookupState === 'loading' || !fields.postalCode || !fields.houseNumber}
+                      disabled={
+                        lookupState === 'loading' || !fields.postalCode || !fields.houseNumber
+                      }
                     >
                       {lookupState === 'loading' ? 'Looking up address…' : 'Find address'}
                     </button>
@@ -546,16 +536,56 @@ export function CheckoutPage() {
 
         <aside className="checkout-order">
           <h2>Order summary</h2>
-          {items.map(({ product, quantity }) => (
-            <div className="checkout-line" key={product.id}>
-              <img src={product.images[0]} alt="" />
-              <span>
-                <strong>{product.name}</strong>
-                {quantity} × {formatPrice(product.price, product.currency)}
-              </span>
-              <strong>{formatPrice(product.price * quantity, product.currency)}</strong>
-            </div>
-          ))}
+          {isMultiShop && (
+            <p className="inline-note checkout-multi-shop-note">
+              Your cart has items from {shopGroupsWithFees.length} shops. Each shop ships as a
+              separate order.
+            </p>
+          )}
+          {shopGroupsWithFees.map((group) => {
+            const shop = shopsBySlug[group.shopSlug]
+            return (
+              <div className="checkout-shop-group" key={group.shopSlug}>
+                {isMultiShop && (
+                  <h3 className="checkout-shop-group__name">{shop?.name ?? group.shopSlug}</h3>
+                )}
+                {group.items.map(({ product, quantity }) => (
+                  <div className="checkout-line" key={product.id}>
+                    <img src={product.images[0]} alt="" />
+                    <span>
+                      <strong>{product.name}</strong>
+                      {quantity} × {formatPrice(product.price, product.currency)}
+                    </span>
+                    <strong>{formatPrice(product.price * quantity, product.currency)}</strong>
+                  </div>
+                ))}
+                {isMultiShop && (
+                  <>
+                    <div className="checkout-total checkout-total--subtotal">
+                      <span>Shop subtotal</span>
+                      <strong>{formatPrice(group.subtotal, currency)}</strong>
+                    </div>
+                    <div className="checkout-total checkout-total--delivery">
+                      <span>Delivery method</span>
+                      <strong>{fields.deliveryMethod === 'pickup' ? 'Pickup' : 'Delivery'}</strong>
+                    </div>
+                    <div className="checkout-total checkout-total--delivery">
+                      <span>Delivery fee</span>
+                      <strong>
+                        {fields.deliveryMethod === 'pickup' || group.deliveryFee === 0
+                          ? 'Free'
+                          : formatPrice(group.deliveryFee, currency)}
+                      </strong>
+                    </div>
+                    <div className="checkout-total checkout-total--shop-total">
+                      <span>Shop total</span>
+                      <strong>{formatPrice(group.subtotal + group.deliveryFee, currency)}</strong>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })}
           <div className="checkout-total checkout-total--subtotal">
             <span>Subtotal</span>
             <strong>{formatPrice(subtotal, currency)}</strong>
@@ -575,7 +605,7 @@ export function CheckoutPage() {
             </strong>
           </div>
           <div className="checkout-total">
-            <span>Estimated total</span>
+            <span>{isMultiShop ? 'Grand total' : 'Estimated total'}</span>
             <strong>{formatPrice(estimatedTotal, currency)}</strong>
           </div>
           <p className="checkout-total-note">Final delivery fee is confirmed by the seller.</p>
@@ -612,7 +642,10 @@ export function CheckoutPage() {
             {submitting ? 'Sending order request…' : 'Submit order request'}
           </button>
           <Link className="checkout-back" to="/cart">
-            ← Return to cart
+            ← Back to cart
+          </Link>
+          <Link className="checkout-back checkout-continue-shopping" to={continueShoppingLink}>
+            ← Continue shopping
           </Link>
         </aside>
       </form>
