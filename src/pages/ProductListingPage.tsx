@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { CartCallToAction } from '../components/CartCallToAction'
 import { LoadingState } from '../components/LoadingState'
 import { ProductGrid } from '../components/ProductGrid'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
+import { shopPath } from '../utils/shopLinks'
 import { SellerNotFoundPage } from './SellerNotFoundPage'
 
 export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) {
@@ -33,6 +34,9 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
 
   return (
     <main className="page-shell section products-page">
+      <Link className="back-link" to={shopPath(slug)}>
+        ← Back to {shop.name}
+      </Link>
       <div className="section-heading">
         <div>
           <p className="eyebrow">{shop.name}</p>

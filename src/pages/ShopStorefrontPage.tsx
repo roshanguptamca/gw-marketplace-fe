@@ -37,8 +37,6 @@ export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) 
         <div className="shop-meta">
           <span>Ships from</span>
           <strong>{shop.location}</strong>
-          <span>Categories</span>
-          <strong>{shop.categories.join(', ')}</strong>
         </div>
       </section>
       <section className="page-shell section">

@@ -540,6 +540,8 @@ nav {
 
 .shop-hero h1 {
   margin-bottom: 10px;
+  font-size: clamp(1.6rem, 3.2vw, 2.6rem);
+  font-weight: 700;
 }
 
 .shop-hero p:last-child {
@@ -565,21 +567,25 @@ nav {
 }
 
 .shop-meta {
-  padding: 22px;
-  display: grid;
-  align-content: center;
-  gap: 5px;
-  background: #eff2e8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: start;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
 }
 
 .shop-meta span {
   color: var(--muted);
   font-size: 0.75rem;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.shop-meta strong + span {
-  margin-top: 14px;
+.shop-meta strong {
+  font-size: 0.95rem;
 }
 
 .text-link,
@@ -1546,7 +1552,6 @@ nav {
 .shop-tile,
 .product-card,
 .order-summary,
-.shop-meta,
 .checkout-summary,
 .seller-card {
   border: 1px solid var(--line);
@@ -1760,7 +1765,6 @@ nav {
 :root[data-theme='light'] .shop-tile,
 :root[data-theme='light'] .product-card,
 :root[data-theme='light'] .order-summary,
-:root[data-theme='light'] .shop-meta,
 :root[data-theme='light'] .checkout-summary,
 :root[data-theme='light'] .seller-card,
 :root[data-theme='light'] .seller-content,
@@ -1772,7 +1776,6 @@ nav {
   box-shadow: 0 14px 40px rgba(15, 23, 42, 0.06);
 }
 
-:root[data-theme='light'] .shop-meta,
 :root[data-theme='light'] .order-summary,
 :root[data-theme='light'] .checkout-summary {
   background: #eef2ff;
