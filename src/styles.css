@@ -1656,11 +1656,76 @@ nav {
 }
 
 .seller-form input,
-.seller-form textarea {
+.seller-form textarea,
+.seller-form select {
   width: 100%;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 6px;
+  color: var(--ink);
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.seller-form-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.seller-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.seller-checkbox-row input {
+  width: auto;
+}
+
+.seller-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.seller-gallery {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  margin-block: 16px;
+}
+
+.seller-gallery__item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  text-align: center;
+}
+
+.seller-gallery__item img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.button--danger {
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.button--danger:hover {
+  background: rgba(239, 68, 68, 0.22);
+}
+
+@media (min-width: 640px) {
+  .seller-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (min-width: 800px) {
@@ -1716,11 +1781,18 @@ nav {
 :root[data-theme='light'] .quantity select,
 :root[data-theme='light'] .seller-form input,
 :root[data-theme='light'] .seller-form textarea,
+:root[data-theme='light'] .seller-form select,
 :root[data-theme='light'] .form-field input,
 :root[data-theme='light'] .form-field textarea {
   color: var(--ink);
   background: #ffffff;
   border-color: rgba(15, 23, 42, 0.16);
+}
+
+:root[data-theme='light'] .button--danger {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: rgba(153, 27, 27, 0.3);
 }
 
 :root[data-theme='light'] .form-field,

@@ -12,6 +12,8 @@ export function SellerLayout() {
           </NavLink>
           <NavLink to="/seller/products">Products</NavLink>
           <NavLink to="/seller/orders">Orders</NavLink>
+          <NavLink to="/seller/coupons">Coupons</NavLink>
+          <NavLink to="/seller/campaigns">Campaigns</NavLink>
           <NavLink to="/seller/settings">Settings</NavLink>
           <NavLink to="/seller/theme">Theme</NavLink>
           <NavLink to="/seller/domain">Domain</NavLink>

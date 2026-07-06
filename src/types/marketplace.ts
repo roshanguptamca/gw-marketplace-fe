@@ -53,6 +53,8 @@ export interface SellerDashboard {
   today_sales: string
   month_sales: string
   low_stock_products: number
+  pending_cancellations?: number
+  recent_orders?: SellerOrder[]
 }
 
 export interface SellerOrder {
@@ -62,6 +64,97 @@ export interface SellerOrder {
   status: string
   total: string
   created_at: string
+}
+
+export const ORDER_STATUS_TRANSITIONS: Record<string, string[]> = {
+  pending: ['accepted', 'rejected', 'cancelled'],
+  accepted: ['preparing', 'cancelled'],
+  preparing: ['ready', 'cancelled'],
+  ready: ['out_for_delivery', 'completed'],
+  out_for_delivery: ['completed'],
+}
+
+export interface SellerCategory {
+  id: number
+  shop: number | null
+  name: string
+  slug: string
+  is_global: boolean
+  is_active: boolean
+}
+
+export interface SellerProductImage {
+  id: number
+  product: number
+  image_public_id: string
+  image_url: string
+  alt_text: string
+  sort_order: number
+}
+
+export interface SellerProduct {
+  id: number
+  shop: number
+  category: number | null
+  category_detail?: { id: number; name: string; slug: string } | null
+  name: string
+  slug: string
+  description: string
+  ingredients: string
+  allergens: string
+  price: string
+  compare_at_price: string | null
+  stock_quantity: number
+  sku: string
+  image_public_id: string
+  image_url: string
+  external_image_url: string
+  images: SellerProductImage[]
+  is_active: boolean
+  is_approved: boolean
+  is_featured: boolean
+  preparation_time_minutes?: number | null
+}
+
+export interface Coupon {
+  id: number
+  code: string
+  discount_type: 'percentage' | 'fixed'
+  discount_value: string
+  min_order_amount: string
+  usage_limit: number | null
+  used_count: number
+  active: boolean
+  starts_at: string | null
+  ends_at: string | null
+}
+
+export interface CouponInput {
+  code: string
+  discount_type: 'percentage' | 'fixed'
+  discount_value: string
+  min_order_amount?: string
+  usage_limit?: number | null
+  active: boolean
+}
+
+export interface Campaign {
+  id: number
+  title: string
+  description: string
+  banner_image: string | null
+  starts_at: string
+  ends_at: string
+  active: boolean
+  featured_product: number | null
+}
+
+export interface CampaignInput {
+  title: string
+  description: string
+  starts_at: string
+  ends_at: string
+  active: boolean
 }
 
 export interface Product {

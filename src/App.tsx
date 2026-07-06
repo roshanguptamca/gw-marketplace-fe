@@ -16,7 +16,10 @@ import { ProtectedSellerRoute } from './auth/ProtectedSellerRoute'
 import { SellerLayout } from './seller/SellerLayout'
 import { SellerDashboardPage } from './seller/SellerDashboardPage'
 import { SellerProductsPage } from './seller/SellerProductsPage'
+import { SellerProductFormPage } from './seller/SellerProductFormPage'
 import { SellerOrdersPage } from './seller/SellerOrdersPage'
+import { SellerCouponsPage } from './seller/SellerCouponsPage'
+import { SellerCampaignsPage } from './seller/SellerCampaignsPage'
 import { SellerSettingsPage } from './seller/SellerSettingsPage'
 import { SellerPlaceholderPage } from './seller/SellerPlaceholderPage'
 
@@ -67,26 +70,8 @@ export function App() {
                   <Route index element={<SellerDashboardPage />} />
                   <Route path="dashboard" element={<SellerDashboardPage />} />
                   <Route path="products" element={<SellerProductsPage />} />
-                  <Route
-                    path="products/new"
-                    element={
-                      <SellerPlaceholderPage
-                        eyebrow="Inventory"
-                        title="Add product"
-                        message="The product editor will connect to the existing seller product API."
-                      />
-                    }
-                  />
-                  <Route
-                    path="products/:id/edit"
-                    element={
-                      <SellerPlaceholderPage
-                        eyebrow="Inventory"
-                        title="Edit product"
-                        message="Product editing and Cloudinary gallery management are being prepared."
-                      />
-                    }
-                  />
+                  <Route path="products/new" element={<SellerProductFormPage />} />
+                  <Route path="products/:id/edit" element={<SellerProductFormPage />} />
                   <Route path="orders" element={<SellerOrdersPage />} />
                   <Route
                     path="orders/:id"
@@ -98,6 +83,8 @@ export function App() {
                       />
                     }
                   />
+                  <Route path="coupons" element={<SellerCouponsPage />} />
+                  <Route path="campaigns" element={<SellerCampaignsPage />} />
                   <Route path="settings" element={<SellerSettingsPage />} />
                   <Route
                     path="theme"

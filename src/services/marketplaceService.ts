@@ -1,15 +1,22 @@
 import { env } from '../config/env'
 import { mockProducts, mockShops } from '../data/mockData'
 import type {
+  Campaign,
+  CampaignInput,
   CartSnapshot,
   Category,
+  Coupon,
+  CouponInput,
   MarketplaceSearchFilters,
   MarketplaceSearchResult,
   OrderConfirmation,
   OrderRequest,
   Product,
+  SellerCategory,
   SellerDashboard,
   SellerOrder,
+  SellerProduct,
+  SellerProductImage,
   Shop,
 } from '../types/marketplace'
 import { apiRequest } from './apiClient'
@@ -286,6 +293,11 @@ export const marketplaceService = {
   getSellerDashboard: () => apiRequest<SellerDashboard>('/seller/dashboard/'),
   getSellerProducts: () => apiRequest<ApiProduct[]>('/seller/products/'),
   getSellerOrders: () => apiRequest<SellerOrder[]>('/seller/orders/'),
+  updateSellerOrderStatus: (id: number, status: string) =>
+    apiRequest<SellerOrder>(`/seller/orders/${id}/status/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
   getSellerShop: () => apiRequest<ApiShop>('/seller/shop/'),
   updateSellerShop: (data: Partial<ApiShop>) =>
     apiRequest<ApiShop>('/seller/shop/', { method: 'PATCH', body: JSON.stringify(data) }),
@@ -296,6 +308,44 @@ export const marketplaceService = {
     }),
   deleteSellerProduct: (id: number) =>
     apiRequest<void>(`/seller/products/${id}/`, { method: 'DELETE' }),
+
+  // Full product editor (add/edit/delete + gallery), matching the existing
+  // gw-frontend seller product form which posts multipart/form-data so the
+  // main image file can be uploaded in the same request.
+  getSellerCategories: () => apiRequest<SellerCategory[]>('/seller/categories/'),
+  getSellerProduct: (id: number) => apiRequest<SellerProduct>(`/seller/products/${id}/`),
+  createSellerProductForm: (formData: FormData) =>
+    apiRequest<SellerProduct>('/seller/products/', { method: 'POST', body: formData }),
+  updateSellerProductForm: (id: number, formData: FormData) =>
+    apiRequest<SellerProduct>(`/seller/products/${id}/`, { method: 'PATCH', body: formData }),
+  addSellerProductImage: (productId: number, formData: FormData) =>
+    apiRequest<SellerProductImage>(`/seller/products/${productId}/images/`, {
+      method: 'POST',
+      body: formData,
+    }),
+  deleteSellerProductImage: (imageId: number) =>
+    apiRequest<void>(`/seller/product-images/${imageId}/`, { method: 'DELETE' }),
+
+  // Coupons
+  getSellerCoupons: () => apiRequest<Coupon[]>('/seller/coupons/'),
+  createSellerCoupon: (data: CouponInput) =>
+    apiRequest<Coupon>('/seller/coupons/', { method: 'POST', body: JSON.stringify(data) }),
+  updateSellerCoupon: (id: number, data: Partial<CouponInput>) =>
+    apiRequest<Coupon>(`/seller/coupons/${id}/`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteSellerCoupon: (id: number) =>
+    apiRequest<void>(`/seller/coupons/${id}/`, { method: 'DELETE' }),
+
+  // Campaigns
+  getSellerCampaigns: () => apiRequest<Campaign[]>('/seller/campaigns/'),
+  createSellerCampaign: (data: CampaignInput) =>
+    apiRequest<Campaign>('/seller/campaigns/', { method: 'POST', body: JSON.stringify(data) }),
+  updateSellerCampaign: (id: number, data: Partial<CampaignInput>) =>
+    apiRequest<Campaign>(`/seller/campaigns/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  deleteSellerCampaign: (id: number) =>
+    apiRequest<void>(`/seller/campaigns/${id}/`, { method: 'DELETE' }),
 
   createOrderRequest: (order: OrderRequest) =>
     withDevelopmentFallback(
