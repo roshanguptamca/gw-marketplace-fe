@@ -258,10 +258,10 @@ nav {
 }
 
 .market-hero__title {
-  /* "GuideMarketplace" is a single unbroken word — cap the size well below the
-     generic h1 clamp (which tops out at 5rem) so it never overflows into the
-     ".market-hero__art" column on wide screens, and allow a mid-word break as
-     a last-resort safety net on very narrow viewports. */
+  /* Cap the size well below the generic h1 clamp (which tops out at 5rem) so
+     the title never overflows into the ".market-hero__art" column on wide
+     screens, and allow a mid-word break as a last-resort safety net on very
+     narrow viewports. */
   font-size: clamp(1.7rem, 3.4vw, 2.5rem);
   overflow-wrap: break-word;
 }

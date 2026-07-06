@@ -54,7 +54,7 @@ describe('marketplace pages', () => {
 
   it('renders marketplace shops', async () => {
     renderPage(<MarketplaceHomePage />)
-    expect(screen.getByRole('heading', { name: 'GuideMarketplace' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'GuideWisey Market' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Test Shop' })).toBeInTheDocument()
   })
 
