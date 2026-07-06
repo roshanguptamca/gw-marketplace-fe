@@ -182,7 +182,13 @@ export function CheckoutPage() {
               .filter(Boolean)
               .join(', ')
           : ''
-      const requests = [...groups.entries()].map(([shopId, shopItems], index) => {
+      // Submit one shop's order at a time (not Promise.all): SQLite only
+      // allows a single writer, so firing all shop orders in parallel from a
+      // multi-shop cart raced against each other and intermittently raised
+      // "database is locked". Sequential awaits also let the account-creation
+      // request (always first) fully commit before any other order write.
+      const created: OrderConfirmation[] = []
+      for (const [index, [shopId, shopItems]] of [...groups.entries()].entries()) {
         const order: OrderRequest = {
           shop_id: Number(shopId),
           customer_name: fields.fullName,
@@ -208,9 +214,8 @@ export function CheckoutPage() {
               }
             : {}),
         }
-        return marketplaceService.createOrderRequest(order)
-      })
-      const created = await Promise.all(requests)
+        created.push(await marketplaceService.createOrderRequest(order))
+      }
       setConfirmations(created)
       setAccountCreated(requestingAccount)
       clearCart()
@@ -311,7 +316,19 @@ export function CheckoutPage() {
                 <input
                   type="checkbox"
                   checked={fields.createAccount}
-                  onChange={(event) => update('createAccount', event.target.checked)}
+                  onChange={(event) => {
+                    const checked = event.target.checked
+                    update('createAccount', checked)
+                    // Unchecking "create an account" means the shopper decided to
+                    // continue as a guest instead — any stale
+                    // ACCOUNT_ALREADY_EXISTS error/"Log in to continue" CTA from a
+                    // previous submit attempt no longer applies, so clear it
+                    // immediately rather than leaving it stuck until next submit.
+                    if (!checked && errorCode === 'ACCOUNT_ALREADY_EXISTS') {
+                      setError('')
+                      setErrorCode('')
+                    }
+                  }}
                 />
                 <span>Create an account to track my order</span>
               </label>
