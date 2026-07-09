@@ -25,7 +25,7 @@ export function Header() {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <Link to="/" className="brand" aria-label="GuideWisey Market home">
+        <Link to="/" className="brand" aria-label="GuideWisey Marketplace home">
           <span className="brand__mark">G</span>
           <span>{t('brand')}</span>
         </Link>

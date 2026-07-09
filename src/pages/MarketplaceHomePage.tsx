@@ -10,7 +10,7 @@ import type { MarketplaceSearchFilters, MarketplaceSearchResult } from '../types
 
 export function MarketplaceHomePage() {
   useEffect(() => {
-    document.title = 'GuideWisey Market | GuideWisey'
+    document.title = 'GuideWisey Marketplace | GuideWisey'
   }, [])
 
   const {
@@ -53,7 +53,7 @@ export function MarketplaceHomePage() {
       <section className="market-hero">
         <div className="market-hero__content">
           <p className="eyebrow">GuideWisey Marketplace</p>
-          <h1 className="market-hero__title">GuideWisey Market</h1>
+          <h1 className="market-hero__title">GuideWisey Marketplace</h1>
           <p>Browse approved GuideWisey sellers and order directly from their shops.</p>
           <a className="button button--light" href="#shops">
             Explore shops

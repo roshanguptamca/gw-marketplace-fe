@@ -544,9 +544,17 @@ nav {
   font-weight: 700;
 }
 
-.shop-hero p:last-child {
-  margin: 0;
+.shop-hero__tagline {
+  margin: 0 0 8px 0;
   font-size: 1.1rem;
+}
+
+.shop-hero__description {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+  max-width: 500px;
+  line-height: 1.5;
 }
 
 .shop-intro {
@@ -1509,6 +1517,25 @@ nav {
   .site-footer {
     flex-direction: column;
   }
+
+  .seller-shell {
+    gap: 20px;
+  }
+
+  .seller-nav nav {
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    padding-right: 20px;
+    margin-right: -20px;
+  }
+
+  .seller-nav nav a {
+    padding: 12px 16px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1668,18 +1695,27 @@ nav {
   display: flex;
   align-items: stretch;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
 }
 
 .seller-nav nav a {
-  padding: 12px 14px;
-  border-radius: 6px;
+  padding: 14px 16px;
+  border-radius: 8px;
   color: var(--muted);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.seller-nav nav a:hover {
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--text);
 }
 
 .seller-nav nav a.active {
   color: white;
-  background: rgba(99, 102, 241, 0.24);
+  background: rgba(99, 102, 241, 0.4);
+  border-left: 3px solid rgba(99, 102, 241, 0.8);
+  padding-left: 13px;
 }
 
 .seller-content {

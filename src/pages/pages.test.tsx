@@ -64,7 +64,7 @@ describe('marketplace pages', () => {
 
   it('renders marketplace shops', async () => {
     renderPage(<MarketplaceHomePage />)
-    expect(screen.getByRole('heading', { name: 'GuideWisey Market' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'GuideWisey Marketplace' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Test Shop' })).toBeInTheDocument()
   })
 
@@ -86,9 +86,10 @@ describe('marketplace pages', () => {
 
   it('shows ships-from info but no longer the categories block on the shop storefront', async () => {
     const { container } = renderPage(<ShopStorefrontPage resolvedSlug="test-shop" />)
-    const shopMeta = await screen.findByText('Ships from')
-    expect(shopMeta.closest('.shop-meta')).toBeInTheDocument()
-    expect(container.querySelector('.shop-meta')).toHaveTextContent('Test City')
+    const shopHero = await screen.findByRole('heading', { name: 'Test Shop' })
+    expect(shopHero).toBeInTheDocument()
+    expect(await screen.findByText('Ships from')).toBeInTheDocument()
+    expect(await screen.findByText('Test City')).toBeInTheDocument()
     expect(screen.queryByText('Categories')).not.toBeInTheDocument()
     expect(container.querySelector('.shop-meta')).not.toHaveTextContent('Home')
   })
@@ -144,8 +145,10 @@ describe('marketplace pages', () => {
     expect(screen.queryByRole('link', { name: /go to cart/i })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Show image 2' }))
     await userEvent.click(screen.getByRole('button', { name: 'Add to cart' }))
-    expect(screen.getByRole('button', { name: /added to cart/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /go to cart/i })).toHaveAttribute('href', '/cart')
+    expect(await screen.findByText('✓ Added to cart')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Continue Shopping' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'View Cart' })).toHaveAttribute('href', '/cart')
+    expect(screen.getByRole('link', { name: 'Checkout' })).toHaveAttribute('href', '/checkout')
   })
 
   it('shows unavailable and missing product states', async () => {

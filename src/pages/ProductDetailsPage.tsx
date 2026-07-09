@@ -72,13 +72,30 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
             <span className={product.stock > 0 ? 'status-dot' : 'status-dot status-dot--empty'} />
             {product.stock > 0 ? `${product.stock} available` : 'Currently out of stock'}
           </div>
-          <button
-            className="button button--wide"
-            disabled={product.stock === 0}
-            onClick={handleAdd}
-          >
-            {added ? 'Added to cart ✓' : product.stock === 0 ? 'Out of stock' : 'Add to cart'}
-          </button>
+          {added ? (
+            <div className="add-to-cart-success">
+              <p className="success-message">✓ Added to cart</p>
+              <div className="action-buttons">
+                <button className="button button--secondary" onClick={() => setAdded(false)}>
+                  Continue Shopping
+                </button>
+                <Link className="button button--primary" to="/cart">
+                  View Cart
+                </Link>
+                <Link className="button button--primary" to="/checkout">
+                  Checkout
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="button button--wide"
+              disabled={product.stock === 0}
+              onClick={handleAdd}
+            >
+              {product.stock === 0 ? 'Out of stock' : 'Add to cart'}
+            </button>
+          )}
           <div className="product-notes">
             <p>
               <strong>Secure checkout</strong>
