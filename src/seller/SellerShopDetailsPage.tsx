@@ -44,26 +44,23 @@ export function SellerShopDetailsPage() {
     const loadShopDetails = async () => {
       try {
         setLoading(true)
-        // TODO: Fetch shop details from API
-        // const response = await fetch('/api/seller/shop/details')
-        // const data = await response.json()
-        // setFormData(data)
-        
-        // For now, set dummy data for development
+        const response = await fetch('/api/seller/shop/')
+        if (!response.ok) throw new Error('Failed to load shop details')
+        const data = await response.json()
         setFormData({
-          name: 'Sourdough Bread NL',
-          slug: 'sourdough-bread-nl',
-          description: 'Pure Sourdough Bread home baked with passion.',
-          shortDescription: 'Premium handmade sourdough',
-          category: 'Food & Beverages',
-          phone: '+31 6 12345678',
-          email: 'hello@sourdoughnl.com',
-          website: 'https://sourdoughnl.com',
-          address: 'Bakery Street 42',
-          city: 'Rosmalen',
-          postalCode: '5242 AA',
-          country: 'Netherlands',
-          isActive: true,
+          name: data.name || '',
+          slug: data.slug || '',
+          description: data.description || '',
+          shortDescription: data.short_description || '',
+          category: data.category || '',
+          phone: data.phone || '',
+          email: data.email || '',
+          website: data.website || '',
+          address: data.address || '',
+          city: data.city || '',
+          postalCode: data.postal_code || '',
+          country: data.country || '',
+          isActive: data.is_active !== false,
         })
       } catch (err) {
         setError('Failed to load shop details. Please try again.')
@@ -94,13 +91,25 @@ export function SellerShopDetailsPage() {
     setSuccess(false)
 
     try {
-      // TODO: Send shop details to API
-      // const response = await fetch('/api/seller/shop/details', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData),
-      // })
-      // if (!response.ok) throw new Error('Failed to save shop details')
+      const response = await fetch('/api/seller/shop/', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          short_description: formData.shortDescription,
+          category: formData.category,
+          phone: formData.phone,
+          email: formData.email,
+          website: formData.website,
+          address: formData.address,
+          city: formData.city,
+          postal_code: formData.postalCode,
+          country: formData.country,
+          is_active: formData.isActive,
+        }),
+      })
+      if (!response.ok) throw new Error('Failed to save shop details')
 
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)

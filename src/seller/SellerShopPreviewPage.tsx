@@ -15,15 +15,12 @@ export function SellerShopPreviewPage() {
     const loadShop = async () => {
       try {
         setLoading(true)
-        // TODO: Fetch shop info from API
-        // const response = await fetch('/api/seller/shop')
-        // const data = await response.json()
-        // setShop(data)
-
-        // For development, use dummy data
+        const response = await fetch('/api/seller/shop/')
+        if (!response.ok) throw new Error('Failed to load shop')
+        const data = await response.json()
         setShop({
-          slug: 'sourdough-bread-nl',
-          name: 'Sourdough Bread NL',
+          slug: data.slug,
+          name: data.name,
         })
       } catch (err) {
         setError('Failed to load shop information.')
