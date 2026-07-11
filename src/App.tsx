@@ -25,6 +25,14 @@ import { SellerCouponsPage } from './seller/SellerCouponsPage'
 import { SellerCampaignsPage } from './seller/SellerCampaignsPage'
 import { SellerSettingsPage } from './seller/SellerSettingsPage'
 import { SellerPlaceholderPage } from './seller/SellerPlaceholderPage'
+import { SellerShopDetailsPage } from './seller/SellerShopDetailsPage'
+import { SellerShopLogoBannerPage } from './seller/SellerShopLogoBannerPage'
+import { SellerShopContactPage } from './seller/SellerShopContactPage'
+import { SellerShopDeliveryPage } from './seller/SellerShopDeliveryPage'
+import { SellerShopHoursPage } from './seller/SellerShopHoursPage'
+import { SellerShopOrderSettingsPage } from './seller/SellerShopOrderSettingsPage'
+import { SellerShopNotificationsPage } from './seller/SellerShopNotificationsPage'
+import { SellerShopPreviewPage } from './seller/SellerShopPreviewPage'
 
 export function App() {
   const hostnameShopSlug = getShopSlugFromHostname(window.location.hostname)
@@ -88,6 +96,16 @@ export function App() {
                 >
                   <Route index element={<SellerDashboardPage />} />
                   <Route path="dashboard" element={<SellerDashboardPage />} />
+
+                  <Route path="shop-details" element={<SellerShopDetailsPage />} />
+                  <Route path="shop-logo-banner" element={<SellerShopLogoBannerPage />} />
+                  <Route path="shop-contact" element={<SellerShopContactPage />} />
+                  <Route path="shop-delivery" element={<SellerShopDeliveryPage />} />
+                  <Route path="shop-hours" element={<SellerShopHoursPage />} />
+                  <Route path="shop-orders" element={<SellerShopOrderSettingsPage />} />
+                  <Route path="shop-notifications" element={<SellerShopNotificationsPage />} />
+                  <Route path="shop-preview" element={<SellerShopPreviewPage />} />
+
                   <Route path="products" element={<SellerProductsPage />} />
                   <Route path="products/new" element={<SellerProductFormPage />} />
                   <Route path="products/:id/edit" element={<SellerProductFormPage />} />

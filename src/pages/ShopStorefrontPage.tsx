@@ -32,7 +32,6 @@ export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) 
         <Breadcrumb
           items={[
             { label: 'Marketplace', path: '/' },
-            { label: 'All Shops', path: '/marketplace/shops' },
             { label: shop.name, path: shopPath(slug), current: true },
           ]}
         />

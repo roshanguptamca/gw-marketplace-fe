@@ -43,9 +43,8 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
       <Breadcrumb
         items={[
           { label: 'Marketplace', path: '/' },
-          { label: 'All Shops', path: '/marketplace/shops' },
-          { label: product.shopName || shopSlug, path: shopPath(shopSlug) },
-          { label: product.name, current: true },
+          { label: shopSlug, path: shopPath(shopSlug) },
+          { label: product.name, path: '', current: true },
         ]}
       />
       <Link className="back-link" to={shopPath(shopSlug, '/products')}>
