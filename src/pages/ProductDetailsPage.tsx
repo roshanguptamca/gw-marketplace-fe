@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { Breadcrumb } from '../components/Breadcrumb'
 import { CartCallToAction } from '../components/CartCallToAction'
 import { useCart } from '../cart/CartContext'
 import { LoadingState } from '../components/LoadingState'
@@ -39,6 +40,14 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
 
   return (
     <main className="page-shell section">
+      <Breadcrumb
+        items={[
+          { label: 'Marketplace', path: '/' },
+          { label: 'All Shops', path: '/marketplace/shops' },
+          { label: product.shopName || shopSlug, path: shopPath(shopSlug) },
+          { label: product.name, current: true },
+        ]}
+      />
       <Link className="back-link" to={shopPath(shopSlug, '/products')}>
         ← Back to all products
       </Link>

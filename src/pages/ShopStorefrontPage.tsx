@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
+import { Breadcrumb } from '../components/Breadcrumb'
 import { LoadingState } from '../components/LoadingState'
 import { ProductGrid } from '../components/ProductGrid'
 import { ShopHero } from '../components/ShopHero'
@@ -27,6 +28,15 @@ export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) 
 
   return (
     <main>
+      <div className="page-shell" style={{ paddingTop: '24px' }}>
+        <Breadcrumb
+          items={[
+            { label: 'Marketplace', path: '/' },
+            { label: 'All Shops', path: '/marketplace/shops' },
+            { label: shop.name, path: shopPath(slug), current: true },
+          ]}
+        />
+      </div>
       <ShopHero shop={shop} />
       <section className="page-shell section">
         <div className="section-heading">
