@@ -499,7 +499,7 @@ nav {
 
 .shop-hero {
   position: relative;
-  min-height: 510px;
+  min-height: 260px;
   color: white;
 }
 
@@ -523,17 +523,17 @@ nav {
   position: absolute;
   width: min(100% - 40px, 1200px);
   margin-inline: auto;
-  inset: auto 0 46px;
+  inset: auto 0 24px;
   display: flex;
   align-items: end;
   gap: 22px;
 }
 
 .shop-hero__logo {
-  width: 100px;
-  height: 100px;
+  width: 70px;
+  height: 70px;
   flex: 0 0 auto;
-  border: 5px solid white;
+  border: 3px solid white;
   border-radius: 50%;
   object-fit: cover;
 }
