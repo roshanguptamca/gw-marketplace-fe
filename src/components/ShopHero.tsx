@@ -10,7 +10,8 @@ export function ShopHero({ shop }: { shop: Shop }) {
         <div>
           <p className="eyebrow">{shop.location}</p>
           <h1>{shop.name}</h1>
-          <p>{shop.tagline}</p>
+          <p className="shop-hero__tagline">{shop.tagline}</p>
+          <p className="shop-hero__description">{shop.description}</p>
         </div>
       </div>
     </section>

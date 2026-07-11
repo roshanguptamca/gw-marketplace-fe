@@ -8,7 +8,7 @@ void i18n.use(initReactI18next).init({
   resources: {
     en: {
       translation: {
-        brand: 'GuideWisey Market',
+        brand: 'GuideWisey Marketplace',
         browse: 'Browse shops',
         cart: 'Cart',
         addToCart: 'Add to cart',

@@ -28,17 +28,6 @@ export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) 
   return (
     <main>
       <ShopHero shop={shop} />
-      <section className="page-shell shop-intro">
-        <div>
-          <p className="eyebrow">About the shop</p>
-          <h2>{shop.tagline}</h2>
-          <p>{shop.description}</p>
-        </div>
-        <div className="shop-meta">
-          <span>Ships from</span>
-          <strong>{shop.location}</strong>
-        </div>
-      </section>
       <section className="page-shell section">
         <div className="section-heading">
           <div>

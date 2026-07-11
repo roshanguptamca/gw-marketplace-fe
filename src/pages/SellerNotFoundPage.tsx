@@ -6,7 +6,7 @@ export function SellerNotFoundPage() {
     <main className="page-shell section">
       <EmptyState
         title="We couldn’t find this shop"
-        message="Check the shop address, or browse sellers currently on GuideWisey Market."
+        message="Check the shop address, or browse sellers currently on GuideWisey Marketplace."
         action={
           <Link className="button" to="/">
             Explore marketplace
