@@ -1,0 +1,7 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GuideWisey shop logo">
+  <rect width="512" height="512" rx="128" fill="#1E293B"/>
+  <rect x="52" y="52" width="408" height="408" rx="112" fill="#4F46E5"/>
+  <circle cx="256" cy="256" r="130" fill="#E0E7FF" opacity="0.18"/>
+  <path d="M177 188H335V226H255C219.712 226 191 254.712 191 290V324H281C300.33 324 316 308.33 316 289V285H246V247H352V330C352 367.003 321.003 398 284 398H177V188Z" fill="#FFFFFF"/>
+  <path d="M180 142H332C343.046 142 352 150.954 352 162V166H160V162C160 150.954 168.954 142 180 142Z" fill="#C7D2FE"/>
+</svg>

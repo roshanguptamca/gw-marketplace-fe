@@ -1,15 +1,18 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { CartCallToAction } from '../components/CartCallToAction'
+import { MarketplaceBackNavigation } from '../components/MarketplaceBackNavigation'
 import { useCart } from '../cart/CartContext'
 import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
 import { formatPrice, shopPath } from '../utils/shopLinks'
+import { getProductImageUrl, handleProductImageError } from '../utils/productImages'
 import { ErrorPage } from './ErrorPage'
 
 export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) {
   const params = useParams()
+  const location = useLocation()
   const shopSlug = resolvedSlug ?? params.shopSlug ?? ''
   const productId = params.productId ?? ''
   const [selectedImage, setSelectedImage] = useState(0)
@@ -30,6 +33,7 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
       <ErrorPage title="Product not found" message="This product may no longer be available." />
     )
   }
+  const backTo = (location.state as { returnTo?: string } | undefined)?.returnTo
 
   const handleAdd = () => {
     addItem(product)
@@ -39,14 +43,24 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
 
   return (
     <main className="page-shell section">
-      <Link className="back-link" to={shopPath(shopSlug, '/products')}>
-        ← Back to all products
-      </Link>
+      <MarketplaceBackNavigation
+        items={[
+          { label: 'Marketplace', path: '/' },
+          { label: product.shopName ?? shopSlug, path: shopPath(shopSlug) },
+          { label: product.name, path: '', current: true },
+        ]}
+        backLabel="Back to all products"
+        backTo={backTo ?? shopPath(shopSlug, '/products')}
+      />
       <CartCallToAction />
       <div className="product-detail">
         <div className="gallery">
           <div className="gallery__main">
-            <img src={product.images[selectedImage]} alt={product.name} />
+            <img
+              src={getProductImageUrl(product.images[selectedImage])}
+              alt={product.name}
+              onError={handleProductImageError}
+            />
           </div>
           {product.images.length > 1 && (
             <div className="gallery__thumbs" aria-label="Product images">
@@ -57,7 +71,7 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
                   onClick={() => setSelectedImage(index)}
                   aria-label={`Show image ${index + 1}`}
                 >
-                  <img src={image} alt="" />
+                  <img src={image} alt="" onError={handleProductImageError} />
                 </button>
               ))}
             </div>

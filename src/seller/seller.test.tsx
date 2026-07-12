@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -6,6 +6,7 @@ import { marketplaceService, type ApiProduct } from '../services/marketplaceServ
 import { renderPage } from '../test/renderPage'
 import type { Campaign, Coupon, SellerCategory, SellerProduct } from '../types/marketplace'
 import { SellerCampaignsPage } from './SellerCampaignsPage'
+import { SellerCategoriesPage } from './SellerCategoriesPage'
 import { SellerCouponsPage } from './SellerCouponsPage'
 import { SellerDashboardPage } from './SellerDashboardPage'
 import { SellerLayout } from './SellerLayout'
@@ -14,6 +15,13 @@ import { SellerProductFormPage } from './SellerProductFormPage'
 import { SellerProductsPage } from './SellerProductsPage'
 import { SellerSettingsPage } from './SellerSettingsPage'
 import { SellerPlaceholderPage } from './SellerPlaceholderPage'
+import { SellerShopContactPage } from './SellerShopContactPage'
+import { SellerShopDeliveryPage } from './SellerShopDeliveryPage'
+import { SellerShopDetailsPage } from './SellerShopDetailsPage'
+import { SellerShopHoursPage } from './SellerShopHoursPage'
+import { SellerShopLogoBannerPage } from './SellerShopLogoBannerPage'
+import { SellerShopNotificationsPage } from './SellerShopNotificationsPage'
+import { SellerShopPreviewPage } from './SellerShopPreviewPage'
 
 vi.mock('../services/marketplaceService', () => ({
   marketplaceService: {
@@ -23,9 +31,15 @@ vi.mock('../services/marketplaceService', () => ({
     updateSellerOrderStatus: vi.fn(),
     getSellerShop: vi.fn(),
     updateSellerShop: vi.fn(),
+    updateSellerShopForm: vi.fn(),
+    getSellerSettings: vi.fn(),
+    updateSellerSettings: vi.fn(),
     updateSellerProduct: vi.fn(),
     deleteSellerProduct: vi.fn(),
     getSellerCategories: vi.fn(),
+    createSellerCategory: vi.fn(),
+    updateSellerCategory: vi.fn(),
+    deleteSellerCategory: vi.fn(),
     getSellerProduct: vi.fn(),
     createSellerProductForm: vi.fn(),
     updateSellerProductForm: vi.fn(),
@@ -102,6 +116,15 @@ const category: SellerCategory = {
   is_active: true,
 }
 
+const globalCategory: SellerCategory = {
+  id: 6,
+  shop: null,
+  name: 'General marketplace',
+  slug: 'general-marketplace',
+  is_global: true,
+  is_active: true,
+}
+
 const coupon: Coupon = {
   id: 1,
   code: 'SAVE10',
@@ -131,6 +154,7 @@ describe('seller portal pages', () => {
     service.getSellerDashboard.mockResolvedValue({
       total_products: 3,
       active_products: 2,
+      total_orders: 6,
       pending_orders: 1,
       completed_orders: 4,
       today_sales: '10.00',
@@ -168,25 +192,141 @@ describe('seller portal pages', () => {
       created_at: '2026-01-01',
     })
     service.getSellerShop.mockResolvedValue({
-      id: 1,
+      id: '1',
       slug: 'seller',
       name: 'Seller Shop',
+      tagline: 'Seller tagline',
       description: 'Shop description',
-      logo_url: '',
-      banner_url: '',
-      city: 'Amsterdam',
+      shortDescription: 'Shop description',
+      shopType: 'Bakery',
+      phone: '+31 6 12345678',
+      email: 'hello@example.com',
+      websiteUrl: 'https://seller.example',
+      socialLinks: [],
+      address: 'Seller Street 1',
+      logoUrl: '',
+      bannerUrl: '',
+      postalCode: '1000 AA',
+      country: 'Netherlands',
+      categories: [],
+      location: 'Amsterdam',
+      contactEmail: 'hello@example.com',
+      contactPhone: '+31 6 12345678',
+      whatsapp: '',
+      pickupAvailable: true,
+      deliveryAvailable: false,
+      localDeliveryFee: 5,
+      internationalDeliveryFee: 10,
+      freeDeliveryAbove: 50,
+      openingHours: [],
+      active: true,
+      approved: false,
     })
     service.updateSellerShop.mockResolvedValue({
-      id: 1,
+      id: '1',
       slug: 'seller',
       name: 'Updated',
+      tagline: 'Seller tagline',
       description: 'Shop description',
-      logo_url: '',
-      banner_url: '',
-      city: 'Amsterdam',
+      shortDescription: 'Shop description',
+      shopType: 'Bakery',
+      phone: '+31 6 12345678',
+      email: 'hello@example.com',
+      websiteUrl: 'https://seller.example',
+      socialLinks: [],
+      address: 'Seller Street 1',
+      logoUrl: '',
+      bannerUrl: '',
+      postalCode: '1000 AA',
+      country: 'Netherlands',
+      categories: [],
+      location: 'Amsterdam',
+      contactEmail: 'hello@example.com',
+      contactPhone: '+31 6 12345678',
+      whatsapp: '',
+      pickupAvailable: true,
+      deliveryAvailable: false,
+      localDeliveryFee: 5,
+      internationalDeliveryFee: 10,
+      freeDeliveryAbove: 50,
+      openingHours: [],
+      active: true,
+      approved: false,
+    })
+    service.updateSellerShopForm.mockResolvedValue({
+      id: '1',
+      slug: 'seller',
+      name: 'Updated',
+      tagline: 'Seller tagline',
+      description: 'Shop description',
+      shortDescription: 'Shop description',
+      shopType: 'Bakery',
+      phone: '+31 6 12345678',
+      email: 'hello@example.com',
+      websiteUrl: 'https://seller.example',
+      socialLinks: [],
+      address: 'Seller Street 1',
+      logoUrl: '',
+      bannerUrl: '',
+      location: 'Amsterdam',
+      postalCode: '1000 AA',
+      country: 'Netherlands',
+      categories: [],
+      contactEmail: 'hello@example.com',
+      contactPhone: '+31 6 12345678',
+      whatsapp: '',
+      pickupAvailable: true,
+      deliveryAvailable: false,
+      localDeliveryFee: 5,
+      internationalDeliveryFee: 10,
+      freeDeliveryAbove: 50,
+      openingHours: [],
+      active: true,
+      approved: false,
+    })
+    service.getSellerSettings.mockResolvedValue({
+      currency: 'EUR',
+      minOrderAmount: '0.00',
+      deliveryFee: '0.00',
+      localDeliveryFee: '5.00',
+      internationalDeliveryFee: '10.00',
+      freeDeliveryAbove: null,
+      deliveryNotes: '',
+      orderAcceptanceMode: 'manual',
+      whatsappNumber: '',
+      bankTransferInstructions: '',
+      notificationEmail: 'hello@example.com',
+      newOrderEmailEnabled: true,
+      cancellationRequestEmailEnabled: true,
+      lowStockNotificationEnabled: false,
+      supportedDeliveryCountries: ['NL'],
+      pickupAvailable: true,
+      deliveryAvailable: false,
+    })
+    service.updateSellerSettings.mockResolvedValue({
+      currency: 'EUR',
+      minOrderAmount: '0.00',
+      deliveryFee: '0.00',
+      localDeliveryFee: '5.00',
+      internationalDeliveryFee: '10.00',
+      freeDeliveryAbove: null,
+      deliveryNotes: '',
+      orderAcceptanceMode: 'manual',
+      whatsappNumber: '',
+      bankTransferInstructions: '',
+      notificationEmail: 'hello@example.com',
+      newOrderEmailEnabled: true,
+      cancellationRequestEmailEnabled: true,
+      lowStockNotificationEnabled: false,
+      supportedDeliveryCountries: ['NL'],
+      pickupAvailable: true,
+      deliveryAvailable: false,
     })
     service.deleteSellerProduct.mockResolvedValue(undefined)
-    service.getSellerCategories.mockResolvedValue([category])
+    service.getSellerCategories.mockResolvedValue([category, globalCategory])
+    service.createSellerCategory.mockResolvedValue(category)
+    service.updateSellerCategory.mockResolvedValue(category)
+    service.deleteSellerCategory.mockResolvedValue(undefined)
     service.getSellerProduct.mockResolvedValue(sellerProduct)
     service.createSellerProductForm.mockResolvedValue(sellerProduct)
     service.updateSellerProductForm.mockResolvedValue(sellerProduct)
@@ -194,9 +334,11 @@ describe('seller portal pages', () => {
     service.deleteSellerProductImage.mockResolvedValue(undefined)
     service.getSellerCoupons.mockResolvedValue([coupon])
     service.createSellerCoupon.mockResolvedValue(coupon)
+    service.updateSellerCoupon.mockResolvedValue(coupon)
     service.deleteSellerCoupon.mockResolvedValue(undefined)
     service.getSellerCampaigns.mockResolvedValue([campaign])
     service.createSellerCampaign.mockResolvedValue(campaign)
+    service.updateSellerCampaign.mockResolvedValue(campaign)
     service.deleteSellerCampaign.mockResolvedValue(undefined)
   })
 
@@ -218,6 +360,14 @@ describe('seller portal pages', () => {
     const first = renderPage(<SellerDashboardPage />)
     expect(await screen.findByText('€50.00')).toBeInTheDocument()
     expect(screen.getByText('GW-9')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /pending orders/i })).toHaveAttribute(
+      'href',
+      '/seller/orders?status=pending',
+    )
+    expect(screen.getByRole('link', { name: /total orders/i })).toHaveAttribute(
+      'href',
+      '/seller/orders',
+    )
     first.unmount()
     service.getSellerDashboard.mockRejectedValueOnce(new Error('offline'))
     renderPage(<SellerDashboardPage />)
@@ -289,6 +439,85 @@ describe('seller portal pages', () => {
     expect(await screen.findByText(/settings could not be loaded/i)).toBeInTheDocument()
   })
 
+  it('renders and saves the shop details form', async () => {
+    renderPage(<SellerShopDetailsPage />)
+    await screen.findByRole('heading', { name: 'Shop Details' })
+    await userEvent.clear(screen.getByLabelText('Shop Name *'))
+    await userEvent.type(screen.getByLabelText('Shop Name *'), 'Updated Seller Shop')
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await waitFor(() => expect(service.updateSellerShop).toHaveBeenCalled())
+  })
+
+  it('renders the delivery, hours, notification and preview sections', async () => {
+    renderPage(
+      <>
+        <SellerShopDeliveryPage />
+        <SellerShopHoursPage />
+        <SellerShopNotificationsPage />
+        <SellerShopLogoBannerPage />
+        <SellerShopContactPage />
+        <SellerShopPreviewPage />
+      </>,
+    )
+    expect(await screen.findByRole('heading', { name: 'Delivery & Pickup' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Opening Hours' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Notifications' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Logo & Banner' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Contact Information' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Public Shop Preview' })).toBeInTheDocument()
+  })
+
+  it('renders and manages categories', async () => {
+    renderPage(<SellerCategoriesPage />)
+    expect(await screen.findByRole('heading', { name: 'Categories' })).toBeInTheDocument()
+    expect(screen.getByText('Bakery')).toBeInTheDocument()
+    expect(screen.getByText('General marketplace')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add category' }))
+    await userEvent.type(screen.getByLabelText('Name'), 'Desserts')
+    await userEvent.click(screen.getByRole('button', { name: 'Create category' }))
+    await waitFor(() => expect(service.createSellerCategory).toHaveBeenCalledWith({
+      name: 'Desserts',
+      is_active: true,
+    }))
+
+    const bakeryRow = screen.getByText('Bakery').closest('tr')
+    expect(bakeryRow).not.toBeNull()
+    if (!bakeryRow) return
+
+    await userEvent.click(within(bakeryRow).getByRole('button', { name: 'Edit' }))
+    const bakeryNameInput = within(bakeryRow).getByDisplayValue('Bakery')
+    await userEvent.clear(bakeryNameInput)
+    await userEvent.type(bakeryNameInput, 'Fresh Bakery')
+    await userEvent.click(within(bakeryRow).getByRole('button', { name: 'Save' }))
+    await waitFor(() =>
+      expect(service.updateSellerCategory).toHaveBeenCalledWith(5, {
+        name: 'Fresh Bakery',
+        is_active: true,
+      }),
+    )
+
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await userEvent.click(within(bakeryRow).getByRole('button', { name: 'Delete' }))
+    await waitFor(() => expect(service.deleteSellerCategory).toHaveBeenCalledWith(5))
+  })
+
+  it('loads filtered orders from the query string', async () => {
+    renderPage(<SellerOrdersPage />, '/seller/orders?status=pending&q=GW')
+    await screen.findByRole('heading', { name: 'Orders' })
+    await waitFor(() =>
+      expect(service.getSellerOrders).toHaveBeenCalledWith({ q: 'GW', status: 'pending' }),
+    )
+  })
+
+  it('loads filtered products from the query string', async () => {
+    renderPage(<SellerProductsPage />, '/seller/products?status=active&q=Seller')
+    await screen.findByRole('heading', { name: 'Products' })
+    await waitFor(() =>
+      expect(service.getSellerProducts).toHaveBeenCalledWith({ q: 'Seller', status: 'active' }),
+    )
+  })
+
   it('creates a new product via the form', async () => {
     renderPage(
       <Routes>
@@ -327,30 +556,88 @@ describe('seller portal pages', () => {
     await waitFor(() => expect(service.deleteSellerProduct).toHaveBeenCalledWith(1))
   })
 
-  it('renders coupons list, creates and deletes coupons', async () => {
+  it('renders coupons list, creates, edits and deletes coupons', async () => {
     renderPage(<SellerCouponsPage />)
     expect(await screen.findByText('SAVE10')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Add coupon' }))
     await userEvent.type(screen.getByLabelText('Code'), 'NEW10')
     await userEvent.type(screen.getByLabelText('Value'), '15')
-    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
-    await waitFor(() => expect(service.createSellerCoupon).toHaveBeenCalled())
+    await userEvent.click(screen.getByRole('button', { name: 'Create coupon' }))
+    await waitFor(() =>
+      expect(service.createSellerCoupon).toHaveBeenCalledWith({
+        code: 'NEW10',
+        discount_type: 'percentage',
+        discount_value: '15',
+        min_order_amount: undefined,
+        usage_limit: null,
+        active: true,
+      }),
+    )
+
+    const couponRow = screen.getByText('SAVE10').closest('tr')
+    expect(couponRow).not.toBeNull()
+    if (!couponRow) return
+
+    await userEvent.click(within(couponRow).getByRole('button', { name: 'Edit' }))
+    const couponCodeInput = screen.getByLabelText('Code')
+    await userEvent.clear(couponCodeInput)
+    await userEvent.type(couponCodeInput, 'SAVE20')
+    await userEvent.click(screen.getByRole('button', { name: 'Save coupon' }))
+    await waitFor(() =>
+      expect(service.updateSellerCoupon).toHaveBeenCalledWith(1, {
+        code: 'SAVE20',
+        discount_type: 'percentage',
+        discount_value: '10',
+        min_order_amount: '0',
+        usage_limit: null,
+        active: true,
+      }),
+    )
 
     vi.spyOn(window, 'confirm').mockReturnValue(true)
-    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await userEvent.click(within(couponRow).getByRole('button', { name: 'Delete' }))
     await waitFor(() => expect(service.deleteSellerCoupon).toHaveBeenCalledWith(1))
   })
 
-  it('renders campaigns list, creates and deletes campaigns', async () => {
+  it('renders campaigns list, creates, edits and deletes campaigns', async () => {
     renderPage(<SellerCampaignsPage />)
     expect(await screen.findByText('Summer Sale')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Add campaign' }))
     await userEvent.type(screen.getByLabelText('Title'), 'Winter Sale')
+    await userEvent.type(screen.getByLabelText('Description'), 'Winter discounts')
     await userEvent.type(screen.getByLabelText('Starts'), '2026-02-01T00:00')
     await userEvent.type(screen.getByLabelText('Ends'), '2026-02-15T00:00')
-    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
-    await waitFor(() => expect(service.createSellerCampaign).toHaveBeenCalled())
+    await userEvent.click(screen.getByRole('button', { name: 'Create campaign' }))
+    await waitFor(() =>
+      expect(service.createSellerCampaign).toHaveBeenCalledWith({
+        title: 'Winter Sale',
+        description: 'Winter discounts',
+        starts_at: '2026-02-01T00:00',
+        ends_at: '2026-02-15T00:00',
+        active: true,
+      }),
+    )
+
+    const campaignRow = screen.getByText('Summer Sale').closest('tr')
+    expect(campaignRow).not.toBeNull()
+    if (!campaignRow) return
+
+    await userEvent.click(within(campaignRow).getByRole('button', { name: 'Edit' }))
+    await userEvent.clear(screen.getByLabelText('Title'))
+    await userEvent.type(screen.getByLabelText('Title'), 'Spring Sale')
+    await userEvent.click(screen.getByRole('button', { name: 'Save campaign' }))
+    await waitFor(() =>
+      expect(service.updateSellerCampaign).toHaveBeenCalledWith(1, {
+        title: 'Spring Sale',
+        description: 'Big discounts',
+        starts_at: '2026-01-01T00:00',
+        ends_at: '2026-01-31T00:00',
+        active: true,
+      }),
+    )
 
     vi.spyOn(window, 'confirm').mockReturnValue(true)
-    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await userEvent.click(within(campaignRow).getByRole('button', { name: 'Delete' }))
     await waitFor(() => expect(service.deleteSellerCampaign).toHaveBeenCalledWith(1))
   })
 })

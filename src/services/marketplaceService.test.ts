@@ -40,6 +40,10 @@ describe('marketplace service mock mode', () => {
     await expect(marketplaceService.getSellerOrders()).rejects.toThrow()
     await expect(marketplaceService.getSellerShop()).rejects.toThrow()
     await expect(marketplaceService.updateSellerShop({ name: 'Shop' })).rejects.toThrow()
+    await expect(marketplaceService.getSellerSettings()).rejects.toThrow()
+    await expect(
+      marketplaceService.updateSellerSettings({ notificationEmail: 'seller@example.com' }),
+    ).rejects.toThrow()
     await expect(marketplaceService.updateSellerProduct(1, { name: 'Product' })).rejects.toThrow()
     await expect(marketplaceService.deleteSellerProduct(1)).rejects.toThrow()
   })

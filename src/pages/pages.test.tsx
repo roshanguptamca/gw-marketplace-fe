@@ -84,14 +84,19 @@ describe('marketplace pages', () => {
     expect(await screen.findByRole('heading', { name: 'Test Product' })).toBeInTheDocument()
   })
 
-  it('shows ships-from info but no longer the categories block on the shop storefront', async () => {
-    const { container } = renderPage(<ShopStorefrontPage resolvedSlug="test-shop" />)
+  it('shows shop details in a popup from the banner instead of a full summary block', async () => {
+    renderPage(<ShopStorefrontPage resolvedSlug="test-shop" />)
     const shopHero = await screen.findByRole('heading', { name: 'Test Shop' })
     expect(shopHero).toBeInTheDocument()
-    expect(await screen.findByText('Ships from')).toBeInTheDocument()
-    expect(await screen.findByText('Test City')).toBeInTheDocument()
-    expect(screen.queryByText('Categories')).not.toBeInTheDocument()
-    expect(container.querySelector('.shop-meta')).not.toHaveTextContent('Home')
+    expect(await screen.findByRole('link', { name: /back to all shops/i })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: 'More details about shop' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Shop details')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'More details about shop' }))
+    expect(await screen.findByRole('dialog', { name: 'Test Shop' })).toBeInTheDocument()
+    expect(await screen.findByText(/test city, netherlands/i)).toBeInTheDocument()
+    expect(await screen.findByText('Opening hours')).toBeInTheDocument()
   })
 
   it('renders seller not found when shop is absent or errors', async () => {
@@ -118,7 +123,7 @@ describe('marketplace pages', () => {
 
   it('shows a back-to-shop link on the products listing page', async () => {
     renderPage(<ProductListingPage resolvedSlug="test-shop" />)
-    const backLink = await screen.findByRole('link', { name: /back to test shop/i })
+    const backLink = await screen.findByRole('link', { name: /back to shop/i })
     expect(backLink).toHaveAttribute('href', '/shop/test-shop/')
   })
 
@@ -194,7 +199,7 @@ describe('marketplace pages', () => {
     await userEvent.click(screen.getByLabelText(/delivery/i))
     await userEvent.type(screen.getByLabelText('Street and house number'), 'Main Street')
     await userEvent.type(screen.getByLabelText('House number'), '1')
-    await userEvent.type(screen.getByLabelText('Postal code'), '1000 AA')
+    await userEvent.type(screen.getByLabelText('Postcode'), '1000 AA')
     await userEvent.type(screen.getByLabelText('City'), 'Amsterdam')
     await userEvent.type(screen.getByLabelText('Notes to seller'), 'Please call me.')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))

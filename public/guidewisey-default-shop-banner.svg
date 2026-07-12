@@ -1,0 +1,17 @@
+<svg width="1600" height="600" viewBox="0 0 1600 600" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GuideWisey shop banner">
+  <rect width="1600" height="600" fill="#0F172A"/>
+  <rect width="1600" height="600" fill="url(#paint0_linear)"/>
+  <circle cx="1180" cy="150" r="210" fill="#A78BFA" fill-opacity="0.24"/>
+  <circle cx="1380" cy="430" r="260" fill="#22D3EE" fill-opacity="0.18"/>
+  <circle cx="330" cy="470" r="190" fill="#6366F1" fill-opacity="0.2"/>
+  <path d="M280 190H650C664.912 190 677 202.088 677 217V223H253V217C253 202.088 265.088 190 280 190Z" fill="white" fill-opacity="0.12"/>
+  <text x="280" y="290" fill="white" font-family="Inter, Arial, sans-serif" font-size="88" font-weight="800">GuideWisey Marketplace</text>
+  <text x="280" y="364" fill="#E0E7FF" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="500">Independent shops, remarkable things.</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="0" y1="0" x2="1600" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset="0.5" stop-color="#1E1B4B"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+  </defs>
+</svg>

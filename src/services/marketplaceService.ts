@@ -1,5 +1,6 @@
 import { env } from '../config/env'
 import { mockProducts, mockShops } from '../data/mockData'
+import { DEFAULT_PRODUCT_IMAGE_URL } from '../utils/productImages'
 import type {
   AddressLookupResult,
   Campaign,
@@ -15,10 +16,13 @@ import type {
   OrderRequest,
   Product,
   SellerCategory,
+  SellerCategoryInput,
   SellerDashboard,
   SellerOrder,
   SellerProduct,
   SellerProductImage,
+  OpeningHour,
+  ShopSettings,
   Shop,
 } from '../types/marketplace'
 import { ApiError, apiRequest } from './apiClient'
@@ -30,24 +34,88 @@ interface ApiShop {
   slug: string
   name: string
   description: string
+  short_description?: string
+  shop_type?: string
+  phone?: string
+  email?: string
+  website_url?: string
+  social_links?: string[]
+  address?: string
   logo_url: string
   banner_url: string
+  logo_public_id?: string
+  banner_public_id?: string
   city: string
+  postal_code?: string
+  country?: string
   contact_email?: string
   contact_phone?: string
   pickup_available?: boolean
   delivery_available?: boolean
+  opening_hours?: ApiOpeningHour[]
+  is_active?: boolean
+  is_approved?: boolean
   settings?: {
     currency?: string
     whatsapp_number?: string
     local_delivery_fee?: string
     international_delivery_fee?: string
     free_delivery_above?: string | null
+    delivery_fee?: string
+    min_order_amount?: string
+    delivery_notes?: string
+    order_acceptance_mode?: 'manual' | 'auto'
+    bank_transfer_instructions?: string
+    notification_email?: string
+    new_order_email_enabled?: boolean
+    cancellation_request_email_enabled?: boolean
+    low_stock_notification_enabled?: boolean
+    supported_delivery_countries?: string[]
   }
+}
+
+interface ApiOpeningHour {
+  day_of_week: number
+  is_closed: boolean
+  open_time?: string
+  close_time?: string
+}
+
+interface ApiShopSettings {
+  currency: string
+  min_order_amount: string
+  delivery_fee: string
+  local_delivery_fee: string
+  international_delivery_fee: string
+  free_delivery_above?: string | null
+  delivery_notes: string
+  order_acceptance_mode: 'manual' | 'auto'
+  whatsapp_number: string
+  bank_transfer_instructions: string
+  notification_email: string
+  new_order_email_enabled: boolean
+  cancellation_request_email_enabled: boolean
+  low_stock_notification_enabled: boolean
+  supported_delivery_countries?: string[]
+  pickup_available?: boolean
+  delivery_available?: boolean
 }
 
 interface ApiProductImage {
   image_url: string
+}
+
+export interface SellerListFilters {
+  q?: string
+  status?: string
+}
+
+function buildSellerQuery(filters: SellerListFilters = {}) {
+  const params = new URLSearchParams()
+  if (filters.q) params.set('q', filters.q)
+  if (filters.status) params.set('status', filters.status)
+  const query = params.toString()
+  return query ? `?${query}` : ''
 }
 
 export interface ApiProduct {
@@ -79,6 +147,40 @@ function normalizeCategory(category: ApiCategory): Category {
     slug: category.slug,
     name: category.name,
     productCount: category.product_count,
+  }
+}
+
+function normalizeOpeningHours(hours: ApiOpeningHour[] | undefined): OpeningHour[] {
+  if (!Array.isArray(hours)) return []
+  return hours
+    .map((hour) => ({
+      dayOfWeek: hour.day_of_week ?? (hour as unknown as { dayOfWeek?: number }).dayOfWeek ?? 0,
+      isClosed:
+        hour.is_closed ?? (hour as unknown as { isClosed?: boolean }).isClosed ?? false,
+      openTime: hour.open_time ?? (hour as unknown as { openTime?: string }).openTime,
+      closeTime: hour.close_time ?? (hour as unknown as { closeTime?: string }).closeTime,
+    }))
+    .sort((left, right) => left.dayOfWeek - right.dayOfWeek)
+}
+
+function normalizeShopSettings(settings: ApiShopSettings | undefined): ShopSettings | undefined {
+  if (!settings) return undefined
+  return {
+    currency: settings.currency ?? 'EUR',
+    minOrderAmount: settings.min_order_amount ?? '0.00',
+    deliveryFee: settings.delivery_fee ?? '0.00',
+    localDeliveryFee: settings.local_delivery_fee ?? '0.00',
+    internationalDeliveryFee: settings.international_delivery_fee ?? '0.00',
+    freeDeliveryAbove: settings.free_delivery_above ?? null,
+    deliveryNotes: settings.delivery_notes ?? '',
+    orderAcceptanceMode: settings.order_acceptance_mode ?? 'manual',
+    whatsappNumber: settings.whatsapp_number ?? '',
+    bankTransferInstructions: settings.bank_transfer_instructions ?? '',
+    notificationEmail: settings.notification_email ?? '',
+    newOrderEmailEnabled: settings.new_order_email_enabled ?? true,
+    cancellationRequestEmailEnabled: settings.cancellation_request_email_enabled ?? true,
+    lowStockNotificationEnabled: settings.low_stock_notification_enabled ?? false,
+    supportedDeliveryCountries: settings.supported_delivery_countries ?? [],
   }
 }
 
@@ -131,13 +233,24 @@ function normalizeShop(shop: ApiShop): Shop {
     slug: shop.slug,
     name: shop.name,
     tagline: shop.description || 'Independent seller on GuideWisey',
+    shortDescription: shop.short_description ?? '',
+    shopType: shop.shop_type ?? '',
     description: shop.description,
+    phone: shop.phone,
+    email: shop.email ?? shop.contact_email,
+    websiteUrl: shop.website_url,
+    socialLinks: shop.social_links ?? [],
+    address: shop.address ?? '',
     logoUrl: shop.logo_url,
     bannerUrl: shop.banner_url,
-    categories: [],
+    logoPublicId: shop.logo_public_id,
+    bannerPublicId: shop.banner_public_id,
+    categories: shop.shop_type ? [shop.shop_type] : [],
     location: shop.city,
-    contactEmail: shop.contact_email,
-    contactPhone: shop.contact_phone,
+    postalCode: shop.postal_code,
+    country: shop.country,
+    contactEmail: shop.email ?? shop.contact_email,
+    contactPhone: shop.phone ?? shop.contact_phone,
     whatsapp: shop.settings?.whatsapp_number,
     pickupAvailable: shop.pickup_available,
     deliveryAvailable: shop.delivery_available,
@@ -150,17 +263,21 @@ function normalizeShop(shop: ApiShop): Shop {
     freeDeliveryAbove: shop.settings?.free_delivery_above
       ? Number(shop.settings.free_delivery_above)
       : null,
+    openingHours: normalizeOpeningHours(shop.opening_hours),
+    active: shop.is_active,
+    approved: shop.is_approved,
   }
 }
 
 export function normalizeProduct(product: ApiProduct, fallbackShopSlug = ''): Product {
   const shop = typeof product.shop === 'object' ? product.shop : null
   const gallery = product.images.map((image) => image.image_url).filter(Boolean)
-  const primary = product.image_url || product.external_image_url
+  const primary = product.image_url || product.external_image_url || DEFAULT_PRODUCT_IMAGE_URL
   return {
     id: String(product.id),
     shopId: shop ? String(shop.id) : undefined,
     shopSlug: shop?.slug ?? fallbackShopSlug,
+    shopName: shop?.name,
     name: product.name,
     description: product.description,
     price: Number(product.price),
@@ -324,16 +441,49 @@ export const marketplaceService = {
     }),
 
   getSellerDashboard: () => apiRequest<SellerDashboard>('/seller/dashboard/'),
-  getSellerProducts: () => apiRequest<ApiProduct[]>('/seller/products/'),
-  getSellerOrders: () => apiRequest<SellerOrder[]>('/seller/orders/'),
+  getSellerProducts: (filters: SellerListFilters = {}) =>
+    apiRequest<ApiProduct[]>(`/seller/products/${buildSellerQuery(filters)}`),
+  getSellerOrders: (filters: SellerListFilters = {}) =>
+    apiRequest<SellerOrder[]>(`/seller/orders/${buildSellerQuery(filters)}`),
   updateSellerOrderStatus: (id: number, status: string) =>
     apiRequest<SellerOrder>(`/seller/orders/${id}/status/`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
-  getSellerShop: () => apiRequest<ApiShop>('/seller/shop/'),
-  updateSellerShop: (data: Partial<ApiShop>) =>
-    apiRequest<ApiShop>('/seller/shop/', { method: 'PATCH', body: JSON.stringify(data) }),
+  getSellerShop: async () => normalizeShop(await apiRequest<ApiShop>('/seller/shop/')),
+  updateSellerShop: async (data: Partial<ApiShop>) =>
+    normalizeShop(
+      await apiRequest<ApiShop>('/seller/shop/', { method: 'PATCH', body: JSON.stringify(data) }),
+    ),
+  updateSellerShopForm: (formData: FormData) =>
+    apiRequest<ApiShop>('/seller/shop/', { method: 'PATCH', body: formData }).then(normalizeShop),
+  getSellerSettings: async () => {
+    const settings = await apiRequest<ApiShopSettings>('/seller/settings/')
+    return normalizeShopSettings(settings)
+  },
+  updateSellerSettings: (data: Partial<ShopSettings>) =>
+    apiRequest<ApiShopSettings>('/seller/settings/', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        currency: data.currency,
+        min_order_amount: data.minOrderAmount || '0.00',
+        delivery_fee: data.deliveryFee || '0.00',
+        local_delivery_fee: data.localDeliveryFee || '0.00',
+        international_delivery_fee: data.internationalDeliveryFee || '0.00',
+        free_delivery_above: data.freeDeliveryAbove,
+        delivery_notes: data.deliveryNotes,
+        order_acceptance_mode: data.orderAcceptanceMode,
+        whatsapp_number: data.whatsappNumber,
+        bank_transfer_instructions: data.bankTransferInstructions,
+        notification_email: data.notificationEmail,
+        new_order_email_enabled: data.newOrderEmailEnabled,
+        cancellation_request_email_enabled: data.cancellationRequestEmailEnabled,
+        low_stock_notification_enabled: data.lowStockNotificationEnabled,
+        supported_delivery_countries: data.supportedDeliveryCountries,
+        pickup_available: data.pickupAvailable,
+        delivery_available: data.deliveryAvailable,
+      }),
+    }).then((settings) => normalizeShopSettings(settings) as ShopSettings),
   updateSellerProduct: (id: number, data: Partial<ApiProduct>) =>
     apiRequest<ApiProduct>(`/seller/products/${id}/`, {
       method: 'PATCH',
@@ -346,6 +496,18 @@ export const marketplaceService = {
   // gw-frontend seller product form which posts multipart/form-data so the
   // main image file can be uploaded in the same request.
   getSellerCategories: () => apiRequest<SellerCategory[]>('/seller/categories/'),
+  createSellerCategory: (data: SellerCategoryInput) =>
+    apiRequest<SellerCategory>('/seller/categories/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateSellerCategory: (id: number, data: Partial<SellerCategoryInput>) =>
+    apiRequest<SellerCategory>(`/seller/categories/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  deleteSellerCategory: (id: number) =>
+    apiRequest<void>(`/seller/categories/${id}/`, { method: 'DELETE' }),
   getSellerProduct: (id: number) => apiRequest<SellerProduct>(`/seller/products/${id}/`),
   createSellerProductForm: (formData: FormData) =>
     apiRequest<SellerProduct>('/seller/products/', { method: 'POST', body: formData }),

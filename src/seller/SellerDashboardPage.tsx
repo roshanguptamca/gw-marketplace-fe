@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
@@ -11,11 +12,12 @@ export function SellerDashboardPage() {
   if (error || !data) return <p className="inline-error">Dashboard data is unavailable.</p>
 
   const metrics = [
-    ['Products', data.total_products],
-    ['Active products', data.active_products],
-    ['Pending orders', data.pending_orders],
-    ['Month sales', `€${data.month_sales}`],
-    ['Low stock', data.low_stock_products],
+    { label: 'Products', value: data.total_products, to: '/seller/products' },
+    { label: 'Active products', value: data.active_products, to: '/seller/products?status=active' },
+    { label: 'Pending orders', value: data.pending_orders, to: '/seller/orders?status=pending' },
+    { label: 'Total orders', value: data.total_orders, to: '/seller/orders' },
+    { label: 'Month sales', value: `€${data.month_sales}` },
+    { label: 'Low stock', value: data.low_stock_products, to: '/seller/products?status=low-stock' },
   ]
   const recentOrders = data.recent_orders ?? []
   return (
@@ -29,12 +31,23 @@ export function SellerDashboardPage() {
         </p>
       )}
       <div className="seller-metrics">
-        {metrics.map(([label, value]) => (
-          <article className="seller-card" key={label}>
-            <span>{label}</span>
-            <strong>{value}</strong>
-          </article>
-        ))}
+        {metrics.map((metric) => {
+          const card = (
+            <article className="seller-card" key={metric.label}>
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
+            </article>
+          )
+          return metric.to ? (
+            <Link key={metric.label} className="seller-card seller-card--link" to={metric.to}>
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
+              <span className="seller-card__action">View</span>
+            </Link>
+          ) : (
+            card
+          )
+        })}
       </div>
 
       <h3 style={{ marginTop: '32px' }}>Recent orders</h3>

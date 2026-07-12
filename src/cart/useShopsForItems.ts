@@ -16,14 +16,14 @@ export function useShopsForItems(items: CartItem[]): Record<string, Shop> {
     const missing = slugs.filter((slug) => !(slug in shopsBySlug))
     if (missing.length === 0) return
     let active = true
-    void Promise.all(missing.map((slug) => marketplaceService.getShopBySlug(slug))).then(
-      (shops) => {
+    void Promise.allSettled(missing.map((slug) => marketplaceService.getShopBySlug(slug))).then(
+      (results) => {
         if (!active) return
         setShopsBySlug((current) => {
           const next = { ...current }
-          missing.forEach((slug, index) => {
-            const shop = shops[index]
-            if (shop) next[slug] = shop
+          results.forEach((result, index) => {
+            if (result.status !== 'fulfilled' || !result.value) return
+            next[missing[index]] = result.value
           })
           return next
         })

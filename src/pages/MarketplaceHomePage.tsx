@@ -7,6 +7,12 @@ import { EmptyState } from '../components/EmptyState'
 import { MarketplaceSearch } from '../components/MarketplaceSearch'
 import { ProductGrid } from '../components/ProductGrid'
 import type { MarketplaceSearchFilters, MarketplaceSearchResult } from '../types/marketplace'
+import {
+  getShopBannerUrl,
+  getShopLogoUrl,
+  handleShopBannerError,
+  handleShopLogoError,
+} from '../utils/shopImages'
 
 export function MarketplaceHomePage() {
   useEffect(() => {
@@ -47,6 +53,7 @@ export function MarketplaceHomePage() {
   }
 
   const isSearchActive = searchResult !== null || searchError
+  const shopReturnState = { returnTo: '/#shops' }
 
   return (
     <main>
@@ -97,10 +104,18 @@ export function MarketplaceHomePage() {
                 ) : (
                   <div className="shop-grid">
                     {searchResult.shops.map((shop) => (
-                      <Link className="shop-tile" to={`/shop/${shop.slug}`} key={shop.id}>
-                        <img src={shop.bannerUrl} alt="" />
+                      <Link className="shop-tile" to={`/shop/${shop.slug}`} state={shopReturnState} key={shop.id}>
+                        <img
+                          src={getShopBannerUrl(shop.bannerUrl)}
+                          alt=""
+                          onError={handleShopBannerError}
+                        />
                         <div className="shop-tile__body">
-                          <img src={shop.logoUrl} alt={`${shop.name} logo`} />
+                          <img
+                            src={getShopLogoUrl(shop.logoUrl)}
+                            alt={`${shop.name} logo`}
+                            onError={handleShopLogoError}
+                          />
                           <div>
                             <h3>{shop.name}</h3>
                             <p>{shop.tagline}</p>
@@ -139,10 +154,18 @@ export function MarketplaceHomePage() {
             {shops && shops.length > 0 && (
               <div className="shop-grid">
                 {shops.map((shop) => (
-                  <Link className="shop-tile" to={`/shop/${shop.slug}`} key={shop.id}>
-                    <img src={shop.bannerUrl} alt="" />
+                  <Link className="shop-tile" to={`/shop/${shop.slug}`} state={shopReturnState} key={shop.id}>
+                    <img
+                      src={getShopBannerUrl(shop.bannerUrl)}
+                      alt=""
+                      onError={handleShopBannerError}
+                    />
                     <div className="shop-tile__body">
-                      <img src={shop.logoUrl} alt={`${shop.name} logo`} />
+                      <img
+                        src={getShopLogoUrl(shop.logoUrl)}
+                        alt={`${shop.name} logo`}
+                        onError={handleShopLogoError}
+                      />
                       <div>
                         <h3>{shop.name}</h3>
                         <p>{shop.tagline}</p>
