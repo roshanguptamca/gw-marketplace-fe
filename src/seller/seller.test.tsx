@@ -382,7 +382,7 @@ describe('seller portal pages', () => {
       'href',
       '/seller/products/new',
     )
-    expect(screen.getByRole('link', { name: 'Edit' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /edit seller product/i })).toHaveAttribute(
       'href',
       '/seller/products/1/edit',
     )
@@ -396,7 +396,7 @@ describe('seller portal pages', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderPage(<SellerProductsPage />)
     await screen.findByText('Seller Product')
-    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await userEvent.click(screen.getByRole('button', { name: /delete seller product/i }))
     await waitFor(() => expect(service.deleteSellerProduct).toHaveBeenCalledWith(1))
   })
 

@@ -41,6 +41,17 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
     window.setTimeout(() => setAdded(false), 1800)
   }
 
+  const detailSections = [
+    product.ingredients
+      ? { label: 'Ingredients', value: product.ingredients, testId: 'product-ingredients' }
+      : null,
+    product.allergens
+      ? { label: 'Allergens', value: product.allergens, testId: 'product-allergens' }
+      : null,
+  ].filter(
+    (section): section is { label: string; value: string; testId: string } => section !== null,
+  )
+
   return (
     <main className="page-shell section">
       <MarketplaceBackNavigation
@@ -120,6 +131,16 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
               Fulfilled directly by {product.shopSlug}.
             </p>
           </div>
+          {detailSections.length > 0 && (
+            <div className="product-details-panels">
+              {detailSections.map((section) => (
+                <article key={section.label} className="product-details-panel">
+                  <p className="eyebrow">{section.label}</p>
+                  <p data-testid={section.testId}>{section.value}</p>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </main>
