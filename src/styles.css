@@ -1724,18 +1724,14 @@ nav {
   }
 
   .seller-nav nav {
-    flex-direction: row;
-    gap: 6px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    padding-right: 20px;
-    margin-right: -20px;
+    display: grid;
+    gap: 14px;
   }
 
   .seller-nav nav a {
-    padding: 12px 16px;
-    white-space: nowrap;
-    flex-shrink: 0;
+    display: block;
+    width: 100%;
+    padding: 12px 14px;
   }
 }
 
@@ -1887,25 +1883,37 @@ nav {
   gap: 36px;
 }
 
+.seller-nav {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.68);
+  backdrop-filter: blur(18px);
+}
+
 .seller-form--stacked {
   display: grid;
   gap: 18px;
 }
 
 .seller-nav h1 {
-  margin-bottom: 28px;
+  margin-bottom: 20px;
   font-size: 2rem;
+  line-height: 1.1;
 }
 
 .seller-nav nav {
-  display: flex;
-  align-items: stretch;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  gap: 14px;
 }
 
 .seller-nav-section {
-  margin-bottom: 16px;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .seller-nav-section-title {
@@ -1920,8 +1928,10 @@ nav {
 }
 
 .seller-nav nav a {
-  padding: 14px 16px;
-  border-radius: 8px;
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
   color: var(--muted);
   font-weight: 500;
   transition: all 0.2s ease;
@@ -2674,6 +2684,12 @@ nav {
 @media (min-width: 800px) {
   .seller-shell {
     grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .seller-nav {
+    position: sticky;
+    top: 88px;
+    align-self: start;
   }
 
   .seller-metrics {
