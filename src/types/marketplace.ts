@@ -35,6 +35,8 @@ export interface Shop {
   address?: string
   logoUrl: string
   bannerUrl: string
+  logoPublicId?: string
+  bannerPublicId?: string
   categories: string[]
   location: string
   postalCode?: string

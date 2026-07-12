@@ -42,6 +42,8 @@ interface ApiShop {
   address?: string
   logo_url: string
   banner_url: string
+  logo_public_id?: string
+  banner_public_id?: string
   city: string
   postal_code?: string
   country?: string
@@ -227,6 +229,8 @@ function normalizeShop(shop: ApiShop): Shop {
     address: shop.address ?? '',
     logoUrl: shop.logo_url,
     bannerUrl: shop.banner_url,
+    logoPublicId: shop.logo_public_id,
+    bannerPublicId: shop.banner_public_id,
     categories: shop.shop_type ? [shop.shop_type] : [],
     location: shop.city,
     postalCode: shop.postal_code,

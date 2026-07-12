@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
 import type { Shop } from '../types/marketplace'
+import { getShopBannerUrl, getShopLogoUrl } from '../utils/shopImages'
 
 type UploadTarget = 'logo' | 'banner'
 
@@ -103,7 +104,7 @@ export function SellerShopLogoBannerPage() {
           <div className="image-upload-area">
             <div className="image-preview image-preview--square">
               <img
-                src={shop.logoUrl || 'https://placehold.co/200x200?text=Logo'}
+                src={getShopLogoUrl(shop.logoUrl)}
                 alt={shop.name ? `${shop.name} logo` : 'Shop logo'}
               />
             </div>
@@ -120,14 +121,14 @@ export function SellerShopLogoBannerPage() {
                 style={{ display: 'none' }}
               />
             </label>
-            <button
-              type="button"
-              className="button button--secondary"
-              onClick={() => void removeImage('logo')}
-              disabled={saving !== null || !shop.logoUrl}
-            >
-              Remove
-            </button>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => void removeImage('logo')}
+                disabled={saving !== null || !shop.logoPublicId}
+              >
+                Remove
+              </button>
           </div>
         </article>
 
@@ -137,7 +138,7 @@ export function SellerShopLogoBannerPage() {
           <div className="image-upload-area">
             <div className="image-preview image-preview--wide">
               <img
-                src={shop.bannerUrl || 'https://placehold.co/1200x300?text=Banner'}
+                src={getShopBannerUrl(shop.bannerUrl)}
                 alt={shop.name ? `${shop.name} banner` : 'Shop banner'}
               />
             </div>
@@ -154,14 +155,14 @@ export function SellerShopLogoBannerPage() {
                 style={{ display: 'none' }}
               />
             </label>
-            <button
-              type="button"
-              className="button button--secondary"
-              onClick={() => void removeImage('banner')}
-              disabled={saving !== null || !shop.bannerUrl}
-            >
-              Remove
-            </button>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => void removeImage('banner')}
+                disabled={saving !== null || !shop.bannerPublicId}
+              >
+                Remove
+              </button>
           </div>
         </article>
       </div>

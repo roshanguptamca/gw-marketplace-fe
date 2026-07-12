@@ -516,7 +516,9 @@ nav {
 }
 
 .shop-hero__overlay {
-  background: linear-gradient(0deg, rgba(12, 33, 27, 0.82), rgba(12, 33, 27, 0.05) 75%);
+  background:
+    linear-gradient(180deg, rgba(6, 10, 18, 0.2) 0%, rgba(6, 10, 18, 0.5) 56%, rgba(6, 10, 18, 0.88) 100%),
+    linear-gradient(0deg, rgba(12, 33, 27, 0.62), rgba(12, 33, 27, 0.05) 75%);
 }
 
 .shop-hero__content {
@@ -527,6 +529,13 @@ nav {
   display: flex;
   align-items: end;
   gap: 22px;
+}
+
+.shop-hero__copy {
+  max-width: 720px;
+  padding: 16px 18px 16px 0;
+  border-radius: 14px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 .shop-hero__logo {
@@ -542,11 +551,13 @@ nav {
   margin-bottom: 10px;
   font-size: clamp(1.6rem, 3.2vw, 2.6rem);
   font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
 }
 
 .shop-hero__tagline {
   margin: 0 0 8px 0;
   font-size: 1.1rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .shop-hero__description {
@@ -555,6 +566,7 @@ nav {
   opacity: 0.9;
   max-width: 500px;
   line-height: 1.5;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
 }
 
 .shop-hero__details-button {
@@ -1708,6 +1720,12 @@ nav {
   .shop-hero__content {
     align-items: start;
     flex-direction: column;
+  }
+
+  .shop-hero__copy {
+    padding: 14px 16px;
+    background: rgba(6, 10, 18, 0.36);
+    backdrop-filter: blur(10px);
   }
 
   .shop-hero__logo {
