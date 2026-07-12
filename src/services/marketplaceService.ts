@@ -124,6 +124,8 @@ export interface ApiProduct {
   name: string
   slug: string
   description: string
+  ingredients?: string
+  allergens?: string
   price: string
   stock_quantity: number
   image_url: string
@@ -280,6 +282,8 @@ export function normalizeProduct(product: ApiProduct, fallbackShopSlug = ''): Pr
     shopName: shop?.name,
     name: product.name,
     description: product.description,
+    ingredients: product.ingredients ?? '',
+    allergens: product.allergens ?? '',
     price: Number(product.price),
     currency: shop?.settings?.currency ?? 'EUR',
     category: product.category_detail?.name ?? 'Products',

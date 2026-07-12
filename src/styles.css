@@ -1047,6 +1047,25 @@ nav {
   color: var(--ink);
 }
 
+.product-details-panels {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.product-details-panel {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.product-details-panel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .state-panel {
   min-height: 280px;
   padding: 40px 20px;
@@ -2449,6 +2468,54 @@ nav {
 
 .seller-actions--tight {
   gap: 10px;
+}
+
+.seller-actions--icons {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.icon-button {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.icon-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.icon-button--danger {
+  color: #fecaca;
+}
+
+.icon-button--danger:hover {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.seller-product-name {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .seller-gallery {

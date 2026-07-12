@@ -147,6 +147,10 @@ describe('marketplace pages', () => {
   it('shows the product gallery and adds to cart', async () => {
     renderPage(<ProductDetailsPage resolvedSlug="test-shop" />)
     expect(await screen.findByRole('heading', { name: 'Test Product' })).toBeInTheDocument()
+    expect(screen.getByText('Ingredients')).toBeInTheDocument()
+    expect(screen.getByTestId('product-ingredients')).toHaveTextContent('Flour, water, salt')
+    expect(screen.getByText('Allergens')).toBeInTheDocument()
+    expect(screen.getByTestId('product-allergens')).toHaveTextContent('Gluten')
     expect(screen.queryByRole('link', { name: /go to cart/i })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Show image 2' }))
     await userEvent.click(screen.getByRole('button', { name: 'Add to cart' }))
@@ -161,6 +165,16 @@ describe('marketplace pages', () => {
     const first = renderPage(<ProductDetailsPage resolvedSlug="test-shop" />)
     expect(await screen.findByRole('button', { name: 'Out of stock' })).toBeDisabled()
     first.unmount()
+    service.getProductDetails.mockResolvedValueOnce({
+      ...productFixture,
+      ingredients: '',
+      allergens: '',
+    })
+    const second = renderPage(<ProductDetailsPage resolvedSlug="test-shop" />)
+    expect(await screen.findByRole('heading', { name: 'Test Product' })).toBeInTheDocument()
+    expect(screen.queryByText('Ingredients')).not.toBeInTheDocument()
+    expect(screen.queryByText('Allergens')).not.toBeInTheDocument()
+    second.unmount()
     service.getProductDetails.mockResolvedValueOnce(null)
     renderPage(<ProductDetailsPage resolvedSlug="test-shop" />)
     expect(await screen.findByText('Product not found')).toBeInTheDocument()

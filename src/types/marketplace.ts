@@ -216,6 +216,8 @@ export interface Product {
   shopName?: string
   name: string
   description: string
+  ingredients?: string
+  allergens?: string
   price: number
   currency: string
   category: string

@@ -4,6 +4,28 @@ import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
 
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M13.85 2.85a2.5 2.5 0 0 1 3.54 3.54l-9.9 9.9L3 17l.71-4.49 10.14-10.14Zm2.12 1.41a.5.5 0 0 0-.71 0l-.88.88 1.12 1.12.88-.88a.5.5 0 0 0 0-.71l-.41-.41Zm-2.62 2.29L5.55 14.5l-.27 1.72 1.72-.27 7.8-7.8-1.45-1.6Z"
+      />
+    </svg>
+  )
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M7 3.5A1.5 1.5 0 0 1 8.5 2h3A1.5 1.5 0 0 1 13 3.5V4h3a1 1 0 1 1 0 2h-1.02l-.68 9.1A2.5 2.5 0 0 1 11.8 17H8.2a2.5 2.5 0 0 1-2.5-1.9L5.02 6H4a1 1 0 1 1 0-2h3v-.5ZM8.5 4h3v-.5h-3V4Zm-1.46 2 .55 7.83a.5.5 0 0 0 .5.46h4.82a.5.5 0 0 0 .5-.46L14.46 6H7.04Z"
+      />
+    </svg>
+  )
+}
+
 const PRODUCT_STATUS_FILTERS = [
   { value: '', label: 'All products' },
   { value: 'active', label: 'Active' },
@@ -100,21 +122,28 @@ export function SellerProductsPage() {
           <tbody>
             {filteredProducts.map((product) => (
               <tr key={product.id}>
-                <td>{product.name}</td>
+                <td className="seller-product-name">{product.name}</td>
                 <td>{product.sku || '—'}</td>
                 <td>€{product.price}</td>
                 <td>{product.stock_quantity}</td>
                 <td>{product.is_approved && product.is_active ? 'Live' : 'Draft'}</td>
-                <td className="seller-actions">
-                  <Link className="button button--ghost" to={`/seller/products/${product.id}/edit`}>
-                    Edit
+                <td className="seller-actions seller-actions--icons">
+                  <Link
+                    className="icon-button"
+                    to={`/seller/products/${product.id}/edit`}
+                    aria-label={`Edit ${product.name}`}
+                    title={`Edit ${product.name}`}
+                  >
+                    <PencilIcon />
                   </Link>
                   <button
-                    className="button button--danger"
+                    className="icon-button icon-button--danger"
                     type="button"
+                    aria-label={`Delete ${product.name}`}
+                    title={`Delete ${product.name}`}
                     onClick={() => void removeProduct(product.id)}
                   >
-                    Delete
+                    <TrashIcon />
                   </button>
                 </td>
               </tr>
