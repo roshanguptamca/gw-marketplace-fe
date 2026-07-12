@@ -14,6 +14,13 @@ import { SellerProductFormPage } from './SellerProductFormPage'
 import { SellerProductsPage } from './SellerProductsPage'
 import { SellerSettingsPage } from './SellerSettingsPage'
 import { SellerPlaceholderPage } from './SellerPlaceholderPage'
+import { SellerShopContactPage } from './SellerShopContactPage'
+import { SellerShopDeliveryPage } from './SellerShopDeliveryPage'
+import { SellerShopDetailsPage } from './SellerShopDetailsPage'
+import { SellerShopHoursPage } from './SellerShopHoursPage'
+import { SellerShopLogoBannerPage } from './SellerShopLogoBannerPage'
+import { SellerShopNotificationsPage } from './SellerShopNotificationsPage'
+import { SellerShopPreviewPage } from './SellerShopPreviewPage'
 
 vi.mock('../services/marketplaceService', () => ({
   marketplaceService: {
@@ -23,6 +30,9 @@ vi.mock('../services/marketplaceService', () => ({
     updateSellerOrderStatus: vi.fn(),
     getSellerShop: vi.fn(),
     updateSellerShop: vi.fn(),
+    updateSellerShopForm: vi.fn(),
+    getSellerSettings: vi.fn(),
+    updateSellerSettings: vi.fn(),
     updateSellerProduct: vi.fn(),
     deleteSellerProduct: vi.fn(),
     getSellerCategories: vi.fn(),
@@ -168,22 +178,135 @@ describe('seller portal pages', () => {
       created_at: '2026-01-01',
     })
     service.getSellerShop.mockResolvedValue({
-      id: 1,
+      id: '1',
       slug: 'seller',
       name: 'Seller Shop',
+      tagline: 'Seller tagline',
       description: 'Shop description',
-      logo_url: '',
-      banner_url: '',
-      city: 'Amsterdam',
+      shortDescription: 'Shop description',
+      shopType: 'Bakery',
+      phone: '+31 6 12345678',
+      email: 'hello@example.com',
+      websiteUrl: 'https://seller.example',
+      socialLinks: [],
+      address: 'Seller Street 1',
+      logoUrl: '',
+      bannerUrl: '',
+      postalCode: '1000 AA',
+      country: 'Netherlands',
+      categories: [],
+      location: 'Amsterdam',
+      contactEmail: 'hello@example.com',
+      contactPhone: '+31 6 12345678',
+      whatsapp: '',
+      pickupAvailable: true,
+      deliveryAvailable: false,
+      localDeliveryFee: 5,
+      internationalDeliveryFee: 10,
+      freeDeliveryAbove: 50,
+      openingHours: [],
+      active: true,
+      approved: false,
     })
     service.updateSellerShop.mockResolvedValue({
-      id: 1,
+      id: '1',
       slug: 'seller',
       name: 'Updated',
+      tagline: 'Seller tagline',
       description: 'Shop description',
-      logo_url: '',
-      banner_url: '',
-      city: 'Amsterdam',
+      shortDescription: 'Shop description',
+      shopType: 'Bakery',
+      phone: '+31 6 12345678',
+      email: 'hello@example.com',
+      websiteUrl: 'https://seller.example',
+      socialLinks: [],
+      address: 'Seller Street 1',
+      logoUrl: '',
+      bannerUrl: '',
+      postalCode: '1000 AA',
+      country: 'Netherlands',
+      categories: [],
+      location: 'Amsterdam',
+      contactEmail: 'hello@example.com',
+      contactPhone: '+31 6 12345678',
+      whatsapp: '',
+      pickupAvailable: true,
+      deliveryAvailable: false,
+      localDeliveryFee: 5,
+      internationalDeliveryFee: 10,
+      freeDeliveryAbove: 50,
+      openingHours: [],
+      active: true,
+      approved: false,
+    })
+    service.updateSellerShopForm.mockResolvedValue({
+      id: '1',
+      slug: 'seller',
+      name: 'Updated',
+      tagline: 'Seller tagline',
+      description: 'Shop description',
+      shortDescription: 'Shop description',
+      shopType: 'Bakery',
+      phone: '+31 6 12345678',
+      email: 'hello@example.com',
+      websiteUrl: 'https://seller.example',
+      socialLinks: [],
+      address: 'Seller Street 1',
+      logoUrl: '',
+      bannerUrl: '',
+      location: 'Amsterdam',
+      postalCode: '1000 AA',
+      country: 'Netherlands',
+      categories: [],
+      contactEmail: 'hello@example.com',
+      contactPhone: '+31 6 12345678',
+      whatsapp: '',
+      pickupAvailable: true,
+      deliveryAvailable: false,
+      localDeliveryFee: 5,
+      internationalDeliveryFee: 10,
+      freeDeliveryAbove: 50,
+      openingHours: [],
+      active: true,
+      approved: false,
+    })
+    service.getSellerSettings.mockResolvedValue({
+      currency: 'EUR',
+      minOrderAmount: '0.00',
+      deliveryFee: '0.00',
+      localDeliveryFee: '5.00',
+      internationalDeliveryFee: '10.00',
+      freeDeliveryAbove: null,
+      deliveryNotes: '',
+      orderAcceptanceMode: 'manual',
+      whatsappNumber: '',
+      bankTransferInstructions: '',
+      notificationEmail: 'hello@example.com',
+      newOrderEmailEnabled: true,
+      cancellationRequestEmailEnabled: true,
+      lowStockNotificationEnabled: false,
+      supportedDeliveryCountries: ['NL'],
+      pickupAvailable: true,
+      deliveryAvailable: false,
+    })
+    service.updateSellerSettings.mockResolvedValue({
+      currency: 'EUR',
+      minOrderAmount: '0.00',
+      deliveryFee: '0.00',
+      localDeliveryFee: '5.00',
+      internationalDeliveryFee: '10.00',
+      freeDeliveryAbove: null,
+      deliveryNotes: '',
+      orderAcceptanceMode: 'manual',
+      whatsappNumber: '',
+      bankTransferInstructions: '',
+      notificationEmail: 'hello@example.com',
+      newOrderEmailEnabled: true,
+      cancellationRequestEmailEnabled: true,
+      lowStockNotificationEnabled: false,
+      supportedDeliveryCountries: ['NL'],
+      pickupAvailable: true,
+      deliveryAvailable: false,
     })
     service.deleteSellerProduct.mockResolvedValue(undefined)
     service.getSellerCategories.mockResolvedValue([category])
@@ -287,6 +410,34 @@ describe('seller portal pages', () => {
     service.getSellerShop.mockRejectedValueOnce(new Error('offline'))
     renderPage(<SellerSettingsPage />)
     expect(await screen.findByText(/settings could not be loaded/i)).toBeInTheDocument()
+  })
+
+  it('renders and saves the shop details form', async () => {
+    renderPage(<SellerShopDetailsPage />)
+    await screen.findByRole('heading', { name: 'Shop Details' })
+    await userEvent.clear(screen.getByLabelText('Shop Name *'))
+    await userEvent.type(screen.getByLabelText('Shop Name *'), 'Updated Seller Shop')
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await waitFor(() => expect(service.updateSellerShop).toHaveBeenCalled())
+  })
+
+  it('renders the delivery, hours, notification and preview sections', async () => {
+    renderPage(
+      <>
+        <SellerShopDeliveryPage />
+        <SellerShopHoursPage />
+        <SellerShopNotificationsPage />
+        <SellerShopLogoBannerPage />
+        <SellerShopContactPage />
+        <SellerShopPreviewPage />
+      </>,
+    )
+    expect(await screen.findByRole('heading', { name: 'Delivery & Pickup' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Opening Hours' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Notifications' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Logo & Banner' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Contact Information' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Public Shop Preview' })).toBeInTheDocument()
   })
 
   it('creates a new product via the form', async () => {

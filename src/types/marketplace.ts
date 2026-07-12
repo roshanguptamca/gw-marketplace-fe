@@ -25,11 +25,20 @@ export interface Shop {
   slug: string
   name: string
   tagline: string
+  shortDescription: string
+  shopType: string
   description: string
+  phone?: string
+  email?: string
+  websiteUrl?: string
+  socialLinks?: string[]
+  address?: string
   logoUrl: string
   bannerUrl: string
   categories: string[]
   location: string
+  postalCode?: string
+  country?: string
   contactEmail?: string
   contactPhone?: string
   whatsapp?: string
@@ -38,6 +47,36 @@ export interface Shop {
   localDeliveryFee?: number
   internationalDeliveryFee?: number
   freeDeliveryAbove?: number | null
+  openingHours?: OpeningHour[]
+  active?: boolean
+  approved?: boolean
+}
+
+export interface OpeningHour {
+  dayOfWeek: number
+  isClosed: boolean
+  openTime?: string
+  closeTime?: string
+}
+
+export interface ShopSettings {
+  currency: string
+  minOrderAmount: string
+  deliveryFee: string
+  localDeliveryFee: string
+  internationalDeliveryFee: string
+  freeDeliveryAbove?: string | null
+  deliveryNotes: string
+  orderAcceptanceMode: 'manual' | 'auto'
+  whatsappNumber: string
+  bankTransferInstructions: string
+  notificationEmail: string
+  newOrderEmailEnabled: boolean
+  cancellationRequestEmailEnabled: boolean
+  lowStockNotificationEnabled: boolean
+  supportedDeliveryCountries: string[]
+  pickupAvailable?: boolean
+  deliveryAvailable?: boolean
 }
 
 export interface User {
@@ -166,6 +205,7 @@ export interface Product {
   id: string
   shopId?: string
   shopSlug: string
+  shopName?: string
   name: string
   description: string
   price: number

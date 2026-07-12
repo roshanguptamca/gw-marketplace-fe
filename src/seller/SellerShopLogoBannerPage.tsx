@@ -1,225 +1,180 @@
 import { useEffect, useState } from 'react'
 import { LoadingState } from '../components/LoadingState'
+import { marketplaceService } from '../services/marketplaceService'
+import type { Shop } from '../types/marketplace'
 
-interface ShopImages {
-  logoUrl?: string
-  logoPublicId?: string
-  bannerUrl?: string
-  bannerPublicId?: string
-}
+type UploadTarget = 'logo' | 'banner'
 
 export function SellerShopLogoBannerPage() {
   const [loading, setLoading] = useState(true)
-  const [images, setImages] = useState<ShopImages>({})
-  const [uploading, setUploading] = useState<'logo' | 'banner' | null>(null)
+  const [saving, setSaving] = useState<UploadTarget | 'remove-logo' | 'remove-banner' | null>(null)
+  const [shop, setShop] = useState<Shop | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [success, setSuccess] = useState<string | null>(null)
 
   useEffect(() => {
-    const loadImages = async () => {
+    const loadShop = async () => {
       try {
         setLoading(true)
-        // TODO: Fetch shop images from API
-        // const response = await fetch('/api/seller/shop/images')
-        // const data = await response.json()
-        // setImages(data)
-        
-        // For now, set dummy data
-        setImages({
-          logoUrl:
-            'https://res.cloudinary.com/demo/image/upload/v1/sourdough-bread-nl/logo.png',
-          bannerUrl:
-            'https://res.cloudinary.com/demo/image/upload/v1/sourdough-bread-nl/banner.png',
-        })
-      } catch (err) {
+        const data = await marketplaceService.getSellerShop()
+        setShop(data)
+      } catch {
         setError('Failed to load shop images.')
       } finally {
         setLoading(false)
       }
     }
 
-    loadImages()
+    void loadShop()
   }, [])
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'banner') => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be less than 5MB')
+  const uploadImage = async (file: File, type: UploadTarget) => {
+    if (file.size > (type === 'logo' ? 2 : 5) * 1024 * 1024) {
+      setError(`Image must be smaller than ${type === 'logo' ? '2MB' : '5MB'}.`)
       return
     }
-
-    // Validate file type
     if (!file.type.startsWith('image/')) {
-      setError('Please upload a valid image file')
+      setError('Please upload a valid image file.')
       return
     }
 
-    setUploading(type)
+    const formData = new FormData()
+    formData.append(type === 'logo' ? 'logo' : 'banner_image', file)
+    setSaving(type)
     setError(null)
+    setSuccess(null)
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('type', type)
-
-      // TODO: Upload to backend endpoint
-      // const response = await fetch('/api/seller/shop/upload-image', {
-      //   method: 'POST',
-      //   body: formData,
-      // })
-      // const data = await response.json()
-      // setImages(prev => ({
-      //   ...prev,
-      //   [`${type}Url`]: data.url,
-      //   [`${type}PublicId`]: data.publicId,
-      // }))
-
-      // Simulate successful upload
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        setImages((prev) => ({
-          ...prev,
-          [`${type}Url`]: event.target?.result as string,
-        }))
-        setSuccess(true)
-        setTimeout(() => setSuccess(false), 3000)
-      }
-      reader.readAsDataURL(file)
-    } catch (err) {
+      const updated = await marketplaceService.updateSellerShopForm(formData)
+      setShop(updated)
+      setSuccess(`${type === 'logo' ? 'Logo' : 'Banner'} updated successfully`)
+      setTimeout(() => setSuccess(null), 3000)
+    } catch {
       setError(`Failed to upload ${type}. Please try again.`)
     } finally {
-      setUploading(null)
+      setSaving(null)
     }
   }
 
-  const handleRemoveImage = async (type: 'logo' | 'banner') => {
-    if (!confirm(`Are you sure you want to remove the ${type}?`)) return
+  const removeImage = async (type: UploadTarget) => {
+    if (!window.confirm(`Are you sure you want to remove the ${type}?`)) return
+
+    const formData = new FormData()
+    formData.append(type === 'logo' ? 'remove_logo' : 'remove_banner', 'true')
+    setSaving(type === 'logo' ? 'remove-logo' : 'remove-banner')
+    setError(null)
+    setSuccess(null)
 
     try {
-      // TODO: Call API to remove image
-      // const response = await fetch(`/api/seller/shop/remove-${type}`, {
-      //   method: 'DELETE',
-      // })
-
-      setImages((prev) => ({
-        ...prev,
-        [`${type}Url`]: undefined,
-        [`${type}PublicId`]: undefined,
-      }))
-      setSuccess(true)
-      setTimeout(() => setSuccess(false), 3000)
-    } catch (err) {
+      const updated = await marketplaceService.updateSellerShopForm(formData)
+      setShop(updated)
+      setSuccess(`${type === 'logo' ? 'Logo' : 'Banner'} removed`)
+      setTimeout(() => setSuccess(null), 3000)
+    } catch {
       setError(`Failed to remove ${type}. Please try again.`)
+    } finally {
+      setSaving(null)
     }
   }
 
   if (loading) return <LoadingState label="Loading images" />
 
+  if (!shop) {
+    return <div className="alert alert--error">{error || 'Shop images could not be loaded.'}</div>
+  }
+
   return (
-    <div>
+    <section>
       <div className="seller-page-header">
-        <h2>Logo & Banner</h2>
-        <p className="muted">Upload and manage your shop logo and banner images</p>
+        <div>
+          <p className="eyebrow">Shop Configuration</p>
+          <h2>Logo & Banner</h2>
+          <p className="muted">Upload and manage your shop logo and banner images.</p>
+        </div>
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
-      {success && <div className="alert alert--success">✓ Image updated successfully</div>}
+      {success && <div className="alert alert--success">✓ {success}</div>}
 
       <div className="seller-images-grid">
-        {/* Logo Section */}
-        <div className="image-upload-section">
+        <article className="seller-image-card">
           <h3>Shop Logo</h3>
-          <p className="form-hint">Recommended size: 200x200px, PNG or JPEG</p>
-
+          <p className="form-hint">Recommended size: 200x200px, PNG or JPEG.</p>
           <div className="image-upload-area">
-            {images.logoUrl ? (
-              <div className="image-preview">
-                <img src={images.logoUrl} alt="Shop Logo" />
-                <p>Current Logo</p>
-              </div>
-            ) : (
-              <div className="image-placeholder">
-                <p>No logo uploaded</p>
-              </div>
-            )}
-
+            <div className="image-preview image-preview--square">
+              <img
+                src={shop.logoUrl || 'https://placehold.co/200x200?text=Logo'}
+                alt={shop.name ? `${shop.name} logo` : 'Shop logo'}
+              />
+            </div>
             <label className="upload-button">
-              <span>{uploading === 'logo' ? 'Uploading...' : 'Choose Image'}</span>
+              <span>{saving === 'logo' ? 'Uploading...' : 'Choose image'}</span>
               <input
                 type="file"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e, 'logo')}
-                disabled={uploading !== null}
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  if (file) void uploadImage(file, 'logo')
+                }}
+                disabled={saving !== null}
                 style={{ display: 'none' }}
               />
             </label>
-
-            {images.logoUrl && (
-              <button
-                className="button button--danger button--small"
-                onClick={() => handleRemoveImage('logo')}
-                disabled={uploading !== null}
-              >
-                Remove
-              </button>
-            )}
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={() => void removeImage('logo')}
+              disabled={saving !== null || !shop.logoUrl}
+            >
+              Remove
+            </button>
           </div>
-        </div>
+        </article>
 
-        {/* Banner Section */}
-        <div className="image-upload-section">
+        <article className="seller-image-card">
           <h3>Shop Banner</h3>
-          <p className="form-hint">Recommended size: 1200x300px, PNG or JPEG</p>
-
+          <p className="form-hint">Recommended size: 1200x300px, PNG or JPEG.</p>
           <div className="image-upload-area">
-            {images.bannerUrl ? (
-              <div className="image-preview image-preview--wide">
-                <img src={images.bannerUrl} alt="Shop Banner" />
-                <p>Current Banner</p>
-              </div>
-            ) : (
-              <div className="image-placeholder">
-                <p>No banner uploaded</p>
-              </div>
-            )}
-
+            <div className="image-preview image-preview--wide">
+              <img
+                src={shop.bannerUrl || 'https://placehold.co/1200x300?text=Banner'}
+                alt={shop.name ? `${shop.name} banner` : 'Shop banner'}
+              />
+            </div>
             <label className="upload-button">
-              <span>{uploading === 'banner' ? 'Uploading...' : 'Choose Image'}</span>
+              <span>{saving === 'banner' ? 'Uploading...' : 'Choose image'}</span>
               <input
                 type="file"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e, 'banner')}
-                disabled={uploading !== null}
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  if (file) void uploadImage(file, 'banner')
+                }}
+                disabled={saving !== null}
                 style={{ display: 'none' }}
               />
             </label>
-
-            {images.bannerUrl && (
-              <button
-                className="button button--danger button--small"
-                onClick={() => handleRemoveImage('banner')}
-                disabled={uploading !== null}
-              >
-                Remove
-              </button>
-            )}
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={() => void removeImage('banner')}
+              disabled={saving !== null || !shop.bannerUrl}
+            >
+              Remove
+            </button>
           </div>
-        </div>
+        </article>
       </div>
 
       <div className="image-upload-info">
-        <h4>Image Upload Requirements</h4>
+        <h4>Cloudinary upload rules</h4>
         <ul>
-          <li>Maximum file size: 5MB</li>
-          <li>Supported formats: PNG, JPEG, WebP</li>
-          <li>Logo: Square (200x200px recommended)</li>
-          <li>Banner: Wide format (1200x300px recommended)</li>
-          <li>Images are hosted on Cloudinary CDN</li>
+          <li>Images are uploaded through the existing Cloudinary backend service.</li>
+          <li>Logo files are limited to 2MB.</li>
+          <li>Banner files are limited to 5MB.</li>
+          <li>PNG, JPEG, and WebP are accepted.</li>
         </ul>
       </div>
-    </div>
+    </section>
   )
 }

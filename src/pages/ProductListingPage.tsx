@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 import { CartCallToAction } from '../components/CartCallToAction'
 import { LoadingState } from '../components/LoadingState'
 import { ProductGrid } from '../components/ProductGrid'
+import { MarketplaceBackNavigation } from '../components/MarketplaceBackNavigation'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
 import { shopPath } from '../utils/shopLinks'
@@ -10,6 +11,7 @@ import { SellerNotFoundPage } from './SellerNotFoundPage'
 
 export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) {
   const params = useParams()
+  const location = useLocation()
   const slug = resolvedSlug ?? params.shopSlug ?? ''
   const [category, setCategory] = useState('All')
   const { data: shop, loading: shopLoading } = useMarketplaceData(
@@ -31,12 +33,20 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
 
   if (shopLoading) return <LoadingState label="Opening collection" />
   if (!shop) return <SellerNotFoundPage />
+  const backTo = (location.state as { returnTo?: string } | undefined)?.returnTo
 
   return (
     <main className="page-shell section products-page">
-      <Link className="back-link" to={shopPath(slug)}>
-        ← Back to {shop.name}
-      </Link>
+      <MarketplaceBackNavigation
+        items={[
+          { label: 'Marketplace', path: '/' },
+          { label: 'All Shops', path: '/#shops' },
+          { label: shop.name, path: shopPath(slug) },
+          { label: 'All Products', path: shopPath(slug, '/products'), current: true },
+        ]}
+        backLabel="Back to shop"
+        backTo={backTo ?? shopPath(slug)}
+      />
       <div className="section-heading">
         <div>
           <p className="eyebrow">{shop.name}</p>

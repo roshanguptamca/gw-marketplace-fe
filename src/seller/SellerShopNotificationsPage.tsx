@@ -1,44 +1,69 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
+import { marketplaceService } from '../services/marketplaceService'
+import type { ShopSettings } from '../types/marketplace'
 
-interface NotificationSettings {
-  notificationEmail: string
-  newOrderEmailEnabled: boolean
-  cancellationRequestEmailEnabled: boolean
-  lowStockNotificationEnabled: boolean
-}
-
-export function SellerShopNotificationsPage() {
-  const navigate = useNavigate()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [formData, setFormData] = useState<NotificationSettings>({
+function defaultSettings(): ShopSettings {
+  return {
+    currency: 'EUR',
+    minOrderAmount: '0.00',
+    deliveryFee: '0.00',
+    localDeliveryFee: '5.00',
+    internationalDeliveryFee: '10.00',
+    freeDeliveryAbove: null,
+    deliveryNotes: '',
+    orderAcceptanceMode: 'manual',
+    whatsappNumber: '',
+    bankTransferInstructions: '',
     notificationEmail: '',
     newOrderEmailEnabled: true,
     cancellationRequestEmailEnabled: true,
     lowStockNotificationEnabled: false,
-  })
+    supportedDeliveryCountries: [],
+  }
+}
+
+export function SellerShopNotificationsPage() {
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [formData, setFormData] = useState<ShopSettings>(defaultSettings())
 
   useEffect(() => {
-    setLoading(false)
+    const load = async () => {
+      try {
+        const settings = await marketplaceService.getSellerSettings()
+        if (settings) setFormData(settings)
+      } catch {
+        setError('Failed to load notification settings.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void load()
   }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target
-    const finalValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    setFormData((prev) => ({ ...prev, [name]: finalValue }))
+    const finalValue = type === 'checkbox' ? e.target.checked : value
+    setFormData((prev) => ({ ...prev, [name]: finalValue } as ShopSettings))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
+    setError(null)
+    setSuccess(false)
 
     try {
-      // TODO: Save to API
+      const updated = await marketplaceService.updateSellerSettings(formData)
+      setFormData(updated)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
+    } catch {
+      setError('Failed to save notification settings.')
     } finally {
       setSaving(false)
     }
@@ -47,97 +72,71 @@ export function SellerShopNotificationsPage() {
   if (loading) return <LoadingState label="Loading notifications" />
 
   return (
-    <div>
+    <section>
       <div className="seller-page-header">
-        <h2>Notifications</h2>
-        <p className="muted">Configure how you receive alerts about orders and inventory</p>
+        <div>
+          <p className="eyebrow">Shop Configuration</p>
+          <h2>Notifications</h2>
+          <p className="muted">Configure who receives alerts about orders and stock.</p>
+        </div>
       </div>
 
+      {error && <div className="alert alert--error">{error}</div>}
       {success && <div className="alert alert--success">✓ Notification settings saved</div>}
 
-      <form onSubmit={handleSubmit} className="seller-form">
+      <form onSubmit={handleSubmit} className="seller-form seller-form--stacked">
         <div className="form-section">
-          <h3>Notification Email</h3>
-
+          <h3>Notification email</h3>
           <div className="form-group">
-            <label htmlFor="notificationEmail">Notification Email Address *</label>
+            <label htmlFor="notificationEmail">Notification email address</label>
             <input
               type="email"
               id="notificationEmail"
               name="notificationEmail"
               value={formData.notificationEmail}
               onChange={handleChange}
-              required
               className="form-input"
             />
-            <p className="form-hint">Email address where order and notification alerts will be sent</p>
           </div>
         </div>
 
         <div className="form-section">
-          <h3>Email Alerts</h3>
-
-          <div className="form-group form-group--checkbox">
-            <label>
-              <input
-                type="checkbox"
-                name="newOrderEmailEnabled"
-                checked={formData.newOrderEmailEnabled}
-                onChange={handleChange}
-              />
-              New Order Notifications
-            </label>
-            <p className="form-hint">Receive email when a new order is placed</p>
-          </div>
-
-          <div className="form-group form-group--checkbox">
-            <label>
-              <input
-                type="checkbox"
-                name="cancellationRequestEmailEnabled"
-                checked={formData.cancellationRequestEmailEnabled}
-                onChange={handleChange}
-              />
-              Cancellation Request Notifications
-            </label>
-            <p className="form-hint">Receive email when a customer requests to cancel an order</p>
-          </div>
-
-          <div className="form-group form-group--checkbox">
-            <label>
-              <input
-                type="checkbox"
-                name="lowStockNotificationEnabled"
-                checked={formData.lowStockNotificationEnabled}
-                onChange={handleChange}
-              />
-              Low Stock Notifications
-            </label>
-            <p className="form-hint">Receive email when a product stock is running low</p>
-          </div>
+          <h3>Email alerts</h3>
+          <label className="seller-toggle">
+            <input
+              type="checkbox"
+              name="newOrderEmailEnabled"
+              checked={formData.newOrderEmailEnabled}
+              onChange={handleChange}
+            />
+            <span>New order email notifications</span>
+          </label>
+          <label className="seller-toggle">
+            <input
+              type="checkbox"
+              name="cancellationRequestEmailEnabled"
+              checked={formData.cancellationRequestEmailEnabled}
+              onChange={handleChange}
+            />
+            <span>Cancellation request email notifications</span>
+          </label>
+          <label className="seller-toggle">
+            <input
+              type="checkbox"
+              name="lowStockNotificationEnabled"
+              checked={formData.lowStockNotificationEnabled}
+              onChange={handleChange}
+            />
+            <span>Low-stock notifications</span>
+          </label>
         </div>
 
         <div className="form-actions">
           <button type="submit" disabled={saving} className="button button--primary">
-            {saving ? 'Saving...' : 'Save Settings'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/seller')}
-            className="button button--secondary"
-          >
-            Cancel
+            {saving ? 'Saving...' : 'Save changes'}
           </button>
         </div>
       </form>
-
-      <div className="info-box">
-        <h4>📧 Email Alerts</h4>
-        <p>
-          You will receive professional email notifications from GuideWisey. Make sure your notification
-          email is correct and check your spam folder if you don't receive messages.
-        </p>
-      </div>
-    </div>
+    </section>
   )
 }

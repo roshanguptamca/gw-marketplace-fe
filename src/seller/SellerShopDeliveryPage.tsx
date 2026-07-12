@@ -1,51 +1,60 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
+import { marketplaceService } from '../services/marketplaceService'
+import type { ShopSettings } from '../types/marketplace'
 
-interface DeliveryConfig {
-  pickupEnabled: boolean
-  pickupInstructions?: string
-  deliveryEnabled: boolean
-  nlDeliveryFee?: number
-  internationalDeliveryFee?: number
-  freeDeliveryThreshold?: number
-  deliveryNotes?: string
-  supportedCountries?: string[]
+const deliveryCountries = [
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'BE', name: 'Belgium' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'FR', name: 'France' },
+  { code: 'AT', name: 'Austria' },
+  { code: 'LU', name: 'Luxembourg' },
+]
+
+function emptySettings(): ShopSettings {
+  return {
+    currency: 'EUR',
+    minOrderAmount: '0.00',
+    deliveryFee: '0.00',
+    localDeliveryFee: '5.00',
+    internationalDeliveryFee: '10.00',
+    freeDeliveryAbove: null,
+    deliveryNotes: '',
+    orderAcceptanceMode: 'manual',
+    whatsappNumber: '',
+    bankTransferInstructions: '',
+    notificationEmail: '',
+    newOrderEmailEnabled: true,
+    cancellationRequestEmailEnabled: true,
+    lowStockNotificationEnabled: false,
+    supportedDeliveryCountries: ['NL', 'BE', 'DE'],
+    pickupAvailable: true,
+    deliveryAvailable: false,
+  }
 }
 
 export function SellerShopDeliveryPage() {
-  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [formData, setFormData] = useState<DeliveryConfig>({
-    pickupEnabled: true,
-    pickupInstructions: '',
-    deliveryEnabled: false,
-    nlDeliveryFee: 5.0,
-    internationalDeliveryFee: 10.0,
-    freeDeliveryThreshold: 50.0,
-    deliveryNotes: '',
-    supportedCountries: ['NL', 'BE', 'DE'],
-  })
+  const [formData, setFormData] = useState<ShopSettings>(emptySettings())
 
   useEffect(() => {
     const loadConfig = async () => {
       try {
         setLoading(true)
-        // TODO: Fetch delivery config from API
-        // const response = await fetch('/api/seller/shop/delivery')
-        // const data = await response.json()
-        // setFormData(data)
-      } catch (err) {
+        const data = await marketplaceService.getSellerSettings()
+        if (data) setFormData(data)
+      } catch {
         setError('Failed to load delivery settings.')
       } finally {
         setLoading(false)
       }
     }
 
-    loadConfig()
+    void loadConfig()
   }, [])
 
   const handleChange = (
@@ -54,26 +63,22 @@ export function SellerShopDeliveryPage() {
     const { name, value, type } = e.target
     const finalValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: finalValue,
-    }))
+    setFormData((prev) => ({ ...prev, [name]: finalValue } as ShopSettings))
   }
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value ? parseFloat(value) : undefined,
-    }))
+    setFormData((prev) =>
+      ({ ...prev, [name]: name === 'freeDeliveryAbove' && value === '' ? null : value } as ShopSettings),
+    )
   }
 
   const handleCountryToggle = (country: string) => {
     setFormData((prev) => ({
       ...prev,
-      supportedCountries: prev.supportedCountries?.includes(country)
-        ? prev.supportedCountries.filter((c) => c !== country)
-        : [...(prev.supportedCountries || []), country],
+      supportedDeliveryCountries: prev.supportedDeliveryCountries.includes(country)
+        ? prev.supportedDeliveryCountries.filter((item) => item !== country)
+        : [...prev.supportedDeliveryCountries, country],
     }))
   }
 
@@ -84,17 +89,11 @@ export function SellerShopDeliveryPage() {
     setSuccess(false)
 
     try {
-      // TODO: Save delivery config to API
-      // const response = await fetch('/api/seller/shop/delivery', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData),
-      // })
-      // if (!response.ok) throw new Error('Failed to save delivery settings')
-
+      const updated = await marketplaceService.updateSellerSettings(formData)
+      setFormData(updated)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch (err) {
+    } catch {
       setError('Failed to save delivery settings. Please try again.')
     } finally {
       setSaving(false)
@@ -103,197 +102,126 @@ export function SellerShopDeliveryPage() {
 
   if (loading) return <LoadingState label="Loading delivery settings" />
 
-  const countries = [
-    { code: 'NL', name: 'Netherlands' },
-    { code: 'BE', name: 'Belgium' },
-    { code: 'DE', name: 'Germany' },
-    { code: 'FR', name: 'France' },
-    { code: 'AT', name: 'Austria' },
-    { code: 'LU', name: 'Luxembourg' },
-  ]
-
   return (
-    <div>
+    <section>
       <div className="seller-page-header">
-        <h2>Delivery & Pickup</h2>
-        <p className="muted">Configure how customers receive their orders</p>
+        <div>
+          <p className="eyebrow">Shop Configuration</p>
+          <h2>Delivery & Pickup</h2>
+          <p className="muted">Configure how customers receive their orders.</p>
+        </div>
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
       {success && <div className="alert alert--success">✓ Delivery settings saved successfully</div>}
 
-      <form onSubmit={handleSubmit} className="seller-form">
-        {/* Pickup Section */}
+      <form onSubmit={handleSubmit} className="seller-form seller-form--stacked">
         <div className="form-section">
-          <h3>Pickup Configuration</h3>
-
-          <div className="form-group form-group--checkbox">
-            <label>
+          <h3>Availability</h3>
+          <div className="form-grid">
+            <label className="seller-toggle">
               <input
                 type="checkbox"
-                name="pickupEnabled"
-                checked={formData.pickupEnabled}
+                name="pickupAvailable"
+                checked={formData.pickupAvailable ?? true}
                 onChange={handleChange}
               />
-              Enable customer pickup
+              <span>Enable customer pickup</span>
             </label>
-            <p className="form-hint">Allow customers to pick up their orders from your location</p>
-          </div>
-
-          {formData.pickupEnabled && (
-            <div className="form-group">
-              <label htmlFor="pickupInstructions">Pickup Instructions</label>
-              <textarea
-                id="pickupInstructions"
-                name="pickupInstructions"
-                value={formData.pickupInstructions}
+            <label className="seller-toggle">
+              <input
+                type="checkbox"
+                name="deliveryAvailable"
+                checked={formData.deliveryAvailable ?? false}
                 onChange={handleChange}
-                placeholder="E.g., 'Available Tuesday to Saturday 9AM-5PM. Ring the bell at the back entrance.'"
-                rows={4}
-                className="form-input"
               />
-              <p className="form-hint">
-                Instructions shown to customers when they select pickup
-              </p>
-            </div>
-          )}
+              <span>Enable delivery</span>
+            </label>
+          </div>
         </div>
 
-        {/* Delivery Section */}
         <div className="form-section">
-          <h3>Delivery Configuration</h3>
-
-          <div className="form-group form-group--checkbox">
-            <label>
+          <h3>Delivery fees</h3>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="localDeliveryFee">Netherlands delivery fee (€)</label>
               <input
-                type="checkbox"
-                name="deliveryEnabled"
-                checked={formData.deliveryEnabled}
-                onChange={handleChange}
+                type="number"
+                id="localDeliveryFee"
+                name="localDeliveryFee"
+                value={formData.localDeliveryFee}
+                onChange={handleNumberChange}
+                step="0.01"
+                min="0"
+                className="form-input"
               />
-              Enable delivery
-            </label>
-            <p className="form-hint">Allow customers to have orders delivered</p>
+            </div>
+            <div className="form-group">
+              <label htmlFor="internationalDeliveryFee">International delivery fee (€)</label>
+              <input
+                type="number"
+                id="internationalDeliveryFee"
+                name="internationalDeliveryFee"
+                value={formData.internationalDeliveryFee}
+                onChange={handleNumberChange}
+                step="0.01"
+                min="0"
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="freeDeliveryAbove">Free delivery above (€)</label>
+              <input
+                type="number"
+                id="freeDeliveryAbove"
+                name="freeDeliveryAbove"
+                value={formData.freeDeliveryAbove ?? ''}
+                onChange={handleNumberChange}
+                step="0.01"
+                min="0"
+                className="form-input"
+              />
+            </div>
           </div>
+        </div>
 
-          {formData.deliveryEnabled && (
-            <>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="nlDeliveryFee">Netherlands Delivery Fee (€) *</label>
-                  <input
-                    type="number"
-                    id="nlDeliveryFee"
-                    name="nlDeliveryFee"
-                    value={formData.nlDeliveryFee || ''}
-                    onChange={handleNumberChange}
-                    step="0.01"
-                    min="0"
-                    className="form-input"
-                    required
-                  />
-                </div>
+        <div className="form-section">
+          <h3>Pickup and delivery instructions</h3>
+          <div className="form-group">
+            <label htmlFor="deliveryNotes">Delivery notes</label>
+            <textarea
+              id="deliveryNotes"
+              name="deliveryNotes"
+              value={formData.deliveryNotes}
+              onChange={handleChange}
+              rows={4}
+              className="form-input"
+            />
+          </div>
+        </div>
 
-                <div className="form-group">
-                  <label htmlFor="internationalDeliveryFee">
-                    International Delivery Fee (€) *
-                  </label>
-                  <input
-                    type="number"
-                    id="internationalDeliveryFee"
-                    name="internationalDeliveryFee"
-                    value={formData.internationalDeliveryFee || ''}
-                    onChange={handleNumberChange}
-                    step="0.01"
-                    min="0"
-                    className="form-input"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="freeDeliveryThreshold">Free Delivery Threshold (€)</label>
-                  <input
-                    type="number"
-                    id="freeDeliveryThreshold"
-                    name="freeDeliveryThreshold"
-                    value={formData.freeDeliveryThreshold || ''}
-                    onChange={handleNumberChange}
-                    step="0.01"
-                    min="0"
-                    className="form-input"
-                  />
-                  <p className="form-hint">
-                    Leave empty to disable. Customers get free delivery when order exceeds this amount.
-                  </p>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="deliveryNotes">Delivery Notes</label>
-                <textarea
-                  id="deliveryNotes"
-                  name="deliveryNotes"
-                  value={formData.deliveryNotes}
-                  onChange={handleChange}
-                  placeholder="E.g., 'Delivery typically takes 2-3 business days. No weekend delivery.'"
-                  rows={4}
-                  className="form-input"
+        <div className="form-section">
+          <h3>Supported countries</h3>
+          <div className="countries-grid">
+            {deliveryCountries.map((country) => (
+              <label key={country.code} className="country-checkbox">
+                <input
+                  type="checkbox"
+                  checked={formData.supportedDeliveryCountries.includes(country.code)}
+                  onChange={() => handleCountryToggle(country.code)}
                 />
-              </div>
-
-              <div className="form-group">
-                <label>Supported Delivery Countries</label>
-                <div className="countries-grid">
-                  {countries.map((country) => (
-                    <label key={country.code} className="country-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={formData.supportedCountries?.includes(country.code) || false}
-                        onChange={() => handleCountryToggle(country.code)}
-                      />
-                      {country.name}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+                {country.name}
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="form-actions">
           <button type="submit" disabled={saving} className="button button--primary">
-            {saving ? 'Saving...' : 'Save Settings'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/seller')}
-            className="button button--secondary"
-          >
-            Cancel
+            {saving ? 'Saving...' : 'Save changes'}
           </button>
         </div>
       </form>
-
-      <div className="delivery-info-box">
-        <h4>💡 Pricing Tips</h4>
-        <ul>
-          <li>
-            <strong>Netherlands Fee:</strong> Typically €3-5 for local delivery
-          </li>
-          <li>
-            <strong>International Fee:</strong> Higher for neighboring countries due to distance
-          </li>
-          <li>
-            <strong>Free Delivery:</strong> Encourage larger orders by offering free delivery over a
-            threshold
-          </li>
-          <li>
-            <strong>Flat Rate:</strong> Both fees are flat-rate; GuideWisey does not charge
-            percentage-based fees
-          </li>
-        </ul>
-      </div>
-    </div>
+    </section>
   )
 }

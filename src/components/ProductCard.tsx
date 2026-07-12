@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCart } from '../cart/CartContext'
 import type { Product } from '../types/marketplace'
@@ -9,7 +9,9 @@ export function ProductCard({ product }: { product: Product }) {
   const { t } = useTranslation()
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
+  const location = useLocation()
   const href = shopPath(product.shopSlug, `/products/${product.id}`)
+  const returnTo = `${location.pathname}${location.search}${location.hash}`
   const handleAdd = () => {
     addItem(product)
     setAdded(true)
@@ -18,14 +20,21 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <article className="product-card">
-      <Link to={href} className="product-card__image-link" aria-label={`View ${product.name}`}>
+      <Link
+        to={href}
+        state={{ returnTo }}
+        className="product-card__image-link"
+        aria-label={`View ${product.name}`}
+      >
         <img src={product.images[0]} alt={product.name} loading="lazy" />
         {product.featured && <span className="product-card__badge">Featured</span>}
       </Link>
       <div className="product-card__body">
         <p className="product-card__category">{product.category}</p>
         <h3>
-          <Link to={href}>{product.name}</Link>
+          <Link to={href} state={{ returnTo }}>
+            {product.name}
+          </Link>
         </h3>
         <div className="product-card__footer">
           <strong>{formatPrice(product.price, product.currency)}</strong>

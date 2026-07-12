@@ -8,9 +8,9 @@ export function ShopHero({ shop }: { shop: Shop }) {
       <div className="shop-hero__content">
         <img className="shop-hero__logo" src={shop.logoUrl} alt={`${shop.name} logo`} />
         <div>
-          <p className="eyebrow">{shop.location}</p>
+          <p className="eyebrow">{shop.shopType || shop.location}</p>
           <h1>{shop.name}</h1>
-          <p className="shop-hero__tagline">{shop.tagline}</p>
+          <p className="shop-hero__tagline">{shop.shortDescription || shop.tagline}</p>
           <p className="shop-hero__description">{shop.description}</p>
         </div>
       </div>

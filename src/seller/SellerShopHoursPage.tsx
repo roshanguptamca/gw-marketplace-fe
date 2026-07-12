@@ -1,50 +1,66 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
+import { marketplaceService } from '../services/marketplaceService'
+import type { OpeningHour } from '../types/marketplace'
 
-interface OpeningHour {
-  dayOfWeek: number // 0 = Sunday, 6 = Saturday
-  isClosed: boolean
-  openTime?: string
-  closeTime?: string
+const dayLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+function buildDefaultHours(): OpeningHour[] {
+  return dayLabels.map((_, dayOfWeek) => ({
+    dayOfWeek,
+    isClosed: dayOfWeek === 0,
+    openTime: dayOfWeek === 0 ? undefined : '10:00',
+    closeTime: dayOfWeek === 0 ? undefined : '18:00',
+  }))
 }
 
 export function SellerShopHoursPage() {
-  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [hours, setHours] = useState<OpeningHour[]>([
-    { dayOfWeek: 0, isClosed: false, openTime: '10:00', closeTime: '18:00' },
-    { dayOfWeek: 1, isClosed: false, openTime: '10:00', closeTime: '18:00' },
-    { dayOfWeek: 2, isClosed: false, openTime: '10:00', closeTime: '18:00' },
-    { dayOfWeek: 3, isClosed: false, openTime: '10:00', closeTime: '18:00' },
-    { dayOfWeek: 4, isClosed: false, openTime: '10:00', closeTime: '18:00' },
-    { dayOfWeek: 5, isClosed: false, openTime: '10:00', closeTime: '18:00' },
-    { dayOfWeek: 6, isClosed: true, openTime: '', closeTime: '' },
-  ])
+  const [error, setError] = useState<string | null>(null)
+  const [hours, setHours] = useState<OpeningHour[]>(buildDefaultHours())
 
   useEffect(() => {
-    setLoading(false)
-    // TODO: Load hours from API
+    const load = async () => {
+      try {
+        const shop = await marketplaceService.getSellerShop()
+        setHours(shop.openingHours && shop.openingHours.length > 0 ? shop.openingHours : buildDefaultHours())
+      } catch {
+        setError('Failed to load opening hours.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void load()
   }, [])
 
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-
-  const handleDayChange = (index: number, field: keyof OpeningHour, value: any) => {
-    const updated = [...hours]
-    updated[index] = { ...updated[index], [field]: value }
-    setHours(updated)
+  const updateHour = (index: number, field: keyof OpeningHour, value: string | boolean) => {
+    setHours((current) =>
+      current.map((hour, hourIndex) => (hourIndex === index ? { ...hour, [field]: value } : hour)),
+    )
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
+    setError(null)
+    setSuccess(false)
 
     try {
-      // TODO: Save to API
+      await marketplaceService.updateSellerShop({
+        opening_hours: hours.map((hour) => ({
+          day_of_week: hour.dayOfWeek,
+          is_closed: hour.isClosed,
+          open_time: hour.openTime,
+          close_time: hour.closeTime,
+        })),
+      })
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
+    } catch {
+      setError('Failed to save opening hours.')
     } finally {
       setSaving(false)
     }
@@ -53,46 +69,48 @@ export function SellerShopHoursPage() {
   if (loading) return <LoadingState label="Loading opening hours" />
 
   return (
-    <div>
+    <section>
       <div className="seller-page-header">
-        <h2>Opening Hours</h2>
-        <p className="muted">Set your shop opening hours for each day of the week</p>
+        <div>
+          <p className="eyebrow">Shop Configuration</p>
+          <h2>Opening Hours</h2>
+          <p className="muted">Set your shop opening hours for each day of the week.</p>
+        </div>
       </div>
 
+      {error && <div className="alert alert--error">{error}</div>}
       {success && <div className="alert alert--success">✓ Opening hours saved successfully</div>}
 
-      <form onSubmit={handleSubmit} className="seller-form">
+      <form onSubmit={handleSubmit} className="seller-form seller-form--stacked">
         <div className="form-section">
           <div className="opening-hours-table">
             {hours.map((hour, index) => (
-              <div key={index} className="opening-hour-row">
+              <div key={hour.dayOfWeek} className="opening-hour-row">
                 <div className="day-label">
-                  <label>{days[hour.dayOfWeek]}</label>
+                  <label>{dayLabels[hour.dayOfWeek]}</label>
                 </div>
-
                 <div className="time-inputs">
                   <label className="checkbox-inline">
                     <input
                       type="checkbox"
                       checked={hour.isClosed}
-                      onChange={(e) => handleDayChange(index, 'isClosed', e.target.checked)}
+                      onChange={(event) => updateHour(index, 'isClosed', event.target.checked)}
                     />
                     Closed
                   </label>
-
                   {!hour.isClosed && (
                     <>
                       <input
                         type="time"
                         value={hour.openTime || '10:00'}
-                        onChange={(e) => handleDayChange(index, 'openTime', e.target.value)}
+                        onChange={(event) => updateHour(index, 'openTime', event.target.value)}
                         className="time-input"
                       />
                       <span className="time-separator">to</span>
                       <input
                         type="time"
                         value={hour.closeTime || '18:00'}
-                        onChange={(e) => handleDayChange(index, 'closeTime', e.target.value)}
+                        onChange={(event) => updateHour(index, 'closeTime', event.target.value)}
                         className="time-input"
                       />
                     </>
@@ -105,25 +123,15 @@ export function SellerShopHoursPage() {
 
         <div className="form-actions">
           <button type="submit" disabled={saving} className="button button--primary">
-            {saving ? 'Saving...' : 'Save Hours'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/seller')}
-            className="button button--secondary"
-          >
-            Cancel
+            {saving ? 'Saving...' : 'Save hours'}
           </button>
         </div>
       </form>
 
       <div className="info-box">
-        <h4>💡 Tips</h4>
-        <p>
-          Opening hours are displayed to customers on your public shop page. They help customers
-          know when pickup or delivery is available.
-        </p>
+        <h4>Opening hours are shown on the public shop page.</h4>
+        <p>Customers use this information to know when pickup or delivery support is available.</p>
       </div>
-    </div>
+    </section>
   )
 }

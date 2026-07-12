@@ -1,35 +1,26 @@
 import { useEffect, useState } from 'react'
 import { LoadingState } from '../components/LoadingState'
-
-interface ShopInfo {
-  slug: string
-  name: string
-}
+import { marketplaceService } from '../services/marketplaceService'
+import type { Shop } from '../types/marketplace'
 
 export function SellerShopPreviewPage() {
   const [loading, setLoading] = useState(true)
-  const [shop, setShop] = useState<ShopInfo | null>(null)
+  const [shop, setShop] = useState<Shop | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadShop = async () => {
       try {
-        setLoading(true)
-        const response = await fetch('/api/seller/shop/')
-        if (!response.ok) throw new Error('Failed to load shop')
-        const data = await response.json()
-        setShop({
-          slug: data.slug,
-          name: data.name,
-        })
-      } catch (err) {
+        const data = await marketplaceService.getSellerShop()
+        setShop(data)
+      } catch {
         setError('Failed to load shop information.')
       } finally {
         setLoading(false)
       }
     }
 
-    loadShop()
+    void loadShop()
   }, [])
 
   if (loading) return <LoadingState label="Loading shop information" />
@@ -48,71 +39,49 @@ export function SellerShopPreviewPage() {
   const publicShopUrl = `/shop/${shop.slug}`
 
   return (
-    <div>
+    <section>
       <div className="seller-page-header">
-        <h2>Public Shop Preview</h2>
-        <p className="muted">View how your shop appears to customers</p>
-      </div>
-
-      <div className="form-section" style={{ marginBottom: '20px' }}>
-        <div className="preview-info">
-          <h3>Your Public Shop</h3>
-          <p className="form-hint">Shop Name: {shop.name}</p>
-          <p className="form-hint">URL: {publicShopUrl}</p>
-
-          <div style={{ marginTop: '24px' }}>
-            <a href={publicShopUrl} className="button button--primary" target="_blank" rel="noopener noreferrer">
-              View Public Shop →
-            </a>
-            <p className="form-hint" style={{ marginTop: '12px' }}>
-              Opens in a new tab
-            </p>
-          </div>
+        <div>
+          <p className="eyebrow">Shop Configuration</p>
+          <h2>Public Shop Preview</h2>
+          <p className="muted">View how your shop appears to customers.</p>
         </div>
       </div>
 
-      <div className="form-section">
-        <h3>Share Your Shop</h3>
-        <p>
-          Share your public shop URL with customers to start receiving orders on GuideWisey
-          marketplace.
-        </p>
+      <div className="seller-preview-card">
+        <div>
+          <p className="form-hint">Shop name: {shop.name}</p>
+          <p className="form-hint">Public URL: {publicShopUrl}</p>
+        </div>
 
-        <div className="share-section">
-          <div className="share-url">
-            <input
-              type="text"
-              readOnly
-              value={`${window.location.origin}${publicShopUrl}`}
-              className="form-input"
-            />
-            <button
-              className="button button--secondary"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  `${window.location.origin}${publicShopUrl}`,
-                )
-                alert('URL copied to clipboard!')
-              }}
-            >
-              Copy URL
-            </button>
-          </div>
+        <div className="seller-preview-actions">
+          <a
+            href={publicShopUrl}
+            className="button button--primary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View Public Shop
+          </a>
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={() => navigator.clipboard.writeText(`${window.location.origin}${publicShopUrl}`)}
+          >
+            Copy URL
+          </button>
         </div>
       </div>
 
       <div className="info-box">
-        <h4>✨ Checklist</h4>
-        <p>Before sharing your shop, make sure you have completed:</p>
+        <h4>Pre-launch checklist</h4>
         <ul>
-          <li>✓ Shop Details (name, description, location)</li>
-          <li>✓ Logo & Banner images</li>
-          <li>✓ Contact Information</li>
-          <li>✓ At least one product listed</li>
-          <li>✓ Delivery or Pickup configuration</li>
-          <li>✓ Opening Hours</li>
+          <li>Shop details are complete</li>
+          <li>Logo and banner are uploaded</li>
+          <li>Opening hours are published</li>
+          <li>Delivery and pickup settings are saved</li>
         </ul>
       </div>
-    </div>
+    </section>
   )
 }

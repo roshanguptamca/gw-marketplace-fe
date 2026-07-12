@@ -47,6 +47,7 @@ export function MarketplaceHomePage() {
   }
 
   const isSearchActive = searchResult !== null || searchError
+  const shopReturnState = { returnTo: '/#shops' }
 
   return (
     <main>
@@ -97,7 +98,7 @@ export function MarketplaceHomePage() {
                 ) : (
                   <div className="shop-grid">
                     {searchResult.shops.map((shop) => (
-                      <Link className="shop-tile" to={`/shop/${shop.slug}`} key={shop.id}>
+                      <Link className="shop-tile" to={`/shop/${shop.slug}`} state={shopReturnState} key={shop.id}>
                         <img src={shop.bannerUrl} alt="" />
                         <div className="shop-tile__body">
                           <img src={shop.logoUrl} alt={`${shop.name} logo`} />
@@ -139,7 +140,7 @@ export function MarketplaceHomePage() {
             {shops && shops.length > 0 && (
               <div className="shop-grid">
                 {shops.map((shop) => (
-                  <Link className="shop-tile" to={`/shop/${shop.slug}`} key={shop.id}>
+                  <Link className="shop-tile" to={`/shop/${shop.slug}`} state={shopReturnState} key={shop.id}>
                     <img src={shop.bannerUrl} alt="" />
                     <div className="shop-tile__body">
                       <img src={shop.logoUrl} alt={`${shop.name} logo`} />
