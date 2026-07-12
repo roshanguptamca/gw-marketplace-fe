@@ -25,6 +25,7 @@ import { SellerCouponsPage } from './seller/SellerCouponsPage'
 import { SellerCampaignsPage } from './seller/SellerCampaignsPage'
 import { SellerSettingsPage } from './seller/SellerSettingsPage'
 import { SellerPlaceholderPage } from './seller/SellerPlaceholderPage'
+import { SellerCategoriesPage } from './seller/SellerCategoriesPage'
 import { SellerShopDetailsPage } from './seller/SellerShopDetailsPage'
 import { SellerShopLogoBannerPage } from './seller/SellerShopLogoBannerPage'
 import { SellerShopContactPage } from './seller/SellerShopContactPage'
@@ -109,6 +110,7 @@ export function App() {
                   <Route path="products" element={<SellerProductsPage />} />
                   <Route path="products/new" element={<SellerProductFormPage />} />
                   <Route path="products/:id/edit" element={<SellerProductFormPage />} />
+                  <Route path="categories" element={<SellerCategoriesPage />} />
                   <Route path="orders" element={<SellerOrdersPage />} />
                   <Route
                     path="orders/:id"

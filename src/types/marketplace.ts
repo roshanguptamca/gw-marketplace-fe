@@ -127,6 +127,11 @@ export interface SellerCategory {
   is_active: boolean
 }
 
+export interface SellerCategoryInput {
+  name: string
+  is_active: boolean
+}
+
 export interface SellerProductImage {
   id: number
   product: number

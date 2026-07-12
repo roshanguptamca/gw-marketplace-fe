@@ -15,6 +15,7 @@ import type {
   OrderRequest,
   Product,
   SellerCategory,
+  SellerCategoryInput,
   SellerDashboard,
   SellerOrder,
   SellerProduct,
@@ -475,6 +476,18 @@ export const marketplaceService = {
   // gw-frontend seller product form which posts multipart/form-data so the
   // main image file can be uploaded in the same request.
   getSellerCategories: () => apiRequest<SellerCategory[]>('/seller/categories/'),
+  createSellerCategory: (data: SellerCategoryInput) =>
+    apiRequest<SellerCategory>('/seller/categories/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateSellerCategory: (id: number, data: Partial<SellerCategoryInput>) =>
+    apiRequest<SellerCategory>(`/seller/categories/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  deleteSellerCategory: (id: number) =>
+    apiRequest<void>(`/seller/categories/${id}/`, { method: 'DELETE' }),
   getSellerProduct: (id: number) => apiRequest<SellerProduct>(`/seller/products/${id}/`),
   createSellerProductForm: (formData: FormData) =>
     apiRequest<SellerProduct>('/seller/products/', { method: 'POST', body: formData }),

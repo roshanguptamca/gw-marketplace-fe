@@ -6,6 +6,7 @@ import { marketplaceService, type ApiProduct } from '../services/marketplaceServ
 import { renderPage } from '../test/renderPage'
 import type { Campaign, Coupon, SellerCategory, SellerProduct } from '../types/marketplace'
 import { SellerCampaignsPage } from './SellerCampaignsPage'
+import { SellerCategoriesPage } from './SellerCategoriesPage'
 import { SellerCouponsPage } from './SellerCouponsPage'
 import { SellerDashboardPage } from './SellerDashboardPage'
 import { SellerLayout } from './SellerLayout'
@@ -36,6 +37,9 @@ vi.mock('../services/marketplaceService', () => ({
     updateSellerProduct: vi.fn(),
     deleteSellerProduct: vi.fn(),
     getSellerCategories: vi.fn(),
+    createSellerCategory: vi.fn(),
+    updateSellerCategory: vi.fn(),
+    deleteSellerCategory: vi.fn(),
     getSellerProduct: vi.fn(),
     createSellerProductForm: vi.fn(),
     updateSellerProductForm: vi.fn(),
@@ -310,6 +314,9 @@ describe('seller portal pages', () => {
     })
     service.deleteSellerProduct.mockResolvedValue(undefined)
     service.getSellerCategories.mockResolvedValue([category])
+    service.createSellerCategory.mockResolvedValue(category)
+    service.updateSellerCategory.mockResolvedValue(category)
+    service.deleteSellerCategory.mockResolvedValue(undefined)
     service.getSellerProduct.mockResolvedValue(sellerProduct)
     service.createSellerProductForm.mockResolvedValue(sellerProduct)
     service.updateSellerProductForm.mockResolvedValue(sellerProduct)
@@ -438,6 +445,17 @@ describe('seller portal pages', () => {
     expect(screen.getByRole('heading', { name: 'Logo & Banner' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Contact Information' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Public Shop Preview' })).toBeInTheDocument()
+  })
+
+  it('renders and manages categories', async () => {
+    renderPage(<SellerCategoriesPage />)
+    expect(await screen.findByRole('heading', { name: 'Categories' })).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Name'), 'Desserts')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    await waitFor(() => expect(service.createSellerCategory).toHaveBeenCalledWith({
+      name: 'Desserts',
+      is_active: true,
+    }))
   })
 
   it('creates a new product via the form', async () => {
