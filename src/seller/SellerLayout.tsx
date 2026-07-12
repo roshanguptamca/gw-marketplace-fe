@@ -6,6 +6,7 @@ export function SellerLayout() {
       <aside className="seller-nav">
         <p className="eyebrow">Seller portal</p>
         <h1>Manage shop</h1>
+        <p className="seller-nav__lead">Products, orders, shop settings, and storefront controls.</p>
         <nav aria-label="Seller navigation">
           <div className="seller-nav-section">
             <p className="seller-nav-section-title">Dashboard</p>

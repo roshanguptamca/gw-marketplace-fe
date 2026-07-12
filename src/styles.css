@@ -1878,16 +1878,16 @@ nav {
 }
 
 .seller-shell {
-  padding-block: 64px;
+  padding-block: 20px 56px;
   display: grid;
-  gap: 36px;
+  gap: 18px;
 }
 
 .seller-nav {
-  padding: 20px;
+  padding: 16px;
   border: 1px solid var(--line);
   border-radius: 18px;
-  background: rgba(15, 23, 42, 0.68);
+  background: rgba(15, 23, 42, 0.72);
   backdrop-filter: blur(18px);
 }
 
@@ -1897,44 +1897,55 @@ nav {
 }
 
 .seller-nav h1 {
-  margin-bottom: 20px;
-  font-size: 2rem;
-  line-height: 1.1;
+  margin-bottom: 8px;
+  font-size: clamp(1.35rem, 4vw, 1.8rem);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.seller-nav__lead {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .seller-nav nav {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .seller-nav-section {
   display: grid;
   gap: 8px;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.03);
 }
 
 .seller-nav-section-title {
-  font-size: 0.75rem;
+  display: block;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
-  padding: 12px 16px 8px;
+  padding: 0 2px 2px;
   margin: 0;
   opacity: 0.7;
+  white-space: nowrap;
 }
 
 .seller-nav nav a {
   display: block;
   width: 100%;
-  padding: 12px 14px;
+  padding: 11px 12px;
   border-radius: 10px;
   color: var(--muted);
   font-weight: 500;
   transition: all 0.2s ease;
+  line-height: 1.2;
 }
 
 .seller-nav nav a:hover {
@@ -1951,7 +1962,7 @@ nav {
 
 .seller-content {
   min-width: 0;
-  padding: clamp(22px, 4vw, 42px);
+  padding: clamp(20px, 4vw, 36px);
   border: 1px solid var(--line);
   border-radius: 18px;
   background: rgba(15, 23, 42, 0.72);
@@ -2683,13 +2694,35 @@ nav {
 
 @media (min-width: 800px) {
   .seller-shell {
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 24px;
   }
 
   .seller-nav {
     position: sticky;
     top: 88px;
     align-self: start;
+    padding: 20px;
+  }
+
+  .seller-nav h1 {
+    font-size: 2rem;
+  }
+
+  .seller-nav__lead {
+    margin-bottom: 18px;
+  }
+
+  .seller-nav nav {
+    gap: 14px;
+  }
+
+  .seller-nav-section {
+    padding: 14px;
+  }
+
+  .seller-nav-section-title {
+    padding-bottom: 4px;
   }
 
   .seller-metrics {
