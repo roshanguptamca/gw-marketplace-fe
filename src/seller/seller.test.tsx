@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -113,6 +113,15 @@ const category: SellerCategory = {
   name: 'Bakery',
   slug: 'bakery',
   is_global: false,
+  is_active: true,
+}
+
+const globalCategory: SellerCategory = {
+  id: 6,
+  shop: null,
+  name: 'General marketplace',
+  slug: 'general-marketplace',
+  is_global: true,
   is_active: true,
 }
 
@@ -314,7 +323,7 @@ describe('seller portal pages', () => {
       deliveryAvailable: false,
     })
     service.deleteSellerProduct.mockResolvedValue(undefined)
-    service.getSellerCategories.mockResolvedValue([category])
+    service.getSellerCategories.mockResolvedValue([category, globalCategory])
     service.createSellerCategory.mockResolvedValue(category)
     service.updateSellerCategory.mockResolvedValue(category)
     service.deleteSellerCategory.mockResolvedValue(undefined)
@@ -325,9 +334,11 @@ describe('seller portal pages', () => {
     service.deleteSellerProductImage.mockResolvedValue(undefined)
     service.getSellerCoupons.mockResolvedValue([coupon])
     service.createSellerCoupon.mockResolvedValue(coupon)
+    service.updateSellerCoupon.mockResolvedValue(coupon)
     service.deleteSellerCoupon.mockResolvedValue(undefined)
     service.getSellerCampaigns.mockResolvedValue([campaign])
     service.createSellerCampaign.mockResolvedValue(campaign)
+    service.updateSellerCampaign.mockResolvedValue(campaign)
     service.deleteSellerCampaign.mockResolvedValue(undefined)
   })
 
@@ -459,12 +470,36 @@ describe('seller portal pages', () => {
   it('renders and manages categories', async () => {
     renderPage(<SellerCategoriesPage />)
     expect(await screen.findByRole('heading', { name: 'Categories' })).toBeInTheDocument()
+    expect(screen.getByText('Bakery')).toBeInTheDocument()
+    expect(screen.getByText('General marketplace')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add category' }))
     await userEvent.type(screen.getByLabelText('Name'), 'Desserts')
-    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create category' }))
     await waitFor(() => expect(service.createSellerCategory).toHaveBeenCalledWith({
       name: 'Desserts',
       is_active: true,
     }))
+
+    const bakeryRow = screen.getByText('Bakery').closest('tr')
+    expect(bakeryRow).not.toBeNull()
+    if (!bakeryRow) return
+
+    await userEvent.click(within(bakeryRow).getByRole('button', { name: 'Edit' }))
+    const bakeryNameInput = within(bakeryRow).getByDisplayValue('Bakery')
+    await userEvent.clear(bakeryNameInput)
+    await userEvent.type(bakeryNameInput, 'Fresh Bakery')
+    await userEvent.click(within(bakeryRow).getByRole('button', { name: 'Save' }))
+    await waitFor(() =>
+      expect(service.updateSellerCategory).toHaveBeenCalledWith(5, {
+        name: 'Fresh Bakery',
+        is_active: true,
+      }),
+    )
+
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await userEvent.click(within(bakeryRow).getByRole('button', { name: 'Delete' }))
+    await waitFor(() => expect(service.deleteSellerCategory).toHaveBeenCalledWith(5))
   })
 
   it('loads filtered orders from the query string', async () => {
@@ -521,30 +556,88 @@ describe('seller portal pages', () => {
     await waitFor(() => expect(service.deleteSellerProduct).toHaveBeenCalledWith(1))
   })
 
-  it('renders coupons list, creates and deletes coupons', async () => {
+  it('renders coupons list, creates, edits and deletes coupons', async () => {
     renderPage(<SellerCouponsPage />)
     expect(await screen.findByText('SAVE10')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Add coupon' }))
     await userEvent.type(screen.getByLabelText('Code'), 'NEW10')
     await userEvent.type(screen.getByLabelText('Value'), '15')
-    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
-    await waitFor(() => expect(service.createSellerCoupon).toHaveBeenCalled())
+    await userEvent.click(screen.getByRole('button', { name: 'Create coupon' }))
+    await waitFor(() =>
+      expect(service.createSellerCoupon).toHaveBeenCalledWith({
+        code: 'NEW10',
+        discount_type: 'percentage',
+        discount_value: '15',
+        min_order_amount: undefined,
+        usage_limit: null,
+        active: true,
+      }),
+    )
+
+    const couponRow = screen.getByText('SAVE10').closest('tr')
+    expect(couponRow).not.toBeNull()
+    if (!couponRow) return
+
+    await userEvent.click(within(couponRow).getByRole('button', { name: 'Edit' }))
+    const couponCodeInput = screen.getByLabelText('Code')
+    await userEvent.clear(couponCodeInput)
+    await userEvent.type(couponCodeInput, 'SAVE20')
+    await userEvent.click(screen.getByRole('button', { name: 'Save coupon' }))
+    await waitFor(() =>
+      expect(service.updateSellerCoupon).toHaveBeenCalledWith(1, {
+        code: 'SAVE20',
+        discount_type: 'percentage',
+        discount_value: '10',
+        min_order_amount: '0',
+        usage_limit: null,
+        active: true,
+      }),
+    )
 
     vi.spyOn(window, 'confirm').mockReturnValue(true)
-    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await userEvent.click(within(couponRow).getByRole('button', { name: 'Delete' }))
     await waitFor(() => expect(service.deleteSellerCoupon).toHaveBeenCalledWith(1))
   })
 
-  it('renders campaigns list, creates and deletes campaigns', async () => {
+  it('renders campaigns list, creates, edits and deletes campaigns', async () => {
     renderPage(<SellerCampaignsPage />)
     expect(await screen.findByText('Summer Sale')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Add campaign' }))
     await userEvent.type(screen.getByLabelText('Title'), 'Winter Sale')
+    await userEvent.type(screen.getByLabelText('Description'), 'Winter discounts')
     await userEvent.type(screen.getByLabelText('Starts'), '2026-02-01T00:00')
     await userEvent.type(screen.getByLabelText('Ends'), '2026-02-15T00:00')
-    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
-    await waitFor(() => expect(service.createSellerCampaign).toHaveBeenCalled())
+    await userEvent.click(screen.getByRole('button', { name: 'Create campaign' }))
+    await waitFor(() =>
+      expect(service.createSellerCampaign).toHaveBeenCalledWith({
+        title: 'Winter Sale',
+        description: 'Winter discounts',
+        starts_at: '2026-02-01T00:00',
+        ends_at: '2026-02-15T00:00',
+        active: true,
+      }),
+    )
+
+    const campaignRow = screen.getByText('Summer Sale').closest('tr')
+    expect(campaignRow).not.toBeNull()
+    if (!campaignRow) return
+
+    await userEvent.click(within(campaignRow).getByRole('button', { name: 'Edit' }))
+    await userEvent.clear(screen.getByLabelText('Title'))
+    await userEvent.type(screen.getByLabelText('Title'), 'Spring Sale')
+    await userEvent.click(screen.getByRole('button', { name: 'Save campaign' }))
+    await waitFor(() =>
+      expect(service.updateSellerCampaign).toHaveBeenCalledWith(1, {
+        title: 'Spring Sale',
+        description: 'Big discounts',
+        starts_at: '2026-01-01T00:00',
+        ends_at: '2026-01-31T00:00',
+        active: true,
+      }),
+    )
 
     vi.spyOn(window, 'confirm').mockReturnValue(true)
-    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await userEvent.click(within(campaignRow).getByRole('button', { name: 'Delete' }))
     await waitFor(() => expect(service.deleteSellerCampaign).toHaveBeenCalledWith(1))
   })
 })
