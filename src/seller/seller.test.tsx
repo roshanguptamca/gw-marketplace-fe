@@ -145,6 +145,7 @@ describe('seller portal pages', () => {
     service.getSellerDashboard.mockResolvedValue({
       total_products: 3,
       active_products: 2,
+      total_orders: 6,
       pending_orders: 1,
       completed_orders: 4,
       today_sales: '10.00',
@@ -348,6 +349,14 @@ describe('seller portal pages', () => {
     const first = renderPage(<SellerDashboardPage />)
     expect(await screen.findByText('€50.00')).toBeInTheDocument()
     expect(screen.getByText('GW-9')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /pending orders/i })).toHaveAttribute(
+      'href',
+      '/seller/orders?status=pending',
+    )
+    expect(screen.getByRole('link', { name: /total orders/i })).toHaveAttribute(
+      'href',
+      '/seller/orders',
+    )
     first.unmount()
     service.getSellerDashboard.mockRejectedValueOnce(new Error('offline'))
     renderPage(<SellerDashboardPage />)
@@ -456,6 +465,22 @@ describe('seller portal pages', () => {
       name: 'Desserts',
       is_active: true,
     }))
+  })
+
+  it('loads filtered orders from the query string', async () => {
+    renderPage(<SellerOrdersPage />, '/seller/orders?status=pending&q=GW')
+    await screen.findByRole('heading', { name: 'Orders' })
+    await waitFor(() =>
+      expect(service.getSellerOrders).toHaveBeenCalledWith({ q: 'GW', status: 'pending' }),
+    )
+  })
+
+  it('loads filtered products from the query string', async () => {
+    renderPage(<SellerProductsPage />, '/seller/products?status=active&q=Seller')
+    await screen.findByRole('heading', { name: 'Products' })
+    await waitFor(() =>
+      expect(service.getSellerProducts).toHaveBeenCalledWith({ q: 'Seller', status: 'active' }),
+    )
   })
 
   it('creates a new product via the form', async () => {

@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
 import type { Shop } from '../types/marketplace'
-import { getShopBannerUrl, getShopLogoUrl } from '../utils/shopImages'
+import {
+  getShopBannerUrl,
+  getShopLogoUrl,
+  handleShopBannerError,
+  handleShopLogoError,
+} from '../utils/shopImages'
 
 type UploadTarget = 'logo' | 'banner'
 
@@ -106,6 +111,7 @@ export function SellerShopLogoBannerPage() {
               <img
                 src={getShopLogoUrl(shop.logoUrl)}
                 alt={shop.name ? `${shop.name} logo` : 'Shop logo'}
+                onError={handleShopLogoError}
               />
             </div>
             <label className="upload-button">
@@ -140,6 +146,7 @@ export function SellerShopLogoBannerPage() {
               <img
                 src={getShopBannerUrl(shop.bannerUrl)}
                 alt={shop.name ? `${shop.name} banner` : 'Shop banner'}
+                onError={handleShopBannerError}
               />
             </div>
             <label className="upload-button">

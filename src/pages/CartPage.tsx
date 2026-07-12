@@ -4,6 +4,7 @@ import { groupItemsByShop } from '../cart/groupByShop'
 import { useShopsForItems } from '../cart/useShopsForItems'
 import { EmptyState } from '../components/EmptyState'
 import { continueShoppingPath, formatPrice } from '../utils/shopLinks'
+import { getFirstProductImageUrl, handleProductImageError } from '../utils/productImages'
 
 export function CartPage() {
   const { items, subtotal, updateQuantity, removeItem } = useCart()
@@ -53,7 +54,11 @@ export function CartPage() {
                 )}
                 {group.items.map(({ product, quantity }) => (
                   <article className="cart-item" key={product.id}>
-                    <img src={product.images[0]} alt={product.name} />
+                    <img
+                      src={getFirstProductImageUrl(product.images)}
+                      alt={product.name}
+                      onError={handleProductImageError}
+                    />
                     <div className="cart-item__details">
                       <p className="eyebrow">{shop?.name ?? product.shopSlug}</p>
                       <h2>{product.name}</h2>

@@ -10,6 +10,7 @@ import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
 import type { OrderConfirmation, OrderRequest, Shop } from '../types/marketplace'
 import { continueShoppingPath, formatPrice } from '../utils/shopLinks'
+import { getFirstProductImageUrl, handleProductImageError } from '../utils/productImages'
 
 interface CheckoutFields {
   fullName: string
@@ -551,7 +552,11 @@ export function CheckoutPage() {
                 )}
                 {group.items.map(({ product, quantity }) => (
                   <div className="checkout-line" key={product.id}>
-                    <img src={product.images[0]} alt="" />
+                    <img
+                      src={getFirstProductImageUrl(product.images)}
+                      alt=""
+                      onError={handleProductImageError}
+                    />
                     <span>
                       <strong>{product.name}</strong>
                       {quantity} × {formatPrice(product.price, product.currency)}

@@ -1,5 +1,10 @@
 import type { Shop } from '../types/marketplace'
-import { getShopBannerUrl, getShopLogoUrl } from '../utils/shopImages'
+import {
+  getShopBannerUrl,
+  getShopLogoUrl,
+  handleShopBannerError,
+  handleShopLogoError,
+} from '../utils/shopImages'
 
 export function ShopHero({
   shop,
@@ -10,10 +15,20 @@ export function ShopHero({
 }) {
   return (
     <section className="shop-hero">
-      <img className="shop-hero__banner" src={getShopBannerUrl(shop.bannerUrl)} alt="" />
+      <img
+        className="shop-hero__banner"
+        src={getShopBannerUrl(shop.bannerUrl)}
+        alt=""
+        onError={handleShopBannerError}
+      />
       <div className="shop-hero__overlay" />
       <div className="shop-hero__content">
-        <img className="shop-hero__logo" src={getShopLogoUrl(shop.logoUrl)} alt={`${shop.name} logo`} />
+        <img
+          className="shop-hero__logo"
+          src={getShopLogoUrl(shop.logoUrl)}
+          alt={`${shop.name} logo`}
+          onError={handleShopLogoError}
+        />
         <div className="shop-hero__copy">
           <p className="eyebrow">{shop.shopType || shop.location}</p>
           <h1>{shop.name}</h1>

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
 import type { SellerCategory, SellerProduct, SellerProductImage } from '../types/marketplace'
+import { handleProductImageError } from '../utils/productImages'
 
 interface ProductFormState {
   name: string
@@ -315,7 +316,7 @@ export function SellerProductFormPage() {
             {images.length === 0 && <p className="inline-error">No gallery images yet.</p>}
             {images.map((image) => (
               <div className="seller-gallery__item" key={image.id}>
-                <img src={image.image_url} alt={image.alt_text} />
+                <img src={image.image_url} alt={image.alt_text} onError={handleProductImageError} />
                 <span>{image.sort_order}</span>
                 <button
                   className="button button--danger"

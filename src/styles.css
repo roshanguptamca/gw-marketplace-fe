@@ -2091,6 +2091,23 @@ nav {
   border-radius: 10px;
 }
 
+.seller-card--link {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  color: inherit;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.seller-card--link:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.08);
+}
+
 .seller-card span {
   display: block;
   margin-bottom: 8px;
@@ -2099,6 +2116,28 @@ nav {
 
 .seller-card strong {
   font-size: 1.8rem;
+}
+
+.seller-card--link span {
+  margin-bottom: 0;
+}
+
+.seller-card__action {
+  color: var(--lime) !important;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.seller-toolbar {
+  display: grid;
+  gap: 14px;
+  margin: 18px 0 20px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.36);
 }
 
 .seller-table-wrap {
@@ -2707,6 +2746,11 @@ nav {
 @media (min-width: 640px) {
   .seller-form-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .seller-toolbar {
+    grid-template-columns: minmax(0, 1fr) 220px auto;
+    align-items: end;
   }
 }
 

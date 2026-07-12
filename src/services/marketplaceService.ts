@@ -1,5 +1,6 @@
 import { env } from '../config/env'
 import { mockProducts, mockShops } from '../data/mockData'
+import { DEFAULT_PRODUCT_IMAGE_URL } from '../utils/productImages'
 import type {
   AddressLookupResult,
   Campaign,
@@ -102,6 +103,19 @@ interface ApiShopSettings {
 
 interface ApiProductImage {
   image_url: string
+}
+
+export interface SellerListFilters {
+  q?: string
+  status?: string
+}
+
+function buildSellerQuery(filters: SellerListFilters = {}) {
+  const params = new URLSearchParams()
+  if (filters.q) params.set('q', filters.q)
+  if (filters.status) params.set('status', filters.status)
+  const query = params.toString()
+  return query ? `?${query}` : ''
 }
 
 export interface ApiProduct {
@@ -258,7 +272,7 @@ function normalizeShop(shop: ApiShop): Shop {
 export function normalizeProduct(product: ApiProduct, fallbackShopSlug = ''): Product {
   const shop = typeof product.shop === 'object' ? product.shop : null
   const gallery = product.images.map((image) => image.image_url).filter(Boolean)
-  const primary = product.image_url || product.external_image_url
+  const primary = product.image_url || product.external_image_url || DEFAULT_PRODUCT_IMAGE_URL
   return {
     id: String(product.id),
     shopId: shop ? String(shop.id) : undefined,
@@ -427,8 +441,10 @@ export const marketplaceService = {
     }),
 
   getSellerDashboard: () => apiRequest<SellerDashboard>('/seller/dashboard/'),
-  getSellerProducts: () => apiRequest<ApiProduct[]>('/seller/products/'),
-  getSellerOrders: () => apiRequest<SellerOrder[]>('/seller/orders/'),
+  getSellerProducts: (filters: SellerListFilters = {}) =>
+    apiRequest<ApiProduct[]>(`/seller/products/${buildSellerQuery(filters)}`),
+  getSellerOrders: (filters: SellerListFilters = {}) =>
+    apiRequest<SellerOrder[]>(`/seller/orders/${buildSellerQuery(filters)}`),
   updateSellerOrderStatus: (id: number, status: string) =>
     apiRequest<SellerOrder>(`/seller/orders/${id}/status/`, {
       method: 'PATCH',

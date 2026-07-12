@@ -94,6 +94,7 @@ export interface User {
 export interface SellerDashboard {
   total_products: number
   active_products: number
+  total_orders: number
   pending_orders: number
   completed_orders: number
   today_sales: string

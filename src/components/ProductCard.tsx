@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useCart } from '../cart/CartContext'
 import type { Product } from '../types/marketplace'
 import { formatPrice, shopPath } from '../utils/shopLinks'
+import { getFirstProductImageUrl, handleProductImageError } from '../utils/productImages'
 
 export function ProductCard({ product }: { product: Product }) {
   const { t } = useTranslation()
@@ -26,7 +27,12 @@ export function ProductCard({ product }: { product: Product }) {
         className="product-card__image-link"
         aria-label={`View ${product.name}`}
       >
-        <img src={product.images[0]} alt={product.name} loading="lazy" />
+        <img
+          src={getFirstProductImageUrl(product.images)}
+          alt={product.name}
+          loading="lazy"
+          onError={handleProductImageError}
+        />
         {product.featured && <span className="product-card__badge">Featured</span>}
       </Link>
       <div className="product-card__body">

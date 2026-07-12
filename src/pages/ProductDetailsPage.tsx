@@ -7,6 +7,7 @@ import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
 import { formatPrice, shopPath } from '../utils/shopLinks'
+import { getProductImageUrl, handleProductImageError } from '../utils/productImages'
 import { ErrorPage } from './ErrorPage'
 
 export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) {
@@ -55,7 +56,11 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
       <div className="product-detail">
         <div className="gallery">
           <div className="gallery__main">
-            <img src={product.images[selectedImage]} alt={product.name} />
+            <img
+              src={getProductImageUrl(product.images[selectedImage])}
+              alt={product.name}
+              onError={handleProductImageError}
+            />
           </div>
           {product.images.length > 1 && (
             <div className="gallery__thumbs" aria-label="Product images">
@@ -66,7 +71,7 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
                   onClick={() => setSelectedImage(index)}
                   aria-label={`Show image ${index + 1}`}
                 >
-                  <img src={image} alt="" />
+                  <img src={image} alt="" onError={handleProductImageError} />
                 </button>
               ))}
             </div>
