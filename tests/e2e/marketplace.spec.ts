@@ -143,8 +143,8 @@ test('proceeds from cart and submits an order request without payment', async ({
 
 test('switches theme and keeps the preference after reload', async ({ page }) => {
   await page.goto('/')
-  const initialTheme = await page.locator('html').getAttribute('data-theme')
-  const nextTheme = initialTheme === 'dark' ? 'light' : 'dark'
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  const nextTheme = 'light'
   await page.getByRole('button', { name: `Switch to ${nextTheme} mode` }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', nextTheme)
   await page.reload()
