@@ -4,13 +4,10 @@ export type Theme = 'light' | 'dark'
 
 const STORAGE_KEY = 'guidewisey-marketplace-theme'
 
-export function getInitialTheme(
-  storage: Pick<Storage, 'getItem'> = window.localStorage,
-  prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true,
-): Theme {
+export function getInitialTheme(storage: Pick<Storage, 'getItem'> = window.localStorage): Theme {
   const saved = storage.getItem(STORAGE_KEY)
   if (saved === 'light' || saved === 'dark') return saved
-  return prefersDark ? 'dark' : 'light'
+  return 'dark'
 }
 
 export function useTheme() {
