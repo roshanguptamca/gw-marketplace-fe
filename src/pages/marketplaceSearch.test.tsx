@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { marketplaceService } from '../services/marketplaceService'
-import { productFixture, shopFixture } from '../test/fixtures'
+import { productFixture, secondShopFixture, shopFixture } from '../test/fixtures'
 import { renderPage } from '../test/renderPage'
 import { MarketplaceHomePage } from './MarketplaceHomePage'
 
@@ -40,6 +40,8 @@ describe('marketplace search and filters', () => {
     expect(await screen.findByLabelText(/search products or shops/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/filter by category/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/filter by shop/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/filter by country/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/filter by city/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/minimum price/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/maximum price/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/in stock only/i)).toBeInTheDocument()
@@ -63,6 +65,53 @@ describe('marketplace search and filters', () => {
     const shopSelect = await screen.findByLabelText(/filter by shop/i)
     expect(shopSelect).toHaveTextContent('All shops')
     expect(shopSelect).toHaveTextContent('Test Shop')
+  })
+
+  it('limits city options to the selected country and resets an incompatible city', async () => {
+    const user = userEvent.setup()
+    service.getShops.mockResolvedValue([
+      shopFixture,
+      { ...secondShopFixture, country: 'France', location: 'Paris' },
+    ])
+    renderPage(<MarketplaceHomePage />)
+    const country = await screen.findByLabelText(/filter by country/i)
+    const city = screen.getByLabelText(/filter by city/i)
+
+    await user.selectOptions(country, 'France')
+    expect(city).toHaveTextContent('Paris')
+    expect(city).not.toHaveTextContent('Test City')
+    await user.selectOptions(city, 'Paris')
+    await user.selectOptions(country, 'Netherlands')
+    expect(city).toHaveValue('')
+    expect(city).toHaveTextContent('Test City')
+  })
+
+  it('searches with country and city filters', async () => {
+    const user = userEvent.setup()
+    renderPage(<MarketplaceHomePage />)
+    const country = await screen.findByLabelText(/filter by country/i)
+    const city = screen.getByLabelText(/filter by city/i)
+
+    await user.selectOptions(country, 'Netherlands')
+    await user.selectOptions(city, 'Test City')
+    await user.click(screen.getByRole('button', { name: /^search$/i }))
+
+    await waitFor(() =>
+      expect(service.search).toHaveBeenCalledWith(
+        expect.objectContaining({ country: 'Netherlands', city: 'Test City' }),
+      ),
+    )
+  })
+
+  it('restores search filters from the URL', async () => {
+    renderPage(<MarketplaceHomePage />, '/?country=Netherlands&city=Test%20City')
+    expect(await screen.findByLabelText(/filter by country/i)).toHaveValue('Netherlands')
+    expect(screen.getByLabelText(/filter by city/i)).toHaveValue('Test City')
+    await waitFor(() =>
+      expect(service.search).toHaveBeenCalledWith(
+        expect.objectContaining({ country: 'Netherlands', city: 'Test City' }),
+      ),
+    )
   })
 
   it('runs a search and swaps in matching results when the user searches by keyword', async () => {

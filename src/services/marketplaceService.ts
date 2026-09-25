@@ -170,8 +170,7 @@ function normalizeOpeningHours(hours: ApiOpeningHour[] | undefined): OpeningHour
   return hours
     .map((hour) => ({
       dayOfWeek: hour.day_of_week ?? (hour as unknown as { dayOfWeek?: number }).dayOfWeek ?? 0,
-      isClosed:
-        hour.is_closed ?? (hour as unknown as { isClosed?: boolean }).isClosed ?? false,
+      isClosed: hour.is_closed ?? (hour as unknown as { isClosed?: boolean }).isClosed ?? false,
       openTime: hour.open_time ?? (hour as unknown as { openTime?: string }).openTime,
       closeTime: hour.close_time ?? (hour as unknown as { closeTime?: string }).closeTime,
     }))
@@ -204,6 +203,8 @@ function buildSearchQuery(filters: MarketplaceSearchFilters): string {
   if (filters.q) params.set('q', filters.q)
   if (filters.category) params.set('category', filters.category)
   if (filters.shop) params.set('shop', filters.shop)
+  if (filters.country) params.set('country', filters.country)
+  if (filters.city) params.set('city', filters.city)
   if (filters.minPrice) params.set('min_price', filters.minPrice)
   if (filters.maxPrice) params.set('max_price', filters.maxPrice)
   if (filters.inStock) params.set('in_stock', 'true')
@@ -218,6 +219,8 @@ function mockSearch(filters: MarketplaceSearchFilters): MarketplaceSearchResult 
 
   const shops = mockShops.filter((shop) => {
     if (filters.shop && shop.slug !== filters.shop) return false
+    if (filters.country && shop.country !== filters.country) return false
+    if (filters.city && shop.location !== filters.city) return false
     if (q && !shop.name.toLowerCase().includes(q) && !shop.description.toLowerCase().includes(q))
       return false
     return true
@@ -225,6 +228,9 @@ function mockSearch(filters: MarketplaceSearchFilters): MarketplaceSearchResult 
 
   const products = mockProducts.filter((product) => {
     if (filters.shop && product.shopSlug !== filters.shop) return false
+    const productShop = mockShops.find((shop) => shop.slug === product.shopSlug)
+    if (filters.country && productShop?.country !== filters.country) return false
+    if (filters.city && productShop?.location !== filters.city) return false
     if (filters.category && product.category.toLowerCase() !== filters.category.toLowerCase())
       return false
     if (
