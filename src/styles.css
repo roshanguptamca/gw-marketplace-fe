@@ -14,6 +14,10 @@
   --lime: #22d3ee;
   --orange: #a855f7;
   --line: rgba(255, 255, 255, 0.12);
+  --surface-elevated: rgba(15, 23, 42, 0.72);
+  --surface-subtle: rgba(255, 255, 255, 0.03);
+  --interactive-subtle: rgba(99, 102, 241, 0.18);
+  --interactive-active: rgba(99, 102, 241, 0.4);
   color-scheme: dark;
 }
 
@@ -28,6 +32,10 @@
   --lime: #0891b2;
   --orange: #7c3aed;
   --line: rgba(15, 23, 42, 0.12);
+  --surface-elevated: rgba(255, 255, 255, 0.92);
+  --surface-subtle: rgba(99, 102, 241, 0.06);
+  --interactive-subtle: rgba(99, 102, 241, 0.14);
+  --interactive-active: #4f46e5;
   color-scheme: light;
 }
 
@@ -238,7 +246,13 @@ nav {
 }
 
 .button--ghost:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--interactive-subtle);
+}
+
+.button:focus-visible,
+.seller-nav nav a:focus-visible {
+  outline: 3px solid var(--lime);
+  outline-offset: 2px;
 }
 
 .market-hero {
@@ -576,6 +590,20 @@ nav {
 
 .shop-hero__details-button {
   margin-top: 16px;
+  color: white;
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(5, 7, 15, 0.35);
+}
+
+.shop-hero__details-button:hover,
+.shop-hero__details-button:active {
+  color: white;
+  border-color: white;
+  background: rgba(5, 7, 15, 0.58);
+}
+
+.shop-hero__details-button:focus-visible {
+  outline-color: var(--lime);
 }
 
 .shop-intro {
@@ -2018,7 +2046,7 @@ nav {
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 18px;
-  background: rgba(15, 23, 42, 0.72);
+  background: var(--surface-elevated);
   backdrop-filter: blur(18px);
 }
 
@@ -2053,7 +2081,7 @@ nav {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-subtle);
 }
 
 .seller-nav-section-title {
@@ -2074,21 +2102,21 @@ nav {
   width: 100%;
   padding: 11px 12px;
   border-radius: 10px;
-  color: var(--muted);
+  color: var(--ink);
   font-weight: 500;
   transition: all 0.2s ease;
   line-height: 1.2;
 }
 
 .seller-nav nav a:hover {
-  background: rgba(99, 102, 241, 0.12);
-  color: var(--text);
+  background: var(--interactive-subtle);
+  color: var(--ink);
 }
 
 .seller-nav nav a.active {
   color: white;
-  background: rgba(99, 102, 241, 0.4);
-  border-left: 3px solid rgba(99, 102, 241, 0.8);
+  background: var(--interactive-active);
+  border-left: 3px solid var(--lime);
   padding-left: 13px;
 }
 
@@ -2097,7 +2125,7 @@ nav {
   padding: clamp(20px, 4vw, 36px);
   border: 1px solid var(--line);
   border-radius: 18px;
-  background: rgba(15, 23, 42, 0.72);
+  background: var(--surface-elevated);
   backdrop-filter: blur(18px);
 }
 
@@ -3107,8 +3135,7 @@ nav {
 }
 
 :root[data-theme='light'] .user-menu__dropdown > a:hover,
-:root[data-theme='light'] .user-menu__dropdown > button:hover,
-:root[data-theme='light'] .seller-nav nav a.active {
+:root[data-theme='light'] .user-menu__dropdown > button:hover {
   color: #312e81;
   background: rgba(99, 102, 241, 0.12);
 }

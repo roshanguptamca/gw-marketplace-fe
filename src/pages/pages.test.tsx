@@ -87,7 +87,7 @@ describe('marketplace pages', () => {
   })
 
   it('shows shop details in a popup from the banner instead of a full summary block', async () => {
-    renderPage(<ShopStorefrontPage resolvedSlug="test-shop" />)
+    const { container } = renderPage(<ShopStorefrontPage resolvedSlug="test-shop" />)
     const shopHero = await screen.findByRole('heading', { name: 'Test Shop' })
     expect(shopHero).toBeInTheDocument()
     expect(await screen.findByRole('link', { name: /back to all shops/i })).toBeInTheDocument()
@@ -95,9 +95,12 @@ describe('marketplace pages', () => {
       await screen.findByRole('button', { name: 'More details about shop' }),
     ).toBeInTheDocument()
     expect(screen.queryByText('Shop details')).not.toBeInTheDocument()
+    expect(container.querySelector('.shop-hero')).not.toHaveTextContent(shopFixture.country ?? '')
+    expect(container.querySelector('.shop-hero')).not.toHaveTextContent(shopFixture.description)
     await userEvent.click(screen.getByRole('button', { name: 'More details about shop' }))
     expect(await screen.findByRole('dialog', { name: 'Test Shop' })).toBeInTheDocument()
     expect(await screen.findByText(/test city, netherlands/i)).toBeInTheDocument()
+    expect(screen.getAllByText(shopFixture.description)).toHaveLength(1)
     expect(await screen.findByText('Opening hours')).toBeInTheDocument()
   })
 

@@ -8,6 +8,8 @@ export interface MarketplaceSearchFilters {
   q?: string
   category?: string
   shop?: string
+  country?: string
+  city?: string
   minPrice?: string
   maxPrice?: string
   inStock?: boolean

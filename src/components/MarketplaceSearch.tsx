@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Category, MarketplaceSearchFilters, Shop } from '../types/marketplace'
 
 export interface MarketplaceSearchProps {
   categories: Category[]
   shops: Shop[]
+  initialFilters?: MarketplaceSearchFilters
   onSearch: (filters: MarketplaceSearchFilters) => void
   onClear: () => void
   loading?: boolean
@@ -15,22 +16,48 @@ const DEFAULT_MAX_PRICE = '999'
 export function MarketplaceSearch({
   categories,
   shops,
+  initialFilters,
   onSearch,
   onClear,
   loading = false,
 }: MarketplaceSearchProps) {
-  const [q, setQ] = useState('')
-  const [category, setCategory] = useState('')
-  const [shop, setShop] = useState('')
-  const [minPrice, setMinPrice] = useState(DEFAULT_MIN_PRICE)
-  const [maxPrice, setMaxPrice] = useState(DEFAULT_MAX_PRICE)
-  const [inStock, setInStock] = useState(false)
+  const [q, setQ] = useState(initialFilters?.q ?? '')
+  const [category, setCategory] = useState(initialFilters?.category ?? '')
+  const [shop, setShop] = useState(initialFilters?.shop ?? '')
+  const [country, setCountry] = useState(initialFilters?.country ?? '')
+  const [city, setCity] = useState(initialFilters?.city ?? '')
+  const [minPrice, setMinPrice] = useState(initialFilters?.minPrice ?? DEFAULT_MIN_PRICE)
+  const [maxPrice, setMaxPrice] = useState(initialFilters?.maxPrice ?? DEFAULT_MAX_PRICE)
+  const [inStock, setInStock] = useState(initialFilters?.inStock ?? false)
+
+  const countries = [...new Set(shops.map((item) => item.country).filter(Boolean))].sort()
+  const cities = [
+    ...new Set(
+      shops
+        .filter((item) => !country || item.country === country)
+        .map((item) => item.location)
+        .filter(Boolean),
+    ),
+  ].sort()
+
+  useEffect(() => {
+    setQ(initialFilters?.q ?? '')
+    setCategory(initialFilters?.category ?? '')
+    setShop(initialFilters?.shop ?? '')
+    setCountry(initialFilters?.country ?? '')
+    setCity(initialFilters?.city ?? '')
+    setMinPrice(initialFilters?.minPrice ?? DEFAULT_MIN_PRICE)
+    setMaxPrice(initialFilters?.maxPrice ?? DEFAULT_MAX_PRICE)
+    setInStock(initialFilters?.inStock ?? false)
+  }, [initialFilters])
 
   function currentFilters(): MarketplaceSearchFilters {
     return {
       q: q.trim(),
       category,
       shop,
+      ...(country && { country }),
+      ...(city && { city }),
       minPrice: minPrice.trim(),
       maxPrice: maxPrice.trim(),
       inStock,
@@ -42,6 +69,8 @@ export function MarketplaceSearch({
       filters.q ||
       filters.category ||
       filters.shop ||
+      filters.country ||
+      filters.city ||
       (filters.minPrice && filters.minPrice !== DEFAULT_MIN_PRICE) ||
       (filters.maxPrice && filters.maxPrice !== DEFAULT_MAX_PRICE) ||
       filters.inStock,
@@ -61,6 +90,8 @@ export function MarketplaceSearch({
     setQ('')
     setCategory('')
     setShop('')
+    setCountry('')
+    setCity('')
     setMinPrice(DEFAULT_MIN_PRICE)
     setMaxPrice(DEFAULT_MAX_PRICE)
     setInStock(false)
@@ -96,6 +127,41 @@ export function MarketplaceSearch({
               <option key={item.slug} value={item.slug}>
                 {item.name}
                 {item.productCount ? ` (${item.productCount})` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="market-search-field">
+          <span>Country</span>
+          <select
+            value={country}
+            onChange={(event) => {
+              setCountry(event.target.value)
+              setCity('')
+            }}
+            aria-label="Filter by country"
+          >
+            <option value="">All countries</option>
+            {countries.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="market-search-field">
+          <span>City</span>
+          <select
+            value={city}
+            onChange={(event) => setCity(event.target.value)}
+            aria-label="Filter by city"
+          >
+            <option value="">All cities</option>
+            {cities.map((item) => (
+              <option key={item} value={item}>
+                {item}
               </option>
             ))}
           </select>

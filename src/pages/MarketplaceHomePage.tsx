@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
 import { LoadingState } from '../components/LoadingState'
@@ -15,6 +15,7 @@ import {
 } from '../utils/shopImages'
 
 export function MarketplaceHomePage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   useEffect(() => {
     document.title = 'GuideWisey Marketplace | GuideWisey'
   }, [])
@@ -34,11 +35,47 @@ export function MarketplaceHomePage() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchError, setSearchError] = useState(false)
 
-  async function handleSearch(filters: MarketplaceSearchFilters) {
+  const filters: MarketplaceSearchFilters = {
+    q: searchParams.get('q') ?? '',
+    category: searchParams.get('category') ?? '',
+    shop: searchParams.get('shop') ?? '',
+    country: searchParams.get('country') ?? '',
+    city: searchParams.get('city') ?? '',
+    minPrice: searchParams.get('min_price') ?? '0',
+    maxPrice: searchParams.get('max_price') ?? '999',
+    inStock: searchParams.get('in_stock') === 'true',
+  }
+
+  const hasUrlFilters = [...searchParams.keys()].length > 0
+
+  useEffect(() => {
+    if (!hasUrlFilters) return
+    void handleSearch(filters, false)
+    // URL search parameters are the source of truth for saved searches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  async function handleSearch(nextFilters: MarketplaceSearchFilters, updateUrl = true) {
+    if (updateUrl) {
+      const params = new URLSearchParams()
+      if (nextFilters.q) params.set('q', nextFilters.q)
+      if (nextFilters.category) params.set('category', nextFilters.category)
+      if (nextFilters.shop) params.set('shop', nextFilters.shop)
+      if (nextFilters.country) params.set('country', nextFilters.country)
+      if (nextFilters.city) params.set('city', nextFilters.city)
+      if (nextFilters.minPrice && nextFilters.minPrice !== '0') {
+        params.set('min_price', nextFilters.minPrice)
+      }
+      if (nextFilters.maxPrice && nextFilters.maxPrice !== '999') {
+        params.set('max_price', nextFilters.maxPrice)
+      }
+      if (nextFilters.inStock) params.set('in_stock', 'true')
+      setSearchParams(params)
+    }
     setSearchLoading(true)
     setSearchError(false)
     try {
-      const result = await marketplaceService.search(filters)
+      const result = await marketplaceService.search(nextFilters)
       setSearchResult(result)
     } catch {
       setSearchError(true)
@@ -50,6 +87,7 @@ export function MarketplaceHomePage() {
   function handleClear() {
     setSearchResult(null)
     setSearchError(false)
+    setSearchParams({})
   }
 
   const isSearchActive = searchResult !== null || searchError
@@ -77,6 +115,7 @@ export function MarketplaceHomePage() {
         <MarketplaceSearch
           categories={categories ?? []}
           shops={shops ?? []}
+          initialFilters={filters}
           onSearch={(filters) => void handleSearch(filters)}
           onClear={handleClear}
           loading={searchLoading}
@@ -104,7 +143,12 @@ export function MarketplaceHomePage() {
                 ) : (
                   <div className="shop-grid">
                     {searchResult.shops.map((shop) => (
-                      <Link className="shop-tile" to={`/shop/${shop.slug}`} state={shopReturnState} key={shop.id}>
+                      <Link
+                        className="shop-tile"
+                        to={`/shop/${shop.slug}`}
+                        state={shopReturnState}
+                        key={shop.id}
+                      >
                         <img
                           src={getShopBannerUrl(shop.bannerUrl)}
                           alt=""
@@ -154,7 +198,12 @@ export function MarketplaceHomePage() {
             {shops && shops.length > 0 && (
               <div className="shop-grid">
                 {shops.map((shop) => (
-                  <Link className="shop-tile" to={`/shop/${shop.slug}`} state={shopReturnState} key={shop.id}>
+                  <Link
+                    className="shop-tile"
+                    to={`/shop/${shop.slug}`}
+                    state={shopReturnState}
+                    key={shop.id}
+                  >
                     <img
                       src={getShopBannerUrl(shop.bannerUrl)}
                       alt=""

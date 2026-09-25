@@ -17,6 +17,20 @@ test('opens the marketplace landing page', async ({ page }) => {
   await expect(page.getByRole('heading', { name: "Rishi's Kitchen" })).toBeVisible()
 })
 
+test('filters marketplace shops by country and city with URL state', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Filter by country').selectOption('Netherlands')
+  await expect(page.getByLabel('Filter by city')).toContainText('Amsterdam')
+  await page.getByLabel('Filter by city').selectOption('Amsterdam')
+  await page.getByRole('button', { name: 'Search' }).click()
+
+  await expect(page).toHaveURL(/country=Netherlands&city=Amsterdam/)
+  await expect(page.getByRole('heading', { name: "Rishi's Kitchen" })).toBeVisible()
+  await page.reload()
+  await expect(page.getByLabel('Filter by country')).toHaveValue('Netherlands')
+  await expect(page.getByLabel('Filter by city')).toHaveValue('Amsterdam')
+})
+
 test('opens a seller shop through the path fallback', async ({ page }) => {
   await page.goto('/shop/rishikitchen')
   await expect(page.getByRole('heading', { name: "Rishi's Kitchen" })).toBeVisible()

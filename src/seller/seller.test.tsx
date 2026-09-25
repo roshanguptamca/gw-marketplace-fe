@@ -349,6 +349,16 @@ describe('seller portal pages', () => {
     expect(screen.getByText('Campaigns')).toBeInTheDocument()
   })
 
+  it('uses theme-aware seller navigation styles', () => {
+    document.documentElement.dataset.theme = 'light'
+    const { unmount } = renderPage(<SellerLayout />)
+    const navigation = screen.getByRole('navigation', { name: 'Seller navigation' })
+    expect(getComputedStyle(navigation).color).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Overview' })).toBeVisible()
+    unmount()
+    document.documentElement.dataset.theme = 'dark'
+  })
+
   it('renders protected seller route placeholders', () => {
     renderPage(
       <SellerPlaceholderPage eyebrow="Storefront" title="Media" message="Manage seller media." />,
@@ -476,10 +486,12 @@ describe('seller portal pages', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Add category' }))
     await userEvent.type(screen.getByLabelText('Name'), 'Desserts')
     await userEvent.click(screen.getByRole('button', { name: 'Create category' }))
-    await waitFor(() => expect(service.createSellerCategory).toHaveBeenCalledWith({
-      name: 'Desserts',
-      is_active: true,
-    }))
+    await waitFor(() =>
+      expect(service.createSellerCategory).toHaveBeenCalledWith({
+        name: 'Desserts',
+        is_active: true,
+      }),
+    )
 
     const bakeryRow = screen.getByText('Bakery').closest('tr')
     expect(bakeryRow).not.toBeNull()
