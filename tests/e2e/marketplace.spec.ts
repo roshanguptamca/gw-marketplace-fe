@@ -141,6 +141,32 @@ test('proceeds from cart and submits an order request without payment', async ({
   await expect(page.getByText(/no payment was collected/i)).toBeVisible()
 })
 
+test('filters products within the current shop and preserves URL filters on mobile', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/shop/rishikitchen/products?search=garam&category=spices')
+
+  const search = page.getByLabel('Search products in this shop')
+  await expect(search).toHaveValue('garam')
+  await expect(page.getByRole('button', { name: 'Spices' })).toHaveClass(/active/)
+  await expect(page.getByRole('heading', { name: 'House Garam Masala' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Mango & Lime Pickle' })).not.toBeVisible()
+  await expect(page).toHaveURL(/search=garam&category=spices/)
+
+  await page.getByRole('button', { name: 'Clear search' }).click()
+  await expect(search).toHaveValue('')
+  await expect(page).toHaveURL(/category=spices/)
+
+  await page.getByRole('button', { name: 'Reset filters' }).click()
+  await expect(page).toHaveURL('http://localhost:3102/shop/rishikitchen/products')
+  await expect(page.getByRole('heading', { name: 'Mango & Lime Pickle' })).toBeVisible()
+
+  await page.goBack()
+  await expect(page).toHaveURL(/category=spices/)
+  await expect(page.getByRole('button', { name: 'Spices' })).toHaveClass(/active/)
+})
+
 test('switches theme and keeps the preference after reload', async ({ page }) => {
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
