@@ -23,6 +23,7 @@ vi.mock('../services/marketplaceService', () => ({
   marketplaceService: {
     getShops: vi.fn(),
     getShopBySlug: vi.fn(),
+    getShopCategories: vi.fn(),
     getShopProducts: vi.fn(),
     getProductDetails: vi.fn(),
     getProducts: vi.fn(),
@@ -41,6 +42,7 @@ describe('marketplace pages', () => {
   beforeEach(() => {
     service.getShops.mockResolvedValue([shopFixture])
     service.getShopBySlug.mockResolvedValue(shopFixture)
+    service.getShopCategories.mockResolvedValue([{ slug: 'home', name: 'Home', productCount: 1 }])
     service.getShopProducts.mockResolvedValue([productFixture])
     service.getProductDetails.mockResolvedValue(productFixture)
     service.getProducts.mockResolvedValue([productFixture])
@@ -111,14 +113,89 @@ describe('marketplace pages', () => {
 
   it('filters the product listing by category', async () => {
     const other = { ...productFixture, id: 'other', name: 'Other Product', category: 'Other' }
-    service.getShopProducts.mockResolvedValueOnce([productFixture, other])
+    service.getShopCategories.mockResolvedValueOnce([
+      { slug: 'home', name: 'Home', productCount: 1 },
+      { slug: 'other', name: 'Other', productCount: 1 },
+    ])
+    service.getShopProducts.mockImplementation((_slug, filters) =>
+      Promise.resolve(filters?.category === 'other' ? [other] : [productFixture, other]),
+    )
     renderPage(<ProductListingPage resolvedSlug="test-shop" />)
     expect(await screen.findByText('Test Product')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /go to cart/i })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Home' }))
-    expect(screen.queryByText('Other Product')).not.toBeInTheDocument()
+    expect(await screen.findByText('Other Product')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Other' }))
+    await waitFor(() => expect(screen.queryByText('Test Product')).not.toBeInTheDocument())
     await userEvent.click(screen.getByRole('button', { name: 'All' }))
-    expect(screen.getByText('Other Product')).toBeInTheDocument()
+    expect(await screen.findByText('Test Product')).toBeInTheDocument()
+  })
+
+  it('uses URL filters for shop product search and category selection', async () => {
+    service.getShopCategories.mockResolvedValueOnce([
+      { slug: 'home', name: 'Home', productCount: 1 },
+      { slug: 'other', name: 'Other', productCount: 1 },
+    ])
+    renderPage(
+      <ProductListingPage resolvedSlug="test-shop" />,
+      '/shop/test-shop/products?search=test&category=home',
+    )
+
+    expect(await screen.findByText('Test Product')).toBeInTheDocument()
+    expect(screen.getByLabelText('Search products in this shop')).toHaveValue('test')
+    expect(screen.getByRole('button', { name: 'Home' })).toHaveClass('active')
+    expect(service.getShopProducts).toHaveBeenCalledWith('test-shop', {
+      search: 'test',
+      category: 'home',
+    })
+  })
+
+  it('debounces search and clears or resets shop product filters', async () => {
+    service.getShopCategories.mockResolvedValueOnce([
+      { slug: 'home', name: 'Home', productCount: 1 },
+      { slug: 'other', name: 'Other', productCount: 1 },
+    ])
+    renderPage(<ProductListingPage resolvedSlug="test-shop" />)
+    const search = await screen.findByLabelText('Search products in this shop')
+
+    await userEvent.type(search, 'test')
+    await waitFor(() =>
+      expect(service.getShopProducts).toHaveBeenLastCalledWith('test-shop', {
+        search: 'test',
+        category: '',
+      }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Other' }))
+    expect(service.getShopProducts).toHaveBeenLastCalledWith('test-shop', {
+      search: 'test',
+      category: 'other',
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Clear search' }))
+    expect(search).toHaveValue('')
+    await waitFor(() =>
+      expect(service.getShopProducts).toHaveBeenLastCalledWith('test-shop', {
+        search: '',
+        category: 'other',
+      }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Reset filters' }))
+    await waitFor(() =>
+      expect(service.getShopProducts).toHaveBeenLastCalledWith('test-shop', {
+        search: '',
+        category: '',
+      }),
+    )
+  })
+
+  it('shows a filtered empty state with a reset action', async () => {
+    service.getShopProducts.mockResolvedValueOnce([])
+    renderPage(
+      <ProductListingPage resolvedSlug="test-shop" />,
+      '/shop/test-shop/products?search=missing',
+    )
+
+    expect(await screen.findByRole('heading', { name: 'No products found' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reset filters' })).toBeInTheDocument()
   })
 
   it('shows a back-to-shop link on the products listing page', async () => {

@@ -110,10 +110,23 @@ export interface SellerListFilters {
   status?: string
 }
 
+export interface ShopProductFilters {
+  search?: string
+  category?: string
+}
+
 function buildSellerQuery(filters: SellerListFilters = {}) {
   const params = new URLSearchParams()
   if (filters.q) params.set('q', filters.q)
   if (filters.status) params.set('status', filters.status)
+  const query = params.toString()
+  return query ? `?${query}` : ''
+}
+
+function buildShopProductQuery(filters: ShopProductFilters = {}) {
+  const params = new URLSearchParams()
+  if (filters.search) params.set('search', filters.search)
+  if (filters.category) params.set('category', filters.category)
   const query = params.toString()
   return query ? `?${query}` : ''
 }
@@ -377,13 +390,55 @@ export const marketplaceService = {
     )
   },
 
-  async getShopProducts(slug: string): Promise<Product[]> {
+  async getShopCategories(slug: string): Promise<Category[]> {
     return withDevelopmentFallback(
       async () =>
         (
-          await apiRequest<ApiProduct[]>(`/marketplace/shops/${encodeURIComponent(slug)}/products/`)
+          await apiRequest<ApiCategory[]>(
+            `/marketplace/shops/${encodeURIComponent(slug)}/categories/`,
+          )
+        ).map(normalizeCategory),
+      () => {
+        const categoryCounts = new Map<string, number>()
+        mockProducts
+          .filter((product) => product.shopSlug === slug)
+          .forEach((product) => {
+            categoryCounts.set(product.category, (categoryCounts.get(product.category) ?? 0) + 1)
+          })
+        return [...categoryCounts.entries()].map(([name, productCount]) => ({
+          slug: name.toLowerCase().replaceAll(/\s+/g, '-'),
+          name,
+          productCount,
+        }))
+      },
+    )
+  },
+
+  async getShopProducts(slug: string, filters: ShopProductFilters = {}): Promise<Product[]> {
+    return withDevelopmentFallback(
+      async () =>
+        (
+          await apiRequest<ApiProduct[]>(
+            `/marketplace/shops/${encodeURIComponent(slug)}/products/${buildShopProductQuery(filters)}`,
+          )
         ).map((product) => normalizeProduct(product, slug)),
-      () => mockProducts.filter((product) => product.shopSlug === slug),
+      () => {
+        const search = filters.search?.trim().toLowerCase()
+        return mockProducts.filter((product) => {
+          if (product.shopSlug !== slug) return false
+          if (
+            filters.category &&
+            product.category.toLowerCase().replaceAll(/\s+/g, '-') !== filters.category
+          )
+            return false
+          return (
+            !search ||
+            product.name.toLowerCase().includes(search) ||
+            product.description.toLowerCase().includes(search) ||
+            product.category.toLowerCase().includes(search)
+          )
+        })
+      },
     )
   },
 
