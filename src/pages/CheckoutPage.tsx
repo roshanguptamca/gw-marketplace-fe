@@ -400,10 +400,14 @@ export function CheckoutPage() {
                 checked={fields.deliveryMethod === 'pickup'}
                 onChange={() => update('deliveryMethod', 'pickup')}
               />
-              <span>
-                <strong>Pickup</strong>
-                Arrange collection with the seller.
-              </span>
+            <span>
+              <strong>Pickup</strong>
+              Collect from Vuurdoornpark 2, Zoetermeer. 
+              <a href="https://chat.whatsapp.com/Frj8l3ugZ3cHEj4uJnTQxO" target="_blank" rel="noopener noreferrer">
+                Contact us on WhatsApp
+              </a>
+              to arrange a pickup time.
+            </span>
             </label>
             <label>
               <input
