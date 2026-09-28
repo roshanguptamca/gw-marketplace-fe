@@ -402,13 +402,23 @@ export function CheckoutPage() {
               />
             <span>
               <strong>Pickup</strong>
-              Collect from Vuurdoornpark 2, Zoetermeer.
+              Collect from Vuurdoornpark 2, Zoetermeer.{" "}
               <a
                 href="https://chat.whatsapp.com/Frj8l3ugZ3cHEj4uJnTQxO"
                 target="_blank"
                 rel="noopener noreferrer"
-                style="display:inline-block; background-color:#075e54 !important; color:#ffffff !important; padding:2px 6px; border-radius:4px; font-weight:600; text-decoration:underline !important;"
-              >Contact us on WhatsApp</a>
+                style={{
+                  display: "inline-block",
+                  backgroundColor: "#075e54",
+                  color: "#ffffff",
+                  padding: "2px 6px",
+                  borderRadius: "4px",
+                  fontWeight: 600,
+                  textDecoration: "underline",
+                }}
+              >
+                Join our WhatsApp group
+              </a>{" "}
               to arrange a pickup time.
             </span>
             </label>
