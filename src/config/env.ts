@@ -7,6 +7,7 @@ export interface EnvironmentInput {
   VITE_MARKETPLACE_URL?: string
   VITE_USE_MOCK_API?: string
   VITE_ADDRESS_LOOKUP_ENABLED?: string
+  VITE_GA_MEASUREMENT_ID?: string
 }
 
 export interface EnvironmentConfig {
@@ -16,6 +17,7 @@ export interface EnvironmentConfig {
   marketplaceUrl: string
   useMockApi: boolean
   addressLookupEnabled: boolean
+  gaMeasurementId: string
   loginUrl: string
   sellerLoginUrl: string
   sellerSignupUrl: string
@@ -73,6 +75,7 @@ export function createEnvironmentConfig(
       input.VITE_ADDRESS_LOOKUP_ENABLED,
       'VITE_ADDRESS_LOOKUP_ENABLED',
     ),
+    gaMeasurementId: !local ? (input.VITE_GA_MEASUREMENT_ID ?? 'G-BRT6MH6KPD') : '',
     loginUrl: `${loginBaseUrl}?next=${encodeURIComponent(marketplaceUrl)}`,
     sellerLoginUrl: `${loginBaseUrl}?next=${encodeURIComponent(sellerNextUrl)}`,
     sellerSignupUrl: `${signupBaseUrl}?next=${encodeURIComponent(sellerOnboardingNextUrl)}&intent=seller`,

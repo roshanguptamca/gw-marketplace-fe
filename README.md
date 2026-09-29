@@ -61,11 +61,23 @@ add an entry such as `127.0.0.1 rishikitchen.localhost` to the machine's hosts f
 | `VITE_MAIN_FRONTEND_URL` | Main GuideWisey frontend used for login                |
 | `VITE_MARKETPLACE_URL`   | Marketplace origin used for authentication return URLs |
 | `VITE_USE_MOCK_API`      | `true` explicitly enables local catalog mocks          |
+| `VITE_GA_MEASUREMENT_ID` | GA4 measurement ID; production defaults to `G-BRT6MH6KPD` |
 
 Local development uses ports 8000, 3000, and 3002 for the backend, main frontend, and marketplace.
 Production uses `api.guidewisey.com`, `www.guidewisey.com`, and
 `https://marketplace.guidewisey.com`.
 Production must set `VITE_USE_MOCK_API=false`.
+
+GA4 loads once in production builds and sends explicit, deduplicated page views for the initial
+page and React Router navigation. Query strings and fragments are never sent; dynamic shop,
+product and order paths are anonymized. Commerce events contain IDs, quantities and amounts only,
+not buyer contacts or search terms. A `purchase` event represents a successfully submitted shop
+order request, not a captured payment; multi-shop requests generate one event per accepted shop
+order. The production ID is included in the build by default; set
+`VITE_GA_MEASUREMENT_ID=G-BRT6MH6KPD` in the Vercel Production environment to override or manage
+it there, then redeploy (Vite variables are baked into the build). Local development does not
+load GA. There is currently no marketplace analytics consent mechanism; gate initialization on
+the future shared consent choice before enabling tracking where consent is required.
 
 ### Expected API routes
 

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { analytics } from '../analytics/analytics'
 import { useCart } from '../cart/CartContext'
 import { groupItemsByShop } from '../cart/groupByShop'
 import { useShopsForItems } from '../cart/useShopsForItems'
@@ -82,7 +83,18 @@ export function CartPage() {
                       <p className="eyebrow">{shop?.name ?? product.shopSlug}</p>
                       <h2>{product.name}</h2>
                       <p>{formatPrice(product.price, product.currency)}</p>
-                      <button className="text-button" onClick={() => removeItem(product.id)}>
+                      <button
+                        className="text-button"
+                        onClick={() => {
+                          analytics.event('remove_from_cart', {
+                            item_id: product.id,
+                            value: product.price * quantity,
+                            currency: product.currency,
+                            items: [{ item_id: product.id, quantity, price: product.price }],
+                          })
+                          removeItem(product.id)
+                        }}
+                      >
                         Remove
                       </button>
                     </div>

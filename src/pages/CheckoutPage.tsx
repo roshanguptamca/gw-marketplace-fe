@@ -1,4 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
+import { analytics } from '../analytics/analytics'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { useCart } from '../cart/CartContext'
@@ -228,6 +229,16 @@ export function CheckoutPage() {
             : {}),
         }
         created.push(await marketplaceService.createOrderRequest(order))
+        analytics.event('purchase', {
+          transaction_id: created[created.length - 1].order_number,
+          value: Number(created[created.length - 1].total),
+          currency,
+          items: shopItems.map(({ product, quantity }) => ({
+            item_id: product.id,
+            quantity,
+            price: product.price,
+          })),
+        })
         completedProductIds.push(...shopItems.map((item) => item.product.id))
       }
       setConfirmations(created)
@@ -464,12 +475,16 @@ export function CheckoutPage() {
                       type="radio"
                       name={`deliveryMethod-${group.shopSlug}`}
                       checked={methodFor(group.shopSlug) === 'pickup'}
-                      onChange={() =>
+                      onChange={() => {
                         setFulfilmentSelections((current) => ({
                           ...current,
                           [group.shopSlug]: 'pickup',
                         }))
-                      }
+                        analytics.event('select_delivery_method', {
+                          method: 'pickup',
+                          shop_id: shop.id,
+                        })
+                      }}
                     />
                     <span>
                       <strong>Pickup</strong>
@@ -482,12 +497,16 @@ export function CheckoutPage() {
                       type="radio"
                       name={`deliveryMethod-${group.shopSlug}`}
                       checked={methodFor(group.shopSlug) === 'delivery'}
-                      onChange={() =>
+                      onChange={() => {
                         setFulfilmentSelections((current) => ({
                           ...current,
                           [group.shopSlug]: 'delivery',
                         }))
-                      }
+                        analytics.event('select_delivery_method', {
+                          method: 'delivery',
+                          shop_id: shop.id,
+                        })
+                      }}
                     />
                     <span>
                       <strong>Delivery</strong>

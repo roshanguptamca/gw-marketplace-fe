@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { analytics } from '../analytics/analytics'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
@@ -56,6 +57,7 @@ export function MarketplaceHomePage() {
   }, [searchParams])
 
   async function handleSearch(nextFilters: MarketplaceSearchFilters, updateUrl = true) {
+    if (updateUrl) analytics.event('search')
     if (updateUrl) {
       const params = new URLSearchParams()
       if (nextFilters.q) params.set('q', nextFilters.q)

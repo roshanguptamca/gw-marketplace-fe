@@ -1,4 +1,5 @@
 import type { Shop } from '../types/marketplace'
+import { analytics } from '../analytics/analytics'
 import { formatPrice } from '../utils/shopLinks'
 
 export function whatsappGroupUrl(value?: string | null): string | null {
@@ -30,6 +31,7 @@ export function WhatsAppGroupLink({ url }: { url?: string | null }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => analytics.event('join_whatsapp_group')}
     >
       Join WhatsApp Group
     </a>
