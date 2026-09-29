@@ -75,7 +75,7 @@ export function createEnvironmentConfig(
       input.VITE_ADDRESS_LOOKUP_ENABLED,
       'VITE_ADDRESS_LOOKUP_ENABLED',
     ),
-    gaMeasurementId: !local ? (input.VITE_GA_MEASUREMENT_ID ?? 'G-BRT6MH6KPD') : '',
+    gaMeasurementId: !local ? (input.VITE_GA_MEASUREMENT_ID ?? 'G-8RD04CNBFV') : '',
     loginUrl: `${loginBaseUrl}?next=${encodeURIComponent(marketplaceUrl)}`,
     sellerLoginUrl: `${loginBaseUrl}?next=${encodeURIComponent(sellerNextUrl)}`,
     sellerSignupUrl: `${signupBaseUrl}?next=${encodeURIComponent(sellerOnboardingNextUrl)}&intent=seller`,
