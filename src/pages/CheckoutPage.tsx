@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { useCart } from '../cart/CartContext'
@@ -6,6 +6,7 @@ import { groupItemsByShop } from '../cart/groupByShop'
 import { useShopsForItems } from '../cart/useShopsForItems'
 import { env } from '../config/env'
 import { EmptyState } from '../components/EmptyState'
+import { ShopFulfilment } from '../components/ShopFulfilment'
 import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
 import type { OrderConfirmation, OrderRequest, Shop } from '../types/marketplace'
@@ -16,7 +17,6 @@ interface CheckoutFields {
   fullName: string
   email: string
   phone: string
-  deliveryMethod: 'pickup' | 'delivery'
   street: string
   houseNumber: string
   houseNumberAddition: string
@@ -34,7 +34,6 @@ const initialFields: CheckoutFields = {
   fullName: '',
   email: '',
   phone: '',
-  deliveryMethod: 'pickup',
   street: '',
   houseNumber: '',
   houseNumberAddition: '',
@@ -49,13 +48,6 @@ const initialFields: CheckoutFields = {
 }
 
 const MIN_PASSWORD_LENGTH = 8
-// Fallback delivery fee used only if a shop hasn't configured its own fee —
-// mirrors the legacy gw-frontend marketplace defaults.
-const DEFAULT_LOCAL_DELIVERY_FEE = 5
-
-// Mirrors computeDeliveryFee() from the legacy gw-frontend marketplace:
-// pickup is always free; delivery is free above the shop's threshold,
-// otherwise the shop's local delivery fee (falling back to a sane default).
 function computeShopDeliveryFee(
   shop: Shop | undefined,
   orderType: 'pickup' | 'delivery',
@@ -66,13 +58,17 @@ function computeShopDeliveryFee(
   if (freeAbove !== undefined && freeAbove !== null && shopSubtotal >= freeAbove) {
     return 0
   }
-  return shop?.localDeliveryFee ?? DEFAULT_LOCAL_DELIVERY_FEE
+  return shop?.localDeliveryFee ?? 0
 }
 
 export function CheckoutPage() {
-  const { items, subtotal, clearCart } = useCart()
+  const { items, subtotal, clearCart, removeItem } = useCart()
   const { user } = useAuth()
   const [fields, setFields] = useState(initialFields)
+  const [fulfilmentSelections, setFulfilmentSelections] = useState<
+    Record<string, 'pickup' | 'delivery'>
+  >({})
+  const shopRefs = useRef<Record<string, HTMLFieldSetElement | null>>({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [errorCode, setErrorCode] = useState('')
@@ -87,16 +83,20 @@ export function CheckoutPage() {
   // shop represented in the cart so we can preview an accurate delivery fee
   // before the order is submitted. The backend recomputes this fee
   // authoritatively on submission — this is a preview only.
-  const shopsBySlug = useShopsForItems(items)
+  const { shopsBySlug, error: shopError } = useShopsForItems(items)
 
   const shopGroups = groupItemsByShop(items)
   const isMultiShop = shopGroups.length > 1
   const continueShoppingLink = continueShoppingPath(shopGroups.map((group) => group.shopSlug))
+  const methodFor = (slug: string): 'pickup' | 'delivery' =>
+    fulfilmentSelections[slug] ??
+    (shopsBySlug[slug]?.pickupAvailable !== false ? 'pickup' : 'delivery')
+  const anyDelivery = shopGroups.some((group) => methodFor(group.shopSlug) === 'delivery')
   const shopGroupsWithFees = shopGroups.map((group) => ({
     ...group,
     deliveryFee: computeShopDeliveryFee(
       shopsBySlug[group.shopSlug],
-      fields.deliveryMethod,
+      methodFor(group.shopSlug),
       group.subtotal,
     ),
   }))
@@ -131,8 +131,33 @@ export function CheckoutPage() {
     event.preventDefault()
     setError('')
     setErrorCode('')
+    if (shopError || shopGroups.some((group) => !shopsBySlug[group.shopSlug])) {
+      setError(shopError || 'Shop configuration is still loading. Please try again.')
+      return
+    }
+    for (const group of shopGroups) {
+      const shop = shopsBySlug[group.shopSlug]
+      const minimum = Math.round(Number(shop.minimumOrderAmount ?? 0) * 100)
+      const remaining = minimum - Math.round(group.subtotal * 100)
+      if (remaining > 0) {
+        setError(
+          `Minimum order for ${shop.name} is ${formatPrice(minimum / 100, currency)}. Please add ${formatPrice(remaining / 100, currency)} more to place your order.`,
+        )
+        shopRefs.current[group.shopSlug]?.scrollIntoView?.({ block: 'center' })
+        shopRefs.current[group.shopSlug]?.focus()
+        return
+      }
+      if (
+        (methodFor(group.shopSlug) === 'pickup' && shop.pickupAvailable === false) ||
+        (methodFor(group.shopSlug) === 'delivery' && shop.deliveryAvailable !== true)
+      ) {
+        setError(`${shop.name} does not offer the selected fulfilment method.`)
+        shopRefs.current[group.shopSlug]?.focus()
+        return
+      }
+    }
 
-    const requestingAccount = !user && fields.createAccount
+    const requestingAccount = !user && fields.createAccount && !accountCreated
     if (requestingAccount) {
       if (!fields.password || !fields.passwordConfirm) {
         setError('Please enter and confirm a password to create your account.')
@@ -157,34 +182,33 @@ export function CheckoutPage() {
       groups.set(item.product.shopId, [...(groups.get(item.product.shopId) ?? []), item])
     }
 
+    const created: OrderConfirmation[] = []
+    const completedProductIds: string[] = []
     setSubmitting(true)
     try {
-      const deliveryAddress =
-        fields.deliveryMethod === 'delivery'
-          ? [
-              [fields.street, fields.houseNumber].filter(Boolean).join(' ') +
-                (fields.houseNumberAddition ? ` ${fields.houseNumberAddition}` : ''),
-              fields.postalCode,
-              fields.city,
-              fields.country,
-            ]
-              .filter(Boolean)
-              .join(', ')
-          : ''
+      const deliveryAddress = [
+        [fields.street, fields.houseNumber].filter(Boolean).join(' ') +
+          (fields.houseNumberAddition ? ` ${fields.houseNumberAddition}` : ''),
+        fields.postalCode,
+        fields.city,
+        fields.country,
+      ]
+        .filter(Boolean)
+        .join(', ')
       // Submit one shop's order at a time (not Promise.all): SQLite only
       // allows a single writer, so firing all shop orders in parallel from a
       // multi-shop cart raced against each other and intermittently raised
       // "database is locked". Sequential awaits also let the account-creation
       // request (always first) fully commit before any other order write.
-      const created: OrderConfirmation[] = []
       for (const [index, [shopId, shopItems]] of [...groups.entries()].entries()) {
         const order: OrderRequest = {
           shop_id: Number(shopId),
           customer_name: fields.fullName,
           customer_email: fields.email,
           customer_phone: fields.phone,
-          delivery_address: deliveryAddress,
-          order_type: fields.deliveryMethod,
+          delivery_address:
+            methodFor(shopItems[0].product.shopSlug) === 'delivery' ? deliveryAddress : '',
+          order_type: methodFor(shopItems[0].product.shopSlug),
           delivery_zone: 'local',
           customer_note: fields.notes,
           payment_method: 'cash',
@@ -204,18 +228,48 @@ export function CheckoutPage() {
             : {}),
         }
         created.push(await marketplaceService.createOrderRequest(order))
+        completedProductIds.push(...shopItems.map((item) => item.product.id))
       }
       setConfirmations(created)
       setAccountCreated(requestingAccount)
       clearCart()
     } catch (caught) {
+      if (created.length > 0) {
+        completedProductIds.forEach(removeItem)
+        if (requestingAccount) setAccountCreated(true)
+      }
+      const partialMessage = created.length
+        ? `${created.length} shop order${created.length === 1 ? '' : 's'} already placed (${created.map((order) => order.order_number).join(', ')}). Those items were removed from your cart. Please submit the remaining shop orders separately. `
+        : ''
       if (caught instanceof ApiError && caught.code === 'ACCOUNT_ALREADY_EXISTS') {
         setErrorCode('ACCOUNT_ALREADY_EXISTS')
         setError(
-          'An account already exists with this email. Please log in to continue and track your order.',
+          partialMessage +
+            'An account already exists with this email. Please log in to continue and track your order.',
         )
+      } else if (caught instanceof ApiError && caught.code === 'SHOP_MINIMUM_ORDER_NOT_MET') {
+        const detail = caught.details
+        const minimum = Number(detail?.minimum_order_amount)
+        const remaining = Number(detail?.remaining_amount)
+        const shopName = typeof detail?.shop_name === 'string' ? detail.shop_name : 'this shop'
+        setError(
+          partialMessage +
+            (Number.isFinite(minimum) && Number.isFinite(remaining)
+              ? `Minimum order for ${shopName} is ${formatPrice(minimum, currency)}. Please add ${formatPrice(remaining, currency)} more to place your order.`
+              : caught.message),
+        )
+        const group = shopGroups.find(
+          (item) => shopsBySlug[item.shopSlug]?.id === String(detail?.shop_id),
+        )
+        if (group) {
+          shopRefs.current[group.shopSlug]?.scrollIntoView?.({ block: 'center' })
+          shopRefs.current[group.shopSlug]?.focus()
+        }
       } else {
-        setError(caught instanceof Error ? caught.message : 'The order request could not be sent.')
+        setError(
+          partialMessage +
+            (caught instanceof Error ? caught.message : 'The order request could not be sent.'),
+        )
       }
     } finally {
       setSubmitting(false)
@@ -391,52 +445,64 @@ export function CheckoutPage() {
             </label>
           </div>
 
-          <fieldset className="delivery-options">
-            <legend>Delivery method</legend>
-            <label>
-              <input
-                type="radio"
-                name="deliveryMethod"
-                checked={fields.deliveryMethod === 'pickup'}
-                onChange={() => update('deliveryMethod', 'pickup')}
-              />
-            <span>
-              <strong>Pickup</strong>
-              Collect from Vuurdoornpark 2, Zoetermeer.{" "}
-              <a
-                href="https://chat.whatsapp.com/Frj8l3ugZ3cHEj4uJnTQxO"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "inline-block",
-                  backgroundColor: "#075e54",
-                  color: "#ffffff",
-                  padding: "2px 6px",
-                  borderRadius: "4px",
-                  fontWeight: 600,
-                  textDecoration: "underline",
+          {shopGroups.map((group) => {
+            const shop = shopsBySlug[group.shopSlug]
+            return (
+              <fieldset
+                className="delivery-options checkout-shop-fulfilment"
+                key={group.shopSlug}
+                tabIndex={-1}
+                ref={(node) => {
+                  shopRefs.current[group.shopSlug] = node
                 }}
               >
-                Join our WhatsApp group
-              </a>{" "}
-              to arrange a pickup time.
-            </span>
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="deliveryMethod"
-                checked={fields.deliveryMethod === 'delivery'}
-                onChange={() => update('deliveryMethod', 'delivery')}
-              />
-              <span>
-                <strong>Delivery</strong>
-                The seller will confirm availability and fees.
-              </span>
-            </label>
-          </fieldset>
+                <legend>{shop?.name ?? group.shopSlug} — Delivery method</legend>
+                {!shop && <p>Loading shop fulfilment options…</p>}
+                {shop?.pickupAvailable !== false && shop && (
+                  <label>
+                    <input
+                      type="radio"
+                      name={`deliveryMethod-${group.shopSlug}`}
+                      checked={methodFor(group.shopSlug) === 'pickup'}
+                      onChange={() =>
+                        setFulfilmentSelections((current) => ({
+                          ...current,
+                          [group.shopSlug]: 'pickup',
+                        }))
+                      }
+                    />
+                    <span>
+                      <strong>Pickup</strong>
+                    </span>
+                  </label>
+                )}
+                {shop?.deliveryAvailable === true && (
+                  <label>
+                    <input
+                      type="radio"
+                      name={`deliveryMethod-${group.shopSlug}`}
+                      checked={methodFor(group.shopSlug) === 'delivery'}
+                      onChange={() =>
+                        setFulfilmentSelections((current) => ({
+                          ...current,
+                          [group.shopSlug]: 'delivery',
+                        }))
+                      }
+                    />
+                    <span>
+                      <strong>Delivery</strong>
+                    </span>
+                  </label>
+                )}
+                {shop && <ShopFulfilment shop={shop} method={methodFor(group.shopSlug)} />}
+                {shop && !shop.pickupAvailable && !shop.deliveryAvailable && (
+                  <p role="alert">This shop has no available fulfilment methods.</p>
+                )}
+              </fieldset>
+            )
+          })}
 
-          {fields.deliveryMethod === 'delivery' && (
+          {anyDelivery && (
             <div className="delivery-address">
               {env.addressLookupEnabled && (
                 <div className="form-grid address-lookup">
@@ -581,6 +647,25 @@ export function CheckoutPage() {
                     <strong>{formatPrice(product.price * quantity, product.currency)}</strong>
                   </div>
                 ))}
+                {Number(shop?.minimumOrderAmount ?? 0) > 0 && (
+                  <div className="shop-minimum">
+                    <span>
+                      Minimum order: {formatPrice(Number(shop?.minimumOrderAmount), currency)}
+                    </span>
+                    {Math.round(group.subtotal * 100) <
+                      Math.round(Number(shop?.minimumOrderAmount) * 100) && (
+                      <p>
+                        {formatPrice(
+                          (Math.round(Number(shop?.minimumOrderAmount) * 100) -
+                            Math.round(group.subtotal * 100)) /
+                            100,
+                          currency,
+                        )}{' '}
+                        more required to place an order.
+                      </p>
+                    )}
+                  </div>
+                )}
                 {isMultiShop && (
                   <>
                     <div className="checkout-total checkout-total--subtotal">
@@ -589,12 +674,14 @@ export function CheckoutPage() {
                     </div>
                     <div className="checkout-total checkout-total--delivery">
                       <span>Delivery method</span>
-                      <strong>{fields.deliveryMethod === 'pickup' ? 'Pickup' : 'Delivery'}</strong>
+                      <strong>
+                        {methodFor(group.shopSlug) === 'pickup' ? 'Pickup' : 'Delivery'}
+                      </strong>
                     </div>
                     <div className="checkout-total checkout-total--delivery">
                       <span>Delivery fee</span>
                       <strong>
-                        {fields.deliveryMethod === 'pickup' || group.deliveryFee === 0
+                        {methodFor(group.shopSlug) === 'pickup' || group.deliveryFee === 0
                           ? 'Free'
                           : formatPrice(group.deliveryFee, currency)}
                       </strong>
@@ -613,17 +700,9 @@ export function CheckoutPage() {
             <strong>{formatPrice(subtotal, currency)}</strong>
           </div>
           <div className="checkout-total checkout-total--delivery">
-            <span>Delivery method</span>
-            <strong>{fields.deliveryMethod === 'pickup' ? 'Pickup' : 'Delivery'}</strong>
-          </div>
-          <div className="checkout-total checkout-total--delivery">
             <span>Delivery fee</span>
             <strong>
-              {fields.deliveryMethod === 'pickup'
-                ? 'Free'
-                : estimatedDeliveryFee > 0
-                  ? formatPrice(estimatedDeliveryFee, currency)
-                  : 'Free'}
+              {estimatedDeliveryFee > 0 ? formatPrice(estimatedDeliveryFee, currency) : 'Free'}
             </strong>
           </div>
           <div className="checkout-total">
@@ -660,7 +739,15 @@ export function CheckoutPage() {
               Log in to continue
             </a>
           )}
-          <button className="button button--wide" type="submit" disabled={submitting}>
+          <button
+            className="button button--wide"
+            type="submit"
+            disabled={
+              submitting ||
+              Boolean(shopError) ||
+              shopGroups.some((group) => !shopsBySlug[group.shopSlug])
+            }
+          >
             {submitting ? 'Sending order request…' : 'Submit order request'}
           </button>
           <Link className="checkout-back" to="/cart">

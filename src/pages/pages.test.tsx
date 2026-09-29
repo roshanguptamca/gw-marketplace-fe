@@ -104,6 +104,51 @@ describe('marketplace pages', () => {
     expect(await screen.findByText('Opening hours')).toBeInTheDocument()
   })
 
+  it('shows configured WhatsApp and pickup details without rendering absent links', async () => {
+    service.getShopBySlug.mockResolvedValueOnce({
+      ...shopFixture,
+      whatsappGroupUrl: 'https://chat.whatsapp.com/TestGroup123',
+      pickupAddress: {
+        addressLine1: 'Market Lane 7',
+        addressLine2: '',
+        postalCode: '1234 AB',
+        city: 'Test City',
+        country: 'NL',
+      },
+      pickupInstructions: 'Call before collection.',
+      minimumOrderAmount: '25.00',
+    })
+    renderPage(<ShopStorefrontPage resolvedSlug="test-shop" />)
+    expect(
+      (await screen.findByRole('link', { name: 'Join WhatsApp Group' })).getAttribute('href'),
+    ).toBe('https://chat.whatsapp.com/TestGroup123')
+    await userEvent.click(screen.getByRole('button', { name: 'More details about shop' }))
+    expect(screen.getAllByRole('link', { name: 'Join WhatsApp Group' })).toHaveLength(2)
+    expect(screen.getByText('Market Lane 7', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('Call before collection.')).toBeInTheDocument()
+    expect(screen.getByText('Minimum order: €25.00')).toBeInTheDocument()
+  })
+
+  it('hides disabled pickup and unsafe or missing WhatsApp links', async () => {
+    service.getShopBySlug.mockResolvedValueOnce({
+      ...shopFixture,
+      pickupAvailable: false,
+      whatsappGroupUrl: 'javascript:alert(1)',
+      pickupAddress: {
+        addressLine1: 'Hidden Road',
+        addressLine2: '',
+        postalCode: '',
+        city: '',
+        country: '',
+      },
+    })
+    renderPage(<ShopStorefrontPage resolvedSlug="test-shop" />)
+    await screen.findByRole('heading', { name: 'Test Shop' })
+    await userEvent.click(screen.getByRole('button', { name: 'More details about shop' }))
+    expect(screen.queryByRole('link', { name: 'Join WhatsApp Group' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Hidden Road', { exact: false })).not.toBeInTheDocument()
+  })
+
   it('renders seller not found when shop is absent or errors', async () => {
     service.getShopBySlug.mockResolvedValueOnce(null)
     const first = renderPage(<ShopStorefrontPage resolvedSlug="missing" />)
@@ -389,11 +434,11 @@ describe('marketplace pages', () => {
     renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
 
     // Pickup is the default delivery method — no delivery fee should be charged.
-    expect(screen.getAllByText('Pickup').length).toBeGreaterThan(0)
+    expect((await screen.findAllByText('Pickup')).length).toBeGreaterThan(0)
     const deliveryFeeRow = screen.getByText('Delivery fee').closest('.checkout-total')
     expect(deliveryFeeRow).toHaveTextContent('Free')
 
-    await userEvent.click(screen.getByLabelText(/delivery/i))
+    await userEvent.click(await screen.findByRole('radio', { name: 'Delivery' }))
     await waitFor(() => {
       expect(screen.getByText('Delivery fee').closest('.checkout-total')).toHaveTextContent('€5.00')
     })
@@ -405,12 +450,156 @@ describe('marketplace pages', () => {
       JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
     )
     renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
-    await userEvent.click(screen.getByLabelText(/delivery/i))
+    await userEvent.click(await screen.findByRole('radio', { name: 'Delivery' }))
     await waitFor(() => {
       expect(screen.getByText('Estimated total').closest('.checkout-total')).toHaveTextContent(
         '€17.50',
       )
     })
+  })
+
+  it('enforces each shop minimum independently and shows the remaining amount', async () => {
+    service.getShopBySlug.mockImplementation((slug) =>
+      Promise.resolve(
+        slug === 'other-shop'
+          ? { ...secondShopFixture, minimumOrderAmount: '15.00' }
+          : { ...shopFixture, minimumOrderAmount: '10.00' },
+      ),
+    )
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({
+        items: [
+          { product: productFixture, quantity: 2 },
+          { product: secondProductFixture, quantity: 1 },
+        ],
+      }),
+    )
+    renderPage(<CheckoutPage />)
+    await screen.findByText('Minimum order: €15.00')
+    expect(screen.getByText('€7.00 more required to place an order.')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
+    await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
+    await userEvent.type(screen.getByLabelText('Phone'), '123456')
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Minimum order for Other Shop is €15.00. Please add €7.00 more',
+    )
+    expect(service.createOrderRequest).not.toHaveBeenCalled()
+  })
+
+  it('submits separate configured fulfilment methods for each shop', async () => {
+    service.getShopBySlug.mockImplementation((slug) =>
+      Promise.resolve(
+        slug === 'other-shop'
+          ? { ...secondShopFixture, pickupAvailable: false, deliveryAvailable: true }
+          : { ...shopFixture, pickupAvailable: true, deliveryAvailable: false },
+      ),
+    )
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({
+        items: [
+          { product: productFixture, quantity: 1 },
+          { product: secondProductFixture, quantity: 1 },
+        ],
+      }),
+    )
+    renderPage(<CheckoutPage />)
+    await screen.findByRole('radio', { name: 'Delivery' })
+    expect(screen.getAllByRole('radio')).toHaveLength(2)
+    await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
+    await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
+    await userEvent.type(screen.getByLabelText('Phone'), '123456')
+    await userEvent.type(screen.getByLabelText('Street and house number'), 'Lane')
+    await userEvent.type(screen.getByLabelText('House number'), '1')
+    await userEvent.type(screen.getByLabelText(/Postcode|Postal code/), '1234 AB')
+    await userEvent.type(screen.getByLabelText('City'), 'Town')
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+    await waitFor(() => expect(service.createOrderRequest).toHaveBeenCalledTimes(2))
+    expect(service.createOrderRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        shop_id: 1,
+        order_type: 'pickup',
+        delivery_address: '',
+      }),
+    )
+    expect(service.createOrderRequest).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        shop_id: 2,
+        order_type: 'delivery',
+        delivery_address: expect.stringContaining('Lane'),
+      }),
+    )
+  })
+
+  it('explains the current server-side minimum if prices changed since cart loading', async () => {
+    const { ApiError } = await import('../services/apiClient')
+    service.createOrderRequest.mockRejectedValueOnce(
+      new ApiError('Shop minimum order not met.', 400, 'SHOP_MINIMUM_ORDER_NOT_MET', {
+        code: 'SHOP_MINIMUM_ORDER_NOT_MET',
+        shop_id: 1,
+        shop_name: 'Test Shop',
+        minimum_order_amount: '20.00',
+        current_subtotal: '12.50',
+        remaining_amount: '7.50',
+      }),
+    )
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({
+        items: [{ product: productFixture, quantity: 1 }],
+      }),
+    )
+    renderPage(<CheckoutPage />)
+    await screen.findByRole('radio', { name: 'Pickup' })
+    await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
+    await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
+    await userEvent.type(screen.getByLabelText('Phone'), '123456')
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Minimum order for Test Shop is €20.00. Please add €7.50 more',
+    )
+  })
+
+  it('preserves unsubmitted shops when a later shop request fails', async () => {
+    service.getShopBySlug.mockImplementation((slug) =>
+      Promise.resolve(slug === 'other-shop' ? secondShopFixture : shopFixture),
+    )
+    service.createOrderRequest
+      .mockResolvedValueOnce({
+        id: 101,
+        order_number: 'GW-TEST-101',
+        shop_name: 'Test Shop',
+        total: '12.50',
+        status: 'pending',
+      })
+      .mockRejectedValueOnce(new Error('Seller temporarily unavailable'))
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({
+        items: [
+          { product: productFixture, quantity: 1 },
+          { product: secondProductFixture, quantity: 1 },
+        ],
+      }),
+    )
+    renderPage(<CheckoutPage />)
+    await screen.findAllByRole('radio', { name: 'Pickup' })
+    await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
+    await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
+    await userEvent.type(screen.getByLabelText('Phone'), '123456')
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('GW-TEST-101')
+    expect(screen.getByRole('alert')).toHaveTextContent('Seller temporarily unavailable')
+    expect(screen.queryByText('Test Product')).not.toBeInTheDocument()
+    expect(screen.getByText('Other Product')).toBeInTheDocument()
   })
 
   it('shows a friendly message and login CTA when the account already exists', async () => {
@@ -447,7 +636,7 @@ describe('marketplace pages', () => {
         JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
       )
       renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
-      await userEvent.click(screen.getByLabelText(/delivery/i))
+      await userEvent.click(await screen.findByRole('radio', { name: 'Delivery' }))
 
       service.lookupAddress.mockResolvedValueOnce({
         street: 'Main Street',

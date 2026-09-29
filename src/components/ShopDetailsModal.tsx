@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import type { Shop } from '../types/marketplace'
+import { ShopFulfilment } from './ShopFulfilment'
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -60,6 +61,22 @@ export function ShopDetailsModal({
                 <dt>Website</dt>
                 <dd>{shop.websiteUrl ? <a href={shop.websiteUrl}>{shop.websiteUrl}</a> : '—'}</dd>
               </div>
+              {shop.contactEmail && (
+                <div>
+                  <dt>Contact email</dt>
+                  <dd>
+                    <a href={`mailto:${shop.contactEmail}`}>{shop.contactEmail}</a>
+                  </dd>
+                </div>
+              )}
+              {shop.contactPhone && (
+                <div>
+                  <dt>Contact phone</dt>
+                  <dd>
+                    <a href={`tel:${shop.contactPhone}`}>{shop.contactPhone}</a>
+                  </dd>
+                </div>
+              )}
             </dl>
           </section>
 
@@ -85,8 +102,7 @@ export function ShopDetailsModal({
 
           <section className="shop-details-modal__card">
             <h3>Service</h3>
-            <p>{shop.pickupAvailable ? 'Pickup is available.' : 'Pickup is not available.'}</p>
-            <p>{shop.deliveryAvailable ? 'Delivery is available.' : 'Delivery is not available.'}</p>
+            <ShopFulfilment shop={shop} />
             <p>
               {shop.localDeliveryFee !== undefined
                 ? `Netherlands delivery fee: €${shop.localDeliveryFee.toFixed(2)}`

@@ -9,6 +9,7 @@ export class ApiError extends Error {
     message: string,
     public readonly status: number,
     public readonly code?: string,
+    public readonly details?: Record<string, unknown>,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -68,8 +69,10 @@ export async function apiRequest<T>(
     if (!response.ok) {
       let message = `Request failed with status ${response.status}`
       let code: string | undefined
+      let details: Record<string, unknown> | undefined
       try {
         const body = (await response.json()) as Record<string, unknown>
+        details = body
         if (typeof body.message === 'string') {
           message = body.message
         } else {
@@ -97,7 +100,7 @@ export async function apiRequest<T>(
           new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { status: response.status, path } }),
         )
       }
-      throw new ApiError(message, response.status, code)
+      throw new ApiError(message, response.status, code, details)
     }
 
     if (response.status === 204) return undefined as T

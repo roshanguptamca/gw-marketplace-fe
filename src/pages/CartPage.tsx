@@ -8,7 +8,7 @@ import { getFirstProductImageUrl, handleProductImageError } from '../utils/produ
 
 export function CartPage() {
   const { items, subtotal, updateQuantity, removeItem } = useCart()
-  const shopsBySlug = useShopsForItems(items)
+  const { shopsBySlug, error: shopError } = useShopsForItems(items)
 
   if (items.length === 0) {
     return (
@@ -41,6 +41,7 @@ export function CartPage() {
         <p>{items.length} unique items</p>
       </div>
       <div className="cart-layout">
+        {shopError && <p role="alert">{shopError}</p>}
         <section className="cart-items" aria-label="Cart items">
           {shopGroups.map((group) => {
             const shop = shopsBySlug[group.shopSlug]
@@ -50,6 +51,24 @@ export function CartPage() {
                   <div className="cart-shop-group__header">
                     <h2>{shop?.name ?? group.shopSlug}</h2>
                     <span>{formatPrice(group.subtotal, currency)}</span>
+                  </div>
+                )}
+                {Number(shop?.minimumOrderAmount ?? 0) > 0 && (
+                  <div className="shop-minimum">
+                    <p>Products subtotal: {formatPrice(group.subtotal, currency)}</p>
+                    <p>Minimum order: {formatPrice(Number(shop?.minimumOrderAmount), currency)}</p>
+                    {Math.round(group.subtotal * 100) <
+                      Math.round(Number(shop?.minimumOrderAmount) * 100) && (
+                      <p>
+                        {formatPrice(
+                          (Math.round(Number(shop?.minimumOrderAmount) * 100) -
+                            Math.round(group.subtotal * 100)) /
+                            100,
+                          currency,
+                        )}{' '}
+                        more required to place an order.
+                      </p>
+                    )}
                   </div>
                 )}
                 {group.items.map(({ product, quantity }) => (
