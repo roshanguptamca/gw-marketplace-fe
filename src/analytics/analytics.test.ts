@@ -9,6 +9,26 @@ describe('GA4 analytics', () => {
       .forEach((script) => script.remove())
     delete window.gtag
     delete window.dataLayer
+    delete window.GW_GA4_BOOTSTRAPPED_ID
+  })
+
+  it('reuses the detector-visible Google tag without loading or configuring it twice', async () => {
+    const queuedCalls: unknown[][] = []
+    window.dataLayer = queuedCalls
+    window.gtag = (...args: unknown[]) => queuedCalls.push(args)
+    window.GW_GA4_BOOTSTRAPPED_ID = 'G-8RD04CNBFV'
+    vi.doMock('../config/env', () => ({ env: { gaMeasurementId: 'G-8RD04CNBFV' } }))
+
+    const { analytics } = await import('./analytics')
+    analytics.pageView('/')
+
+    expect(
+      document.head.querySelectorAll('script[src*="googletagmanager.com/gtag/js"]'),
+    ).toHaveLength(0)
+    expect(queuedCalls.filter(([type]) => type === 'config')).toHaveLength(0)
+    expect(queuedCalls.filter(([type, name]) => type === 'event' && name === 'page_view')).toHaveLength(
+      1,
+    )
   })
   afterEach(() => {
     vi.doUnmock('../config/env')

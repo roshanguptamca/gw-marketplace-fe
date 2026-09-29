@@ -29,6 +29,7 @@ declare global {
   interface Window {
     dataLayer?: unknown[][]
     gtag?: Gtag
+    GW_GA4_BOOTSTRAPPED_ID?: string
   }
 }
 
@@ -62,6 +63,12 @@ export function initializeAnalytics(): boolean {
   if (!env.gaMeasurementId || !/^G-[A-Z0-9]+$/.test(env.gaMeasurementId)) return false
   if (initialized) return true
   initialized = true
+  if (
+    window.GW_GA4_BOOTSTRAPPED_ID === env.gaMeasurementId &&
+    typeof window.gtag === 'function'
+  ) {
+    return true
+  }
   window.dataLayer = window.dataLayer ?? []
   window.gtag = (...args: unknown[]) => {
     window.dataLayer?.push(args)

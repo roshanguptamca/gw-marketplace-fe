@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { createEnvironmentConfig } from './env'
 
@@ -65,5 +67,11 @@ describe('environment URL configuration', () => {
         true,
       ).gaMeasurementId,
     ).toBe('G-TEST123')
+  })
+
+  it('keeps the production default aligned with the detector-visible HTML tag', () => {
+    const html = readFileSync(join(process.cwd(), 'index.html'), 'utf8')
+    expect(html.match(/googletagmanager\.com\/gtag\/js\?id=G-8RD04CNBFV/g)).toHaveLength(1)
+    expect(html.match(/gtag\('config', 'G-8RD04CNBFV'/g)).toHaveLength(1)
   })
 })
