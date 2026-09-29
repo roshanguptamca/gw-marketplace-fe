@@ -1520,6 +1520,47 @@ nav {
   font-size: 0.9rem;
 }
 
+.checkout-shop-fulfilment {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  min-width: 0;
+}
+
+.shop-fulfilment {
+  display: grid;
+  gap: 12px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.shop-fulfilment h4,
+.shop-fulfilment p {
+  margin: 0 0 6px;
+}
+
+.shop-fulfilment address {
+  font-style: normal;
+  line-height: 1.5;
+}
+
+.whatsapp-group-link {
+  width: fit-content;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.shop-minimum {
+  padding: 8px 0;
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+
+.shop-minimum p {
+  margin: 4px 0;
+}
+
 .delivery-address {
   margin-bottom: 4px;
 }

@@ -41,7 +41,14 @@ const order: BuyerOrder = {
   customer_note: '',
   seller_note: '',
   items: [
-    { id: 1, product: 1, product_name: 'Test Product', unit_price: '12.50', quantity: 1, line_total: '12.50' },
+    {
+      id: 1,
+      product: 1,
+      product_name: 'Test Product',
+      unit_price: '12.50',
+      quantity: 1,
+      line_total: '12.50',
+    },
   ],
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
@@ -84,6 +91,36 @@ describe('buyer orders (My Orders inside marketplace)', () => {
     })
     expect(await screen.findByRole('heading', { name: 'Order GW-55' })).toBeInTheDocument()
     expect(screen.getByText(/Total: €12.50/)).toBeInTheDocument()
+  })
+
+  it('renders historical pickup details from the order snapshot', async () => {
+    service.getBuyerOrder.mockResolvedValueOnce({
+      ...order,
+      fulfillment_snapshot: {
+        order_type: 'pickup',
+        pickup_address_line_1: 'Market Lane 7',
+        pickup_postal_code: '1234 AB',
+        pickup_city: 'Test City',
+        pickup_country: 'NL',
+        pickup_instructions: 'Call before arriving',
+        whatsapp_group_url: 'https://chat.whatsapp.com/TestGroup123',
+        shop_email: 'seller@example.com',
+      },
+    })
+    renderPage(
+      <Routes>
+        <Route path="/account/orders/:orderId" element={<BuyerOrderDetailPage />} />
+      </Routes>,
+      '/account/orders/55',
+      { user: loggedInUser, loading: false, logout: async () => {} },
+    )
+    expect(await screen.findByText('Market Lane 7', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('Call before arriving')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Join WhatsApp Group' })).toHaveAttribute(
+      'href',
+      'https://chat.whatsapp.com/TestGroup123',
+    )
+    expect(screen.getByRole('link', { name: 'seller@example.com' })).toBeInTheDocument()
   })
 
   it('redirects unauthenticated shoppers to login with next back to /account/orders', () => {
@@ -192,7 +229,9 @@ describe('buyer orders (My Orders inside marketplace)', () => {
     })
     const cancelButton = await screen.findByRole('button', { name: 'Cancel order' })
     await userEvent.click(cancelButton)
-    expect(await screen.findByText('This order can no longer be cancelled directly.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('This order can no longer be cancelled directly.'),
+    ).toBeInTheDocument()
     confirmSpy.mockRestore()
   })
 

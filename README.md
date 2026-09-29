@@ -10,7 +10,11 @@ application.
 - Seller resolution from production subdomains, localhost subdomains, or path fallbacks
 - Product collections, category filters, details, stock states, and multi-image galleries
 - Persistent browser cart with quantity and inventory limits
-- MVP order-request checkout with pickup/delivery details and no online payment
+- Multi-shop order-request checkout with independent shop fulfilment choices and minimum-order
+  checks, without online payment. The backend rechecks current product prices and shop settings.
+- Public shop WhatsApp group links, pickup address/instructions and delivery information come from
+  the Shop API. Sellers manage these settings in Delivery & Pickup; old shops without new settings
+  remain usable.
 - Typed API client with timeout/error handling
 - Real `api.guidewisey.com` integration with explicitly enabled local mocks
 - Shared GuideWisey session/CSRF authentication and marketplace seller portal
@@ -83,6 +87,8 @@ GET    /seller/dashboard/
 GET    /seller/products/
 GET    /seller/orders/
 GET    /seller/shop/
+GET    /seller/settings/
+PATCH  /seller/settings/
 ```
 
 The cart UI persists locally for immediate offline-safe UX; matching session cart APIs are
@@ -90,6 +96,12 @@ available for server synchronization. Authentication is owned by the configured 
 Anonymous users opening `/seller` are redirected to its login with the configured marketplace
 `/seller` URL in the `next` parameter. The marketplace only reads the shared session and exposes
 logout.
+
+The public shop response includes public-safe fulfilment settings (minimum order, WhatsApp group
+URL, pickup address/instructions, and delivery notes). Checkout loads each shop's current settings,
+displays any unmet minimum per shop, and sends one order request per shop with its own `order_type`.
+If a later shop request fails, successful shop orders retain their references and are removed from
+the cart; remaining items can be submitted separately.
 
 ## Scripts
 

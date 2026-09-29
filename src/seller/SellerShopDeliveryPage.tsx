@@ -21,6 +21,13 @@ function emptySettings(): ShopSettings {
     internationalDeliveryFee: '10.00',
     freeDeliveryAbove: null,
     deliveryNotes: '',
+    whatsappGroupUrl: '',
+    pickupAddressLine1: '',
+    pickupAddressLine2: '',
+    pickupPostalCode: '',
+    pickupCity: '',
+    pickupCountry: '',
+    pickupInstructions: '',
     orderAcceptanceMode: 'manual',
     whatsappNumber: '',
     bankTransferInstructions: '',
@@ -63,13 +70,17 @@ export function SellerShopDeliveryPage() {
     const { name, value, type } = e.target
     const finalValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
 
-    setFormData((prev) => ({ ...prev, [name]: finalValue } as ShopSettings))
+    setFormData((prev) => ({ ...prev, [name]: finalValue }) as ShopSettings)
   }
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData((prev) =>
-      ({ ...prev, [name]: name === 'freeDeliveryAbove' && value === '' ? null : value } as ShopSettings),
+    setFormData(
+      (prev) =>
+        ({
+          ...prev,
+          [name]: name === 'freeDeliveryAbove' && value === '' ? null : value,
+        }) as ShopSettings,
     )
   }
 
@@ -93,8 +104,12 @@ export function SellerShopDeliveryPage() {
       setFormData(updated)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch {
-      setError('Failed to save delivery settings. Please try again.')
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : 'Failed to save delivery settings. Please try again.',
+      )
     } finally {
       setSaving(false)
     }
@@ -113,7 +128,9 @@ export function SellerShopDeliveryPage() {
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
-      {success && <div className="alert alert--success">✓ Delivery settings saved successfully</div>}
+      {success && (
+        <div className="alert alert--success">✓ Delivery settings saved successfully</div>
+      )}
 
       <form onSubmit={handleSubmit} className="seller-form seller-form--stacked">
         <div className="form-section">
@@ -137,6 +154,75 @@ export function SellerShopDeliveryPage() {
               />
               <span>Enable delivery</span>
             </label>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h3>Ordering and community</h3>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="minOrderAmount">Minimum order amount (€)</label>
+              <input
+                id="minOrderAmount"
+                name="minOrderAmount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.minOrderAmount}
+                onChange={handleNumberChange}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="whatsappGroupUrl">WhatsApp group URL (optional)</label>
+              <input
+                id="whatsappGroupUrl"
+                name="whatsappGroupUrl"
+                type="url"
+                placeholder="https://chat.whatsapp.com/..."
+                pattern="https://chat\.whatsapp\.com/[A-Za-z0-9]+/?"
+                value={formData.whatsappGroupUrl ?? ''}
+                onChange={handleChange}
+                className="form-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h3>Pickup address</h3>
+          <div className="form-grid">
+            {(
+              [
+                ['pickupAddressLine1', 'Address line 1'],
+                ['pickupAddressLine2', 'Address line 2'],
+                ['pickupPostalCode', 'Postal code'],
+                ['pickupCity', 'City'],
+                ['pickupCountry', 'Country'],
+              ] as const
+            ).map(([name, label]) => (
+              <div className="form-group" key={name}>
+                <label htmlFor={name}>{label}</label>
+                <input
+                  id={name}
+                  name={name}
+                  value={formData[name] ?? ''}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="form-group">
+            <label htmlFor="pickupInstructions">Pickup instructions</label>
+            <textarea
+              id="pickupInstructions"
+              name="pickupInstructions"
+              rows={3}
+              value={formData.pickupInstructions ?? ''}
+              onChange={handleChange}
+              className="form-input"
+            />
           </div>
         </div>
 

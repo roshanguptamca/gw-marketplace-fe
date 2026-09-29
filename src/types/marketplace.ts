@@ -46,6 +46,17 @@ export interface Shop {
   contactEmail?: string
   contactPhone?: string
   whatsapp?: string
+  whatsappGroupUrl?: string
+  minimumOrderAmount?: string
+  pickupAddress?: {
+    addressLine1: string
+    addressLine2: string
+    postalCode: string
+    city: string
+    country: string
+  }
+  pickupInstructions?: string
+  deliveryInstructions?: string
   pickupAvailable?: boolean
   deliveryAvailable?: boolean
   localDeliveryFee?: number
@@ -71,6 +82,13 @@ export interface ShopSettings {
   internationalDeliveryFee: string
   freeDeliveryAbove?: string | null
   deliveryNotes: string
+  whatsappGroupUrl?: string
+  pickupAddressLine1?: string
+  pickupAddressLine2?: string
+  pickupPostalCode?: string
+  pickupCity?: string
+  pickupCountry?: string
+  pickupInstructions?: string
   orderAcceptanceMode: 'manual' | 'auto'
   whatsappNumber: string
   bankTransferInstructions: string
@@ -289,6 +307,21 @@ export interface BuyerOrder {
   delivery_fee: string
   total: string
   customer_note: string
+  fulfillment_snapshot?: {
+    order_type?: 'pickup' | 'delivery'
+    shop_name?: string
+    shop_address?: string
+    shop_phone?: string
+    shop_email?: string
+    whatsapp_group_url?: string | null
+    pickup_address_line_1?: string
+    pickup_address_line_2?: string
+    pickup_postal_code?: string
+    pickup_city?: string
+    pickup_country?: string
+    pickup_instructions?: string
+    delivery_instructions?: string
+  } | null
   seller_note: string
   items: BuyerOrderItem[]
   created_at: string

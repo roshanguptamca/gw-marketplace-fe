@@ -8,32 +8,41 @@ import type { CartItem, Shop } from '../types/marketplace'
  * so both can show shop names and compute per-shop delivery fees without
  * duplicating the fetch/caching logic.
  */
-export function useShopsForItems(items: CartItem[]): Record<string, Shop> {
+export function useShopsForItems(items: CartItem[]): {
+  shopsBySlug: Record<string, Shop>
+  error: string
+} {
   const [shopsBySlug, setShopsBySlug] = useState<Record<string, Shop>>({})
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const slugs = [...new Set(items.map((item) => item.product.shopSlug).filter(Boolean))]
     const missing = slugs.filter((slug) => !(slug in shopsBySlug))
     if (missing.length === 0) return
     let active = true
-    void Promise.allSettled(missing.map((slug) => marketplaceService.getShopBySlug(slug))).then(
-      (results) => {
+    void Promise.all(missing.map((slug) => marketplaceService.getShopBySlug(slug)))
+      .then((results) => {
         if (!active) return
+        const missingShop = results.findIndex((result) => !result)
+        if (missingShop !== -1)
+          setError(`Shop configuration for ${missing[missingShop]} could not be found.`)
         setShopsBySlug((current) => {
           const next = { ...current }
           results.forEach((result, index) => {
-            if (result.status !== 'fulfilled' || !result.value) return
-            next[missing[index]] = result.value
+            if (result) next[missing[index]] = result
           })
           return next
         })
-      },
-    )
+      })
+      .catch(() => {
+        if (active)
+          setError('Shop configuration could not be loaded. Please refresh and try again.')
+      })
     return () => {
       active = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items])
 
-  return shopsBySlug
+  return { shopsBySlug, error }
 }

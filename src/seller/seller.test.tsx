@@ -477,6 +477,32 @@ describe('seller portal pages', () => {
     expect(screen.getByRole('heading', { name: 'Public Shop Preview' })).toBeInTheDocument()
   })
 
+  it('saves fulfilment and WhatsApp configuration for the seller shop', async () => {
+    renderPage(<SellerShopDeliveryPage />)
+    await screen.findByRole('heading', { name: 'Delivery & Pickup' })
+    await userEvent.type(
+      screen.getByLabelText('WhatsApp group URL (optional)'),
+      'https://chat.whatsapp.com/TestGroup123',
+    )
+    await userEvent.type(screen.getByLabelText('Address line 1'), 'Market Lane 7')
+    await userEvent.type(screen.getByLabelText('City'), 'Test City')
+    await userEvent.type(screen.getByLabelText('Pickup instructions'), 'Call first')
+    await userEvent.clear(screen.getByLabelText('Minimum order amount (€)'))
+    await userEvent.type(screen.getByLabelText('Minimum order amount (€)'), '20')
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await waitFor(() =>
+      expect(service.updateSellerSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          whatsappGroupUrl: 'https://chat.whatsapp.com/TestGroup123',
+          pickupAddressLine1: 'Market Lane 7',
+          pickupCity: 'Test City',
+          pickupInstructions: 'Call first',
+          minOrderAmount: '20',
+        }),
+      ),
+    )
+  })
+
   it('renders and manages categories', async () => {
     renderPage(<SellerCategoriesPage />)
     expect(await screen.findByRole('heading', { name: 'Categories' })).toBeInTheDocument()

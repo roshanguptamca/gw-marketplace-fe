@@ -64,6 +64,13 @@ interface ApiShop {
     delivery_fee?: string
     min_order_amount?: string
     delivery_notes?: string
+    whatsapp_group_url?: string | null
+    pickup_address_line_1?: string
+    pickup_address_line_2?: string
+    pickup_postal_code?: string
+    pickup_city?: string
+    pickup_country?: string
+    pickup_instructions?: string
     order_acceptance_mode?: 'manual' | 'auto'
     bank_transfer_instructions?: string
     notification_email?: string
@@ -89,6 +96,13 @@ interface ApiShopSettings {
   international_delivery_fee: string
   free_delivery_above?: string | null
   delivery_notes: string
+  whatsapp_group_url?: string | null
+  pickup_address_line_1?: string
+  pickup_address_line_2?: string
+  pickup_postal_code?: string
+  pickup_city?: string
+  pickup_country?: string
+  pickup_instructions?: string
   order_acceptance_mode: 'manual' | 'auto'
   whatsapp_number: string
   bank_transfer_instructions: string
@@ -187,6 +201,13 @@ function normalizeShopSettings(settings: ApiShopSettings | undefined): ShopSetti
     internationalDeliveryFee: settings.international_delivery_fee ?? '0.00',
     freeDeliveryAbove: settings.free_delivery_above ?? null,
     deliveryNotes: settings.delivery_notes ?? '',
+    whatsappGroupUrl: settings.whatsapp_group_url ?? '',
+    pickupAddressLine1: settings.pickup_address_line_1 ?? '',
+    pickupAddressLine2: settings.pickup_address_line_2 ?? '',
+    pickupPostalCode: settings.pickup_postal_code ?? '',
+    pickupCity: settings.pickup_city ?? '',
+    pickupCountry: settings.pickup_country ?? '',
+    pickupInstructions: settings.pickup_instructions ?? '',
     orderAcceptanceMode: settings.order_acceptance_mode ?? 'manual',
     whatsappNumber: settings.whatsapp_number ?? '',
     bankTransferInstructions: settings.bank_transfer_instructions ?? '',
@@ -195,6 +216,8 @@ function normalizeShopSettings(settings: ApiShopSettings | undefined): ShopSetti
     cancellationRequestEmailEnabled: settings.cancellation_request_email_enabled ?? true,
     lowStockNotificationEnabled: settings.low_stock_notification_enabled ?? false,
     supportedDeliveryCountries: settings.supported_delivery_countries ?? [],
+    pickupAvailable: settings.pickup_available ?? true,
+    deliveryAvailable: settings.delivery_available ?? false,
   }
 }
 
@@ -273,6 +296,19 @@ function normalizeShop(shop: ApiShop): Shop {
     contactEmail: shop.email ?? shop.contact_email,
     contactPhone: shop.phone ?? shop.contact_phone,
     whatsapp: shop.settings?.whatsapp_number,
+    whatsappGroupUrl: shop.settings?.whatsapp_group_url ?? undefined,
+    minimumOrderAmount: shop.settings?.min_order_amount ?? undefined,
+    pickupAddress: shop.settings
+      ? {
+          addressLine1: shop.settings.pickup_address_line_1 ?? '',
+          addressLine2: shop.settings.pickup_address_line_2 ?? '',
+          postalCode: shop.settings.pickup_postal_code ?? '',
+          city: shop.settings.pickup_city ?? '',
+          country: shop.settings.pickup_country ?? '',
+        }
+      : undefined,
+    pickupInstructions: shop.settings?.pickup_instructions ?? '',
+    deliveryInstructions: shop.settings?.delivery_notes ?? '',
     pickupAvailable: shop.pickup_available,
     deliveryAvailable: shop.delivery_available,
     localDeliveryFee: shop.settings?.local_delivery_fee
@@ -312,8 +348,8 @@ export function normalizeProduct(product: ApiProduct, fallbackShopSlug = ''): Pr
     ),
     featured: product.is_featured,
     sellerContact: {
-      email: shop?.contact_email,
-      phone: shop?.contact_phone,
+      email: shop?.email ?? shop?.contact_email,
+      phone: shop?.phone ?? shop?.contact_phone,
       whatsapp: shop?.settings?.whatsapp_number,
     },
   }
@@ -537,6 +573,13 @@ export const marketplaceService = {
         international_delivery_fee: data.internationalDeliveryFee || '0.00',
         free_delivery_above: data.freeDeliveryAbove,
         delivery_notes: data.deliveryNotes,
+        whatsapp_group_url: data.whatsappGroupUrl,
+        pickup_address_line_1: data.pickupAddressLine1,
+        pickup_address_line_2: data.pickupAddressLine2,
+        pickup_postal_code: data.pickupPostalCode,
+        pickup_city: data.pickupCity,
+        pickup_country: data.pickupCountry,
+        pickup_instructions: data.pickupInstructions,
         order_acceptance_mode: data.orderAcceptanceMode,
         whatsapp_number: data.whatsappNumber,
         bank_transfer_instructions: data.bankTransferInstructions,

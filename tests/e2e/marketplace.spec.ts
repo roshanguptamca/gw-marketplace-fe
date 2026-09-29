@@ -11,9 +11,7 @@ test.beforeEach(async ({ page }) => {
 
 test('opens the marketplace landing page', async ({ page }) => {
   await page.goto('/')
-  await expect(
-    page.getByRole('heading', { name: /good things, from people who care/i }),
-  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'GuideWisey Marketplace' })).toBeVisible()
   await expect(page.getByRole('heading', { name: "Rishi's Kitchen" })).toBeVisible()
 })
 
@@ -48,8 +46,8 @@ test('views product details and adds a product to the cart', async ({ page }) =>
   await expect(page.getByRole('heading', { name: 'House Garam Masala' })).toBeVisible()
   await page.getByRole('button', { name: 'Show image 2' }).click()
   await page.getByRole('button', { name: 'Add to cart' }).click()
-  await expect(page.getByRole('link', { name: /cart/i }).getByText('1')).toBeVisible()
-  await page.getByRole('link', { name: /cart/i }).click()
+  await expect(page.locator('.cart-link').getByText('1')).toBeVisible()
+  await page.locator('.cart-link').click()
   await expect(page.getByRole('heading', { name: 'Shopping cart' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'House Garam Masala' })).toBeVisible()
 })
@@ -139,14 +137,14 @@ test('opens the user menu and navigates a seller to the portal', async ({ page }
 test('proceeds from cart and submits an order request without payment', async ({ page }) => {
   await page.goto('/shop/rishikitchen/products/masala-01')
   await page.getByRole('button', { name: 'Add to cart' }).click()
-  await page.getByRole('link', { name: /cart/i }).click()
+  await page.locator('.cart-link').click()
   await page.getByRole('link', { name: 'Proceed to checkout' }).click()
   await expect(page).toHaveURL('http://localhost:3102/checkout')
 
   await page.getByLabel('Full name').fill('Playwright Buyer')
   await page.getByLabel('Email').fill('buyer@example.com')
   await page.getByLabel('Phone').fill('+31612345678')
-  await page.getByLabel(/i confirm these order details/i).check()
+  await page.getByLabel(/i have read and agree/i).check()
   await page.getByRole('button', { name: 'Submit order request' }).click()
 
   await expect(

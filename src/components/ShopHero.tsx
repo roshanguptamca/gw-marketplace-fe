@@ -1,4 +1,5 @@
 import type { Shop } from '../types/marketplace'
+import { WhatsAppGroupLink } from './ShopFulfilment'
 import {
   getShopBannerUrl,
   getShopLogoUrl,
@@ -27,6 +28,7 @@ export function ShopHero({ shop, onMoreDetails }: { shop: Shop; onMoreDetails?: 
           <p className="eyebrow">{shop.shopType || shop.location}</p>
           <h1>{shop.name}</h1>
           <p className="shop-hero__tagline">{shop.shortDescription || shop.tagline}</p>
+          <WhatsAppGroupLink url={shop.whatsappGroupUrl} />
           {onMoreDetails && (
             <button
               type="button"
