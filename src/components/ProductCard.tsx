@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { analytics } from '../analytics/analytics'
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCart } from '../cart/CartContext'
@@ -15,6 +16,12 @@ export function ProductCard({ product }: { product: Product }) {
   const returnTo = `${location.pathname}${location.search}${location.hash}`
   const handleAdd = () => {
     addItem(product)
+    analytics.event('add_to_cart', {
+      item_id: product.id,
+      value: product.price,
+      currency: product.currency,
+      items: [{ item_id: product.id, quantity: 1, price: product.price }],
+    })
     setAdded(true)
     window.setTimeout(() => setAdded(false), 1600)
   }

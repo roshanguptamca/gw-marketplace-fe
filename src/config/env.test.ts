@@ -55,4 +55,15 @@ describe('environment URL configuration', () => {
       'VITE_USE_MOCK_API',
     )
   })
+
+  it('enables the GA4 ID in production only and permits an override', () => {
+    expect(createEnvironmentConfig({}, false).gaMeasurementId).toBe('G-BRT6MH6KPD')
+    expect(createEnvironmentConfig({}, true).gaMeasurementId).toBe('')
+    expect(
+      createEnvironmentConfig(
+        { VITE_APP_ENV: 'production', VITE_GA_MEASUREMENT_ID: 'G-TEST123' },
+        true,
+      ).gaMeasurementId,
+    ).toBe('G-TEST123')
+  })
 })

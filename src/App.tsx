@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { AnalyticsRouteTracker } from './analytics/AnalyticsRouteTracker'
 import { CartProvider } from './cart/CartContext'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import { Layout } from './components/Layout'
@@ -43,6 +44,7 @@ export function App() {
       <AuthProvider>
         <CartProvider>
           <BrowserRouter>
+            <AnalyticsRouteTracker />
             <Routes>
               <Route element={<Layout />}>
                 {hostnameShopSlug ? (

@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
+import { analytics } from '../analytics/analytics'
 import { LoadingState } from '../components/LoadingState'
 import { ProductGrid } from '../components/ProductGrid'
 import { MarketplaceBackNavigation } from '../components/MarketplaceBackNavigation'
@@ -8,7 +10,6 @@ import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
 import { shopPath } from '../utils/shopLinks'
 import { SellerNotFoundPage } from './SellerNotFoundPage'
-import { useState } from 'react'
 
 export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) {
   const params = useParams()
@@ -24,6 +25,9 @@ export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) 
     () => marketplaceService.getShopProducts(slug),
     [slug],
   )
+  useEffect(() => {
+    if (shop) analytics.event('view_shop', { shop_id: shop.id })
+  }, [shop])
 
   if (shopLoading) return <LoadingState label="Opening shop" />
   if (shopError || !shop) return <SellerNotFoundPage />

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { analytics } from '../analytics/analytics'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { CartCallToAction } from '../components/CartCallToAction'
 import { MarketplaceBackNavigation } from '../components/MarketplaceBackNavigation'
@@ -26,6 +27,15 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
     () => marketplaceService.getProductDetails(shopSlug, productId),
     [shopSlug, productId],
   )
+  useEffect(() => {
+    if (product)
+      analytics.event('view_item', {
+        item_id: product.id,
+        value: product.price,
+        currency: product.currency,
+        items: [{ item_id: product.id, quantity: 1, price: product.price }],
+      })
+  }, [product])
 
   if (loading) return <LoadingState label="Loading product" />
   if (error || !product) {
@@ -37,6 +47,12 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
 
   const handleAdd = () => {
     addItem(product)
+    analytics.event('add_to_cart', {
+      item_id: product.id,
+      value: product.price,
+      currency: product.currency,
+      items: [{ item_id: product.id, quantity: 1, price: product.price }],
+    })
     setAdded(true)
     window.setTimeout(() => setAdded(false), 1800)
   }
