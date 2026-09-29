@@ -57,7 +57,7 @@ describe('environment URL configuration', () => {
   })
 
   it('enables the GA4 ID in production only and permits an override', () => {
-    expect(createEnvironmentConfig({}, false).gaMeasurementId).toBe('G-BRT6MH6KPD')
+    expect(createEnvironmentConfig({}, false).gaMeasurementId).toBe('G-8RD04CNBFV')
     expect(createEnvironmentConfig({}, true).gaMeasurementId).toBe('')
     expect(
       createEnvironmentConfig(

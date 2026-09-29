@@ -23,7 +23,7 @@ describe('GA4 analytics', () => {
   })
 
   it('initializes once, tracks initial and SPA page views without duplicate route events', async () => {
-    vi.doMock('../config/env', () => ({ env: { gaMeasurementId: 'G-BRT6MH6KPD' } }))
+    vi.doMock('../config/env', () => ({ env: { gaMeasurementId: 'G-8RD04CNBFV' } }))
     const { analytics } = await import('./analytics')
     analytics.pageView('/')
     analytics.pageView('/')
@@ -49,7 +49,7 @@ describe('GA4 analytics', () => {
   })
 
   it('sends only allowlisted commerce parameters and no PII', async () => {
-    vi.doMock('../config/env', () => ({ env: { gaMeasurementId: 'G-BRT6MH6KPD' } }))
+    vi.doMock('../config/env', () => ({ env: { gaMeasurementId: 'G-8RD04CNBFV' } }))
     const { analytics } = await import('./analytics')
     analytics.event('add_to_cart', {
       item_id: '42',
