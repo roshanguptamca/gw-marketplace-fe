@@ -63,6 +63,10 @@ describe('GA4 analytics', () => {
     )
     expect(event?.[2]).toMatchObject({ item_id: '42', currency: 'EUR', value: 12.5 })
     expect(JSON.stringify(event)).not.toContain('buyer@example.com')
+    expect(event?.[2]).toMatchObject({
+      page_location: `${window.location.origin}/`,
+      page_referrer: '',
+    })
   })
 
   it('does not load GA or send events without configuration', async () => {

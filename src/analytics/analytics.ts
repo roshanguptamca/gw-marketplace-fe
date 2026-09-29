@@ -67,7 +67,13 @@ export function initializeAnalytics(): boolean {
     window.dataLayer?.push(args)
   }
   window.gtag('js', new Date())
-  window.gtag('config', env.gaMeasurementId, { send_page_view: false })
+  window.gtag('config', env.gaMeasurementId, {
+    send_page_view: false,
+    page_location: `${window.location.origin}/`,
+    page_referrer: '',
+    allow_google_signals: false,
+    allow_ad_personalization_signals: false,
+  })
   const script = document.createElement('script')
   script.async = true
   script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(env.gaMeasurementId)}`
@@ -84,6 +90,7 @@ export const analytics = {
     window.gtag?.('event', 'page_view', {
       page_path: pagePath,
       page_location: `${window.location.origin}${pagePath}`,
+      page_referrer: '',
       page_title: `GuideWisey Marketplace ${pagePath}`,
       send_to: env.gaMeasurementId,
     })
@@ -110,6 +117,14 @@ export const analytics = {
           quantity,
           ...(price !== undefined && Number.isFinite(price) ? { price } : {}),
         }))
-    window.gtag?.('event', name, { ...payload, send_to: env.gaMeasurementId })
+    const pagePath = sanitizePagePath(window.location.pathname)
+    window.gtag?.('event', name, {
+      ...payload,
+      page_path: pagePath,
+      page_location: `${window.location.origin}${pagePath}`,
+      page_title: `GuideWisey Marketplace ${pagePath}`,
+      page_referrer: '',
+      send_to: env.gaMeasurementId,
+    })
   },
 }
