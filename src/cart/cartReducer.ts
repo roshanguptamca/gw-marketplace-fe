@@ -1,4 +1,5 @@
 import type { CartItem, Product } from '../types/marketplace'
+import { effectiveMinimumQuantity } from '../utils/productUnits'
 
 export interface CartState {
   items: CartItem[]
@@ -17,6 +18,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
       return { items: action.items.filter((item) => item.quantity > 0) }
     case 'add': {
       if (action.product.stock <= 0) return state
+      const minimum = effectiveMinimumQuantity(action.product)
       const quantity = Math.max(1, action.quantity ?? 1)
       const existing = state.items.find((item) => item.product.id === action.product.id)
       if (existing) {
@@ -24,8 +26,12 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           items: state.items.map((item) =>
             item.product.id === action.product.id
               ? {
-                  ...item,
-                  quantity: Math.min(item.quantity + quantity, action.product.stock),
+                  // Refresh the product so selling format/rule changes reach older carts.
+                  product: action.product,
+                  quantity: Math.min(
+                    Math.max(item.quantity + quantity, minimum),
+                    action.product.stock,
+                  ),
                 }
               : item,
           ),
@@ -34,7 +40,10 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
       return {
         items: [
           ...state.items,
-          { product: action.product, quantity: Math.min(quantity, action.product.stock) },
+          {
+            product: action.product,
+            quantity: Math.min(Math.max(quantity, minimum), action.product.stock),
+          },
         ],
       }
     }
@@ -45,7 +54,13 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
       return {
         items: state.items.map((item) =>
           item.product.id === action.productId
-            ? { ...item, quantity: Math.min(action.quantity, item.product.stock) }
+            ? {
+                ...item,
+                quantity: Math.min(
+                  Math.max(action.quantity, effectiveMinimumQuantity(item.product)),
+                  item.product.stock,
+                ),
+              }
             : item,
         ),
       }

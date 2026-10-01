@@ -99,6 +99,9 @@ export interface ShopSettings {
   supportedDeliveryCountries: string[]
   pickupAvailable?: boolean
   deliveryAvailable?: boolean
+  pickupSlotMinutes?: number
+  pickupTimezone?: string
+  pickupBookingWindowDays?: number
 }
 
 export interface User {
@@ -186,6 +189,13 @@ export interface SellerProduct {
   is_approved: boolean
   is_featured: boolean
   preparation_time_minutes?: number | null
+  selling_unit?: SellingUnit
+  units_per_pack?: number | null
+  weight_value?: string | null
+  weight_unit?: MeasureUnit | ''
+  minimum_order_quantity?: number | null
+  minimum_physical_units?: number | null
+  minimum_order_amount?: string | null
 }
 
 export interface Coupon {
@@ -229,6 +239,18 @@ export interface CampaignInput {
   active: boolean
 }
 
+export const SELLING_UNITS = ['PIECE', 'PACK', 'PLATE', 'BOX', 'TRAY', 'BOTTLE', 'WEIGHT'] as const
+export type SellingUnit = (typeof SELLING_UNITS)[number]
+export const MEASURE_UNITS = ['GRAM', 'KILOGRAM', 'MILLILITRE', 'LITRE'] as const
+export type MeasureUnit = (typeof MEASURE_UNITS)[number]
+
+export interface OrderingRules {
+  minimumOrderQuantity: number | null
+  minimumPhysicalUnits: number | null
+  minimumOrderAmount: number | null
+  orderLeadTimeHours: number
+}
+
 export interface Product {
   id: string
   shopId?: string
@@ -244,6 +266,13 @@ export interface Product {
   stock: number
   images: string[]
   featured?: boolean
+  sku?: string
+  // Optional so carts saved before selling formats existed still render.
+  sellingUnit?: SellingUnit
+  unitsPerPack?: number | null
+  weightValue?: number | null
+  weightUnit?: MeasureUnit | null
+  orderingRules?: OrderingRules
   sellerContact?: {
     email?: string
     phone?: string
@@ -263,6 +292,7 @@ export interface OrderRequest {
   payment_method: 'cash'
   terms_accepted: true
   items: Array<{ product_id: number; quantity: number }>
+  pickup_slot_start?: string | null
   create_account?: boolean
   password?: string
   password_confirm?: string
@@ -286,6 +316,30 @@ export interface BuyerOrderItem {
   unit_price: string
   quantity: number
   line_total: string
+  sku?: string
+  selling_unit?: string
+  units_per_pack?: number | null
+  weight_value?: string | null
+  weight_unit?: string
+  physical_quantity?: number | null
+  total_weight_value?: string | null
+  quantity_description?: string
+}
+
+export interface PickupSlot {
+  start: string
+  end: string
+  date: string
+  label: string
+}
+
+export interface PickupSchedule {
+  schedulingEnabled: boolean
+  timezone: string
+  slotMinutes: number
+  requiredLeadTimeHours: number
+  earliestAvailablePickup: string | null
+  days: Array<{ date: string; label: string; slots: PickupSlot[] }>
 }
 
 export interface BuyerOrder {
@@ -307,6 +361,8 @@ export interface BuyerOrder {
   delivery_fee: string
   total: string
   customer_note: string
+  pickup_slot_start?: string | null
+  pickup_slot_end?: string | null
   fulfillment_snapshot?: {
     order_type?: 'pickup' | 'delivery'
     shop_name?: string
@@ -321,6 +377,9 @@ export interface BuyerOrder {
     pickup_country?: string
     pickup_instructions?: string
     delivery_instructions?: string
+    pickup_date?: string
+    pickup_time?: string
+    required_lead_time_hours?: number
   } | null
   seller_note: string
   items: BuyerOrderItem[]

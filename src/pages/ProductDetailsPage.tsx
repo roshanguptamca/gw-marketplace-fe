@@ -9,6 +9,14 @@ import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
 import { formatPrice, shopPath } from '../utils/shopLinks'
 import { getProductImageUrl, handleProductImageError } from '../utils/productImages'
+import {
+  effectiveMinimumQuantity,
+  hasSellingFormatDetails,
+  orderingRuleLines,
+  physicalTotalLabel,
+  sellingFormatLabel,
+  sellingUnitOf,
+} from '../utils/productUnits'
 import { ErrorPage } from './ErrorPage'
 
 export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) {
@@ -18,6 +26,7 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
   const productId = params.productId ?? ''
   const [selectedImage, setSelectedImage] = useState(0)
   const [added, setAdded] = useState(false)
+  const [selectedQuantity, setSelectedQuantity] = useState<number | null>(null)
   const { addItem } = useCart()
   const {
     data: product,
@@ -44,14 +53,24 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
     )
   }
   const backTo = (location.state as { returnTo?: string } | undefined)?.returnTo
+  const minimumQuantity = effectiveMinimumQuantity(product)
+  const maximumQuantity = Math.max(minimumQuantity, product.stock)
+  const quantity = Math.min(
+    Math.max(selectedQuantity ?? minimumQuantity, minimumQuantity),
+    maximumQuantity,
+  )
+  const formatLabel = hasSellingFormatDetails(product) ? sellingFormatLabel(product) : ''
+  const physicalTotal = physicalTotalLabel(product, quantity)
+  const ruleLines = orderingRuleLines(product, (value) => formatPrice(value, product.currency))
+  const unitWord = sellingUnitOf(product) === 'PACK' ? 'pack' : ''
 
   const handleAdd = () => {
-    addItem(product)
+    addItem(product, quantity)
     analytics.event('add_to_cart', {
       item_id: product.id,
-      value: product.price,
+      value: product.price * quantity,
       currency: product.currency,
-      items: [{ item_id: product.id, quantity: 1, price: product.price }],
+      items: [{ item_id: product.id, quantity, price: product.price }],
     })
     setAdded(true)
     window.setTimeout(() => setAdded(false), 1800)
@@ -107,7 +126,22 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
         <div className="product-info">
           <p className="eyebrow">{product.category}</p>
           <h1>{product.name}</h1>
-          <p className="product-info__price">{formatPrice(product.price, product.currency)}</p>
+          {formatLabel && (
+            <p className="product-info__format" data-testid="product-selling-format">
+              {unitWord ? `${formatLabel} per ${unitWord}` : formatLabel}
+            </p>
+          )}
+          <p className="product-info__price">
+            {formatPrice(product.price, product.currency)}
+            {unitWord ? ` per ${unitWord}` : ''}
+          </p>
+          {ruleLines.length > 0 && (
+            <ul className="product-rules" data-testid="product-ordering-rules">
+              {ruleLines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          )}
           <p className="product-info__description">{product.description}</p>
           <div className="product-info__stock">
             <span className={product.stock > 0 ? 'status-dot' : 'status-dot status-dot--empty'} />
@@ -129,13 +163,53 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
               </div>
             </div>
           ) : (
-            <button
-              className="button button--wide"
-              disabled={product.stock === 0}
-              onClick={handleAdd}
-            >
-              {product.stock === 0 ? 'Out of stock' : 'Add to cart'}
-            </button>
+            <>
+              {product.stock > 0 && (
+                <div className="quantity-stepper" aria-label="Quantity">
+                  <button
+                    type="button"
+                    className="icon-button"
+                    aria-label="Decrease quantity"
+                    disabled={quantity <= minimumQuantity}
+                    onClick={() => setSelectedQuantity(quantity - 1)}
+                  >
+                    −
+                  </button>
+                  <output aria-live="polite" data-testid="product-quantity">
+                    {quantity}
+                  </output>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    aria-label="Increase quantity"
+                    disabled={quantity >= maximumQuantity}
+                    onClick={() => setSelectedQuantity(quantity + 1)}
+                  >
+                    +
+                  </button>
+                  <div className="quantity-stepper__summary">
+                    {physicalTotal && (
+                      <span data-testid="product-physical-total">{physicalTotal}</span>
+                    )}
+                    <strong data-testid="product-line-total">
+                      {formatPrice(product.price * quantity, product.currency)}
+                    </strong>
+                  </div>
+                </div>
+              )}
+              {product.stock > 0 && product.stock < minimumQuantity && (
+                <p className="inline-note" role="alert">
+                  Not enough stock to meet this product&apos;s minimum order.
+                </p>
+              )}
+              <button
+                className="button button--wide"
+                disabled={product.stock === 0 || product.stock < minimumQuantity}
+                onClick={handleAdd}
+              >
+                {product.stock === 0 ? 'Out of stock' : 'Add to cart'}
+              </button>
+            </>
           )}
           <div className="product-notes">
             <p>
