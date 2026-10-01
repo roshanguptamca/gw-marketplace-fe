@@ -92,3 +92,42 @@ export const secondProductFixture: Product = {
     email: 'other-seller@example.com',
   },
 }
+
+export const packProductFixture: Product = {
+  ...productFixture,
+  id: 'product-pack',
+  name: 'Samosa',
+  sku: 'TS-SAM-2',
+  price: 5,
+  stock: 50,
+  featured: false,
+  sellingUnit: 'PACK',
+  unitsPerPack: 2,
+  weightValue: null,
+  weightUnit: null,
+  orderingRules: {
+    minimumOrderQuantity: null,
+    minimumPhysicalUnits: 10,
+    minimumOrderAmount: 20,
+    orderLeadTimeHours: 48,
+  },
+}
+
+export const weightProductFixture: Product = {
+  ...productFixture,
+  id: 'product-weight',
+  name: 'Namak Pare',
+  price: 5,
+  stock: 50,
+  featured: false,
+  sellingUnit: 'WEIGHT',
+  unitsPerPack: null,
+  weightValue: 250,
+  weightUnit: 'GRAM',
+  orderingRules: {
+    minimumOrderQuantity: 2,
+    minimumPhysicalUnits: null,
+    minimumOrderAmount: 10,
+    orderLeadTimeHours: 12,
+  },
+}

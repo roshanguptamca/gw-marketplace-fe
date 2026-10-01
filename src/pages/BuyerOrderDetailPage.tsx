@@ -94,6 +94,14 @@ export function BuyerOrderDetailPage() {
         {displayOrder.order_type === 'delivery' && <p>{displayOrder.delivery_address}</p>}
         {displayOrder.order_type === 'pickup' && displayOrder.fulfillment_snapshot && (
           <div className="shop-fulfilment">
+            {displayOrder.fulfillment_snapshot.pickup_date && (
+              <p data-testid="order-pickup-slot">
+                <strong>Pickup:</strong> {displayOrder.fulfillment_snapshot.pickup_date}
+                {displayOrder.fulfillment_snapshot.pickup_time
+                  ? `, ${displayOrder.fulfillment_snapshot.pickup_time}`
+                  : ''}
+              </p>
+            )}
             {displayOrder.fulfillment_snapshot.pickup_address_line_1 ? (
               <address>
                 {[
@@ -135,7 +143,9 @@ export function BuyerOrderDetailPage() {
         <ul className="checkout-items">
           {displayOrder.items.map((item) => (
             <li key={item.id}>
-              {item.product_name} × {item.quantity} — €{item.line_total}
+              {item.product_name}
+              {item.sku ? ` [${item.sku}]` : ''} × {item.quantity_description || item.quantity} — €
+              {item.line_total}
             </li>
           ))}
         </ul>

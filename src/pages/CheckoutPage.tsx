@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { useCart } from '../cart/CartContext'
 import { groupItemsByShop } from '../cart/groupByShop'
+import { usePickupSchedules } from '../cart/usePickupSchedules'
 import { useShopsForItems } from '../cart/useShopsForItems'
 import { env } from '../config/env'
 import { EmptyState } from '../components/EmptyState'
@@ -13,6 +14,13 @@ import { marketplaceService } from '../services/marketplaceService'
 import type { OrderConfirmation, OrderRequest, Shop } from '../types/marketplace'
 import { continueShoppingPath, formatPrice } from '../utils/shopLinks'
 import { getFirstProductImageUrl, handleProductImageError } from '../utils/productImages'
+import { describeOrderRuleError } from '../utils/orderRuleErrors'
+import {
+  describeQuantity,
+  formatLeadTime,
+  hasSellingFormatDetails,
+  productRuleViolations,
+} from '../utils/productUnits'
 
 interface CheckoutFields {
   fullName: string
@@ -49,6 +57,7 @@ const initialFields: CheckoutFields = {
 }
 
 const MIN_PASSWORD_LENGTH = 8
+
 function computeShopDeliveryFee(
   shop: Shop | undefined,
   orderType: 'pickup' | 'delivery',
@@ -69,6 +78,10 @@ export function CheckoutPage() {
   const [fulfilmentSelections, setFulfilmentSelections] = useState<
     Record<string, 'pickup' | 'delivery'>
   >({})
+  const [pickupSelections, setPickupSelections] = useState<
+    Record<string, { date: string; start: string }>
+  >({})
+  const [scheduleReload, setScheduleReload] = useState(0)
   const shopRefs = useRef<Record<string, HTMLFieldSetElement | null>>({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -87,6 +100,22 @@ export function CheckoutPage() {
   const { shopsBySlug, error: shopError } = useShopsForItems(items)
 
   const shopGroups = groupItemsByShop(items)
+  const pickupSchedules = usePickupSchedules(
+    shopGroups.map((group) => ({
+      shopSlug: group.shopSlug,
+      productIds: group.items.map((item) => item.product.id),
+    })),
+    scheduleReload,
+  )
+  const scheduleFor = (slug: string) => pickupSchedules[slug]?.schedule ?? null
+  const pickupSchedulingFor = (slug: string) =>
+    methodFor(slug) === 'pickup' && Boolean(scheduleFor(slug)?.schedulingEnabled)
+  const selectedSlotFor = (slug: string) => {
+    const selection = pickupSelections[slug]
+    const day = scheduleFor(slug)?.days.find((candidate) => candidate.date === selection?.date)
+    const slot = day?.slots.find((candidate) => candidate.start === selection?.start)
+    return day && slot ? { day, slot } : null
+  }
   const isMultiShop = shopGroups.length > 1
   const continueShoppingLink = continueShoppingPath(shopGroups.map((group) => group.shopSlug))
   const methodFor = (slug: string): 'pickup' | 'delivery' =>
@@ -156,6 +185,22 @@ export function CheckoutPage() {
         shopRefs.current[group.shopSlug]?.focus()
         return
       }
+      const violation = group.items
+        .flatMap(({ product, quantity }) =>
+          productRuleViolations(product, quantity, (value) => formatPrice(value, currency)),
+        )
+        .at(0)
+      if (violation) {
+        setError(violation.message)
+        shopRefs.current[group.shopSlug]?.focus()
+        return
+      }
+      if (pickupSchedulingFor(group.shopSlug) && !selectedSlotFor(group.shopSlug)) {
+        setError(`Please choose a pickup date and time for ${shop.name}.`)
+        shopRefs.current[group.shopSlug]?.scrollIntoView?.({ block: 'center' })
+        shopRefs.current[group.shopSlug]?.focus()
+        return
+      }
     }
 
     const requestingAccount = !user && fields.createAccount && !accountCreated
@@ -202,6 +247,7 @@ export function CheckoutPage() {
       // "database is locked". Sequential awaits also let the account-creation
       // request (always first) fully commit before any other order write.
       for (const [index, [shopId, shopItems]] of [...groups.entries()].entries()) {
+        const shopSlug = shopItems[0].product.shopSlug
         const order: OrderRequest = {
           shop_id: Number(shopId),
           customer_name: fields.fullName,
@@ -218,6 +264,9 @@ export function CheckoutPage() {
             product_id: Number(item.product.id),
             quantity: item.quantity,
           })),
+          ...(pickupSchedulingFor(shopSlug)
+            ? { pickup_slot_start: selectedSlotFor(shopSlug)?.slot.start ?? null }
+            : {}),
           // Only request account creation on the first order — a shopper
           // checking out across multiple shops should only get one account.
           ...(requestingAccount && index === 0
@@ -275,6 +324,25 @@ export function CheckoutPage() {
         if (group) {
           shopRefs.current[group.shopSlug]?.scrollIntoView?.({ block: 'center' })
           shopRefs.current[group.shopSlug]?.focus()
+        }
+      } else if (
+        caught instanceof ApiError &&
+        describeOrderRuleError(caught.code, caught.details, currency)
+      ) {
+        setError(partialMessage + describeOrderRuleError(caught.code, caught.details, currency))
+        if (caught.code?.startsWith('PICKUP_')) {
+          const group = shopGroups.find(
+            (item) => shopsBySlug[item.shopSlug]?.id === String(caught.details?.shop_id),
+          )
+          if (group) {
+            setPickupSelections((current) => {
+              const next = { ...current }
+              delete next[group.shopSlug]
+              return next
+            })
+            shopRefs.current[group.shopSlug]?.focus()
+          }
+          setScheduleReload((value) => value + 1)
         }
       } else {
         setError(
@@ -514,6 +582,19 @@ export function CheckoutPage() {
                   </label>
                 )}
                 {shop && <ShopFulfilment shop={shop} method={methodFor(group.shopSlug)} />}
+                {shop && methodFor(group.shopSlug) === 'pickup' && (
+                  <PickupSlotPicker
+                    shopName={shop.name}
+                    state={pickupSchedules[group.shopSlug]}
+                    selection={pickupSelections[group.shopSlug]}
+                    onChange={(selection) =>
+                      setPickupSelections((current) => ({
+                        ...current,
+                        [group.shopSlug]: selection,
+                      }))
+                    }
+                  />
+                )}
                 {shop && !shop.pickupAvailable && !shop.deliveryAvailable && (
                   <p role="alert">This shop has no available fulfilment methods.</p>
                 )}
@@ -661,7 +742,10 @@ export function CheckoutPage() {
                     />
                     <span>
                       <strong>{product.name}</strong>
-                      {quantity} × {formatPrice(product.price, product.currency)}
+                      {hasSellingFormatDetails(product)
+                        ? describeQuantity(product, quantity)
+                        : quantity}{' '}
+                      × {formatPrice(product.price, product.currency)}
                     </span>
                     <strong>{formatPrice(product.price * quantity, product.currency)}</strong>
                   </div>
@@ -684,6 +768,13 @@ export function CheckoutPage() {
                       </p>
                     )}
                   </div>
+                )}
+                {methodFor(group.shopSlug) === 'pickup' && (
+                  <PickupSummary
+                    shop={shop}
+                    leadTimeHours={scheduleFor(group.shopSlug)?.requiredLeadTimeHours ?? 0}
+                    selected={selectedSlotFor(group.shopSlug)}
+                  />
                 )}
                 {isMultiShop && (
                   <>
@@ -778,5 +869,121 @@ export function CheckoutPage() {
         </aside>
       </form>
     </main>
+  )
+}
+
+function PickupSlotPicker({
+  shopName,
+  state,
+  selection,
+  onChange,
+}: {
+  shopName: string
+  state: ReturnType<typeof usePickupSchedules>[string] | undefined
+  selection: { date: string; start: string } | undefined
+  onChange: (selection: { date: string; start: string }) => void
+}) {
+  if (!state) return null
+  if (state.error) return <p className="inline-note">{state.error}</p>
+  const schedule = state.schedule
+  if (!schedule) return state.loading ? <p className="inline-note">Loading pickup times…</p> : null
+  if (!schedule.schedulingEnabled) return null
+  const lead = formatLeadTime(schedule.requiredLeadTimeHours)
+  if (schedule.days.length === 0) {
+    return (
+      <p role="alert">
+        {shopName} has no pickup times available in the booking window. Please contact the seller.
+      </p>
+    )
+  }
+  const day = schedule.days.find((candidate) => candidate.date === selection?.date)
+  return (
+    <div className="pickup-slot-picker">
+      {lead && (
+        <p className="inline-note" data-testid="required-preparation">
+          Required preparation: {lead}
+        </p>
+      )}
+      <div className="form-grid">
+        <label className="form-field">
+          Pickup date
+          <select
+            value={selection?.date ?? ''}
+            onChange={(event) => onChange({ date: event.target.value, start: '' })}
+            required
+          >
+            <option value="" disabled>
+              Choose a date
+            </option>
+            {schedule.days.map((candidate) => (
+              <option key={candidate.date} value={candidate.date}>
+                {candidate.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="form-field">
+          Pickup time
+          <select
+            value={selection?.start ?? ''}
+            onChange={(event) =>
+              onChange({ date: selection?.date ?? '', start: event.target.value })
+            }
+            disabled={!day}
+            required
+          >
+            <option value="" disabled>
+              Choose a time
+            </option>
+            {day?.slots.map((slot) => (
+              <option key={slot.start} value={slot.start}>
+                {slot.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </div>
+  )
+}
+
+function PickupSummary({
+  shop,
+  leadTimeHours,
+  selected,
+}: {
+  shop: Shop | undefined
+  leadTimeHours: number
+  selected: { day: { label: string }; slot: { label: string } } | null
+}) {
+  const address = shop?.pickupAddress
+    ? [
+        shop.pickupAddress.addressLine1,
+        shop.pickupAddress.addressLine2,
+        [shop.pickupAddress.postalCode, shop.pickupAddress.city].filter(Boolean).join(' '),
+        shop.pickupAddress.country,
+      ]
+        .filter(Boolean)
+        .join(', ')
+    : ''
+  if (!selected && !address && leadTimeHours <= 0) return null
+  return (
+    <div className="checkout-pickup-summary" data-testid="checkout-pickup-summary">
+      {selected && (
+        <p>
+          <strong>Pickup</strong> {selected.day.label}, {selected.slot.label}
+        </p>
+      )}
+      {address && (
+        <p>
+          <strong>Pickup location</strong> {address}
+        </p>
+      )}
+      {leadTimeHours > 0 && (
+        <p>
+          <strong>Preparation requirement</strong> {formatLeadTime(leadTimeHours)}
+        </p>
+      )}
+    </div>
   )
 }

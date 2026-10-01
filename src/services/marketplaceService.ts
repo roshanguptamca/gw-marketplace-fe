@@ -22,6 +22,10 @@ import type {
   SellerProduct,
   SellerProductImage,
   OpeningHour,
+  MeasureUnit,
+  PickupSchedule,
+  PickupSlot,
+  SellingUnit,
   ShopSettings,
   Shop,
 } from '../types/marketplace'
@@ -113,6 +117,18 @@ interface ApiShopSettings {
   supported_delivery_countries?: string[]
   pickup_available?: boolean
   delivery_available?: boolean
+  pickup_slot_minutes?: number
+  pickup_timezone?: string
+  pickup_booking_window_days?: number
+}
+
+interface ApiPickupSchedule {
+  scheduling_enabled: boolean
+  timezone: string
+  slot_minutes: number
+  required_lead_time_hours: number
+  earliest_available_pickup: string | null
+  days: Array<{ date: string; label: string; slots: PickupSlot[] }>
 }
 
 interface ApiProductImage {
@@ -163,6 +179,26 @@ export interface ApiProduct {
   is_active: boolean
   is_approved: boolean
   sku?: string | null
+  selling_unit?: SellingUnit
+  units_per_pack?: number | null
+  weight_value?: string | null
+  weight_unit?: MeasureUnit | '' | null
+  preparation_time_minutes?: number | null
+  minimum_order_quantity?: number | null
+  minimum_physical_units?: number | null
+  minimum_order_amount?: string | null
+  ordering_rules?: {
+    minimum_order_quantity: number | null
+    minimum_physical_units: number | null
+    minimum_order_amount: string | null
+    order_lead_time_hours: number
+  }
+}
+
+function optionalNumber(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
 }
 
 interface ApiCategory {
@@ -218,6 +254,9 @@ function normalizeShopSettings(settings: ApiShopSettings | undefined): ShopSetti
     supportedDeliveryCountries: settings.supported_delivery_countries ?? [],
     pickupAvailable: settings.pickup_available ?? true,
     deliveryAvailable: settings.delivery_available ?? false,
+    pickupSlotMinutes: settings.pickup_slot_minutes ?? 30,
+    pickupTimezone: settings.pickup_timezone ?? 'Europe/Amsterdam',
+    pickupBookingWindowDays: settings.pickup_booking_window_days ?? 14,
   }
 }
 
@@ -347,6 +386,23 @@ export function normalizeProduct(product: ApiProduct, fallbackShopSlug = ''): Pr
       (image, index, all) => all.indexOf(image) === index,
     ),
     featured: product.is_featured,
+    sku: product.sku ?? undefined,
+    sellingUnit: product.selling_unit ?? 'PIECE',
+    unitsPerPack: product.units_per_pack ?? null,
+    weightValue: optionalNumber(product.weight_value),
+    weightUnit: product.weight_unit || null,
+    orderingRules: {
+      minimumOrderQuantity:
+        product.ordering_rules?.minimum_order_quantity ?? product.minimum_order_quantity ?? null,
+      minimumPhysicalUnits:
+        product.ordering_rules?.minimum_physical_units ?? product.minimum_physical_units ?? null,
+      minimumOrderAmount: optionalNumber(
+        product.ordering_rules?.minimum_order_amount ?? product.minimum_order_amount,
+      ),
+      orderLeadTimeHours:
+        product.ordering_rules?.order_lead_time_hours ??
+        (product.preparation_time_minutes ?? 0) / 60,
+    },
     sellerContact: {
       email: shop?.email ?? shop?.contact_email,
       phone: shop?.phone ?? shop?.contact_phone,
@@ -497,6 +553,33 @@ export const marketplaceService = {
     )
   },
 
+  async getPickupSchedule(shopSlug: string, productIds: string[]): Promise<PickupSchedule> {
+    return withDevelopmentFallback(
+      async () => {
+        const query = new URLSearchParams({ product_ids: productIds.join(',') })
+        const response = await apiRequest<ApiPickupSchedule>(
+          `/marketplace/shops/${encodeURIComponent(shopSlug)}/pickup-slots/?${query.toString()}`,
+        )
+        return {
+          schedulingEnabled: response.scheduling_enabled,
+          timezone: response.timezone,
+          slotMinutes: response.slot_minutes,
+          requiredLeadTimeHours: response.required_lead_time_hours,
+          earliestAvailablePickup: response.earliest_available_pickup,
+          days: response.days,
+        }
+      },
+      () => ({
+        schedulingEnabled: false,
+        timezone: 'Europe/Amsterdam',
+        slotMinutes: 30,
+        requiredLeadTimeHours: 0,
+        earliestAvailablePickup: null,
+        days: [],
+      }),
+    )
+  },
+
   getCart: () =>
     withDevelopmentFallback(
       () => apiRequest<CartSnapshot>('/marketplace/cart/'),
@@ -590,6 +673,9 @@ export const marketplaceService = {
         supported_delivery_countries: data.supportedDeliveryCountries,
         pickup_available: data.pickupAvailable,
         delivery_available: data.deliveryAvailable,
+        pickup_slot_minutes: data.pickupSlotMinutes,
+        pickup_timezone: data.pickupTimezone,
+        pickup_booking_window_days: data.pickupBookingWindowDays,
       }),
     }).then((settings) => normalizeShopSettings(settings) as ShopSettings),
   updateSellerProduct: (id: number, data: Partial<ApiProduct>) =>

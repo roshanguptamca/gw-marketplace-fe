@@ -49,4 +49,39 @@ describe('cart reducer', () => {
     const added = cartReducer(empty, { type: 'add', product: productFixture })
     expect(cartReducer(added, { type: 'update', productId: 'missing', quantity: 2 })).toEqual(added)
   })
+
+  it('starts and clamps rule-based products at their minimum quantity', () => {
+    const samosa = {
+      ...productFixture,
+      id: 'samosa',
+      price: 5,
+      stock: 50,
+      sellingUnit: 'PACK' as const,
+      unitsPerPack: 2,
+      orderingRules: {
+        minimumOrderQuantity: null,
+        minimumPhysicalUnits: 10,
+        minimumOrderAmount: null,
+        orderLeadTimeHours: 24,
+      },
+    }
+    const added = cartReducer(empty, { type: 'add', product: samosa })
+    expect(added.items[0].quantity).toBe(5)
+    const again = cartReducer(added, { type: 'add', product: samosa })
+    expect(again.items[0].quantity).toBe(6)
+    expect(
+      cartReducer(again, { type: 'update', productId: 'samosa', quantity: 2 }).items[0].quantity,
+    ).toBe(5)
+    expect(cartReducer(again, { type: 'update', productId: 'samosa', quantity: 0 }).items).toEqual(
+      [],
+    )
+  })
+
+  it('refreshes stored product data when the same product is added again', () => {
+    const added = cartReducer(empty, { type: 'add', product: productFixture })
+    const updated = { ...productFixture, sellingUnit: 'PLATE' as const }
+    expect(cartReducer(added, { type: 'add', product: updated }).items[0].product.sellingUnit).toBe(
+      'PLATE',
+    )
+  })
 })

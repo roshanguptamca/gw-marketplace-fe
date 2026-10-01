@@ -6,6 +6,18 @@ import { useShopsForItems } from '../cart/useShopsForItems'
 import { EmptyState } from '../components/EmptyState'
 import { continueShoppingPath, formatPrice } from '../utils/shopLinks'
 import { getFirstProductImageUrl, handleProductImageError } from '../utils/productImages'
+import {
+  describeQuantity,
+  effectiveMinimumQuantity,
+  hasSellingFormatDetails,
+  productRuleViolations,
+  sellingFormatLabel,
+} from '../utils/productUnits'
+
+function quantityOptions(minimum: number, stock: number, current: number): number[] {
+  const last = Math.max(Math.min(stock, Math.max(minimum + 9, 10)), current)
+  return Array.from({ length: Math.max(last - minimum + 1, 1) }, (_, index) => minimum + index)
+}
 
 export function CartPage() {
   const { items, subtotal, updateQuantity, removeItem } = useCart()
@@ -72,51 +84,73 @@ export function CartPage() {
                     )}
                   </div>
                 )}
-                {group.items.map(({ product, quantity }) => (
-                  <article className="cart-item" key={product.id}>
-                    <img
-                      src={getFirstProductImageUrl(product.images)}
-                      alt={product.name}
-                      onError={handleProductImageError}
-                    />
-                    <div className="cart-item__details">
-                      <p className="eyebrow">{shop?.name ?? product.shopSlug}</p>
-                      <h2>{product.name}</h2>
-                      <p>{formatPrice(product.price, product.currency)}</p>
-                      <button
-                        className="text-button"
-                        onClick={() => {
-                          analytics.event('remove_from_cart', {
-                            item_id: product.id,
-                            value: product.price * quantity,
-                            currency: product.currency,
-                            items: [{ item_id: product.id, quantity, price: product.price }],
-                          })
-                          removeItem(product.id)
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                    <label className="quantity">
-                      <span>Quantity</span>
-                      <select
-                        value={quantity}
-                        onChange={(event) => updateQuantity(product.id, Number(event.target.value))}
-                      >
-                        {Array.from(
-                          { length: Math.min(product.stock, 10) },
-                          (_, index) => index + 1,
-                        ).map((value) => (
-                          <option key={value} value={value}>
-                            {value}
-                          </option>
+                {group.items.map(({ product, quantity }) => {
+                  const violations = productRuleViolations(product, quantity, (value) =>
+                    formatPrice(value, product.currency),
+                  )
+                  const showUnits = hasSellingFormatDetails(product)
+                  return (
+                    <article className="cart-item" key={product.id}>
+                      <img
+                        src={getFirstProductImageUrl(product.images)}
+                        alt={product.name}
+                        onError={handleProductImageError}
+                      />
+                      <div className="cart-item__details">
+                        <p className="eyebrow">{shop?.name ?? product.shopSlug}</p>
+                        <h2>{product.name}</h2>
+                        <p>
+                          {formatPrice(product.price, product.currency)}
+                          {showUnits ? ` · ${sellingFormatLabel(product)}` : ''}
+                        </p>
+                        {showUnits && (
+                          <p className="cart-item__units" data-testid="cart-item-units">
+                            {describeQuantity(product, quantity)}
+                          </p>
+                        )}
+                        {violations.map((violation) => (
+                          <p className="cart-item__rules" role="alert" key={violation.code}>
+                            {violation.message}
+                          </p>
                         ))}
-                      </select>
-                    </label>
-                    <strong>{formatPrice(product.price * quantity, product.currency)}</strong>
-                  </article>
-                ))}
+                        <button
+                          className="text-button"
+                          onClick={() => {
+                            analytics.event('remove_from_cart', {
+                              item_id: product.id,
+                              value: product.price * quantity,
+                              currency: product.currency,
+                              items: [{ item_id: product.id, quantity, price: product.price }],
+                            })
+                            removeItem(product.id)
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <label className="quantity">
+                        <span>Quantity</span>
+                        <select
+                          value={quantity}
+                          onChange={(event) =>
+                            updateQuantity(product.id, Number(event.target.value))
+                          }
+                        >
+                          {quantityOptions(
+                            effectiveMinimumQuantity(product),
+                            product.stock,
+                            quantity,
+                          ).map((value) => (
+                            <option key={value} value={value}>
+                              {value}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <strong>{formatPrice(product.price * quantity, product.currency)}</strong>
+                    </article>
+                  )
+                })}
               </div>
             )
           })}

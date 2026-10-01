@@ -6,21 +6,29 @@ import { useCart } from '../cart/CartContext'
 import type { Product } from '../types/marketplace'
 import { formatPrice, shopPath } from '../utils/shopLinks'
 import { getFirstProductImageUrl, handleProductImageError } from '../utils/productImages'
+import {
+  effectiveMinimumQuantity,
+  hasSellingFormatDetails,
+  sellingFormatLabel,
+} from '../utils/productUnits'
 
 export function ProductCard({ product }: { product: Product }) {
   const { t } = useTranslation()
-  const { addItem } = useCart()
+  const { addItem, items } = useCart()
   const [added, setAdded] = useState(false)
   const location = useLocation()
   const href = shopPath(product.shopSlug, `/products/${product.id}`)
   const returnTo = `${location.pathname}${location.search}${location.hash}`
+  const formatLabel = hasSellingFormatDetails(product) ? sellingFormatLabel(product) : ''
+  const minimumQuantity = effectiveMinimumQuantity(product)
   const handleAdd = () => {
+    const addedQuantity = items.some((item) => item.product.id === product.id) ? 1 : minimumQuantity
     addItem(product)
     analytics.event('add_to_cart', {
       item_id: product.id,
       value: product.price,
       currency: product.currency,
-      items: [{ item_id: product.id, quantity: 1, price: product.price }],
+      items: [{ item_id: product.id, quantity: addedQuantity, price: product.price }],
     })
     setAdded(true)
     window.setTimeout(() => setAdded(false), 1600)
@@ -49,6 +57,7 @@ export function ProductCard({ product }: { product: Product }) {
             {product.name}
           </Link>
         </h3>
+        {formatLabel && <p className="product-card__format">{formatLabel}</p>}
         <div className="product-card__footer">
           <strong>{formatPrice(product.price, product.currency)}</strong>
           <button

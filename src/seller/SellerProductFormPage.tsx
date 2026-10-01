@@ -1,9 +1,21 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
+import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
-import type { SellerCategory, SellerProduct, SellerProductImage } from '../types/marketplace'
+import {
+  MEASURE_UNITS,
+  SELLING_UNITS,
+  type MeasureUnit,
+  type SellerCategory,
+  type SellerProduct,
+  type SellerProductImage,
+  type SellingUnit,
+} from '../types/marketplace'
 import { handleProductImageError } from '../utils/productImages'
+import { MEASURE_UNIT_LABELS, SELLING_UNIT_LABELS } from '../utils/productUnits'
+
+type LeadTimeUnit = 'hours' | 'days'
 
 interface ProductFormState {
   name: string
@@ -17,6 +29,34 @@ interface ProductFormState {
   allergens: string
   is_active: boolean
   is_featured: boolean
+  selling_unit: SellingUnit
+  units_per_pack: string
+  weight_value: string
+  weight_unit: MeasureUnit | ''
+  minimum_order_quantity: string
+  minimum_physical_units: string
+  minimum_order_amount: string
+  lead_time_value: string
+  lead_time_unit: LeadTimeUnit
+}
+
+/** Show whole days when the stored lead time divides evenly, otherwise hours. */
+function leadTimeFields(minutes: number | null | undefined) {
+  const total = minutes ?? 0
+  if (total > 0 && total % (24 * 60) === 0) {
+    return { lead_time_value: String(total / (24 * 60)), lead_time_unit: 'days' as const }
+  }
+  return { lead_time_value: total > 0 ? String(total / 60) : '', lead_time_unit: 'hours' as const }
+}
+
+function leadTimeMinutes(value: string, unit: LeadTimeUnit): number {
+  const parsed = Number(value)
+  if (!value || !Number.isFinite(parsed) || parsed <= 0) return 0
+  return Math.round(parsed * (unit === 'days' ? 24 * 60 : 60))
+}
+
+function trimDecimal(value: string | null | undefined): string {
+  return value ? String(Number(value)) : ''
 }
 
 const EMPTY_FORM: ProductFormState = {
@@ -31,6 +71,15 @@ const EMPTY_FORM: ProductFormState = {
   allergens: '',
   is_active: true,
   is_featured: false,
+  selling_unit: 'PIECE',
+  units_per_pack: '',
+  weight_value: '',
+  weight_unit: '',
+  minimum_order_quantity: '',
+  minimum_physical_units: '',
+  minimum_order_amount: '',
+  lead_time_value: '',
+  lead_time_unit: 'hours',
 }
 
 export function SellerProductFormPage() {
@@ -74,6 +123,18 @@ export function SellerProductFormPage() {
             allergens: product.allergens,
             is_active: product.is_active,
             is_featured: product.is_featured,
+            selling_unit: product.selling_unit ?? 'PIECE',
+            units_per_pack: product.units_per_pack ? String(product.units_per_pack) : '',
+            weight_value: trimDecimal(product.weight_value),
+            weight_unit: product.weight_unit ?? '',
+            minimum_order_quantity: product.minimum_order_quantity
+              ? String(product.minimum_order_quantity)
+              : '',
+            minimum_physical_units: product.minimum_physical_units
+              ? String(product.minimum_physical_units)
+              : '',
+            minimum_order_amount: product.minimum_order_amount ?? '',
+            ...leadTimeFields(product.preparation_time_minutes),
           })
           setImages([...(product.images ?? [])].sort((a, b) => a.sort_order - b.sort_order))
         }
@@ -118,6 +179,19 @@ export function SellerProductFormPage() {
     formData.set('allergens', form.allergens)
     formData.set('is_active', form.is_active ? 'true' : 'false')
     formData.set('is_featured', form.is_featured ? 'true' : 'false')
+    const isWeight = form.selling_unit === 'WEIGHT'
+    formData.set('selling_unit', form.selling_unit)
+    // Empty strings are stored as "not configured" (null) by the API.
+    formData.set('units_per_pack', isWeight ? '' : form.units_per_pack)
+    formData.set('weight_value', isWeight ? form.weight_value : '')
+    formData.set('weight_unit', isWeight ? form.weight_unit : '')
+    formData.set('minimum_order_quantity', form.minimum_order_quantity)
+    formData.set('minimum_physical_units', isWeight ? '' : form.minimum_physical_units)
+    formData.set('minimum_order_amount', form.minimum_order_amount)
+    formData.set(
+      'preparation_time_minutes',
+      String(leadTimeMinutes(form.lead_time_value, form.lead_time_unit)),
+    )
     if (imageFile) formData.set('image', imageFile)
 
     try {
@@ -129,8 +203,12 @@ export function SellerProductFormPage() {
         const created = await marketplaceService.createSellerProductForm(formData)
         navigate(`/seller/products/${created.id}/edit`)
       }
-    } catch {
-      setStatus('Could not save product')
+    } catch (caught) {
+      setStatus(
+        caught instanceof ApiError && caught.status === 400
+          ? `Could not save product: ${caught.message}`
+          : 'Could not save product',
+      )
     }
   }
 
@@ -252,6 +330,141 @@ export function SellerProductFormPage() {
             />
           </label>
         </div>
+        <fieldset className="seller-form-section">
+          <legend>Selling format</legend>
+          <p className="inline-note">
+            How one unit in the customer&apos;s cart is sold. The price above is per unit.
+          </p>
+          <div className="seller-form-grid">
+            <label>
+              Sold as
+              <select
+                value={form.selling_unit}
+                onChange={(event) => updateField('selling_unit', event.target.value as SellingUnit)}
+              >
+                {SELLING_UNITS.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {SELLING_UNIT_LABELS[unit]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {form.selling_unit === 'WEIGHT' ? (
+              <>
+                <label>
+                  Weight / volume
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0.001"
+                    value={form.weight_value}
+                    onChange={(event) => updateField('weight_value', event.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  Unit
+                  <select
+                    value={form.weight_unit}
+                    onChange={(event) =>
+                      updateField('weight_unit', event.target.value as MeasureUnit | '')
+                    }
+                    required
+                  >
+                    <option value="">Choose unit</option>
+                    {MEASURE_UNITS.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {MEASURE_UNIT_LABELS[unit]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            ) : (
+              form.selling_unit !== 'PIECE' && (
+                <label>
+                  Pieces per {SELLING_UNIT_LABELS[form.selling_unit].toLowerCase()}
+                  <input
+                    type="number"
+                    step="1"
+                    min="1"
+                    value={form.units_per_pack}
+                    onChange={(event) => updateField('units_per_pack', event.target.value)}
+                    required={form.selling_unit === 'PACK'}
+                  />
+                </label>
+              )
+            )}
+          </div>
+        </fieldset>
+        <fieldset className="seller-form-section">
+          <legend>Ordering requirements</legend>
+          <p className="inline-note">
+            Leave a field empty when it does not apply. Example: if you sell 2 Samosas per pack and
+            require at least 10 Samosas per order, set &quot;Pieces per pack&quot; to 2 and
+            &quot;Minimum physical pieces&quot; to 10 — customers must then order at least 5 packs.
+          </p>
+          <div className="seller-form-grid">
+            <label>
+              Minimum cart quantity
+              <input
+                type="number"
+                step="1"
+                min="1"
+                value={form.minimum_order_quantity}
+                onChange={(event) => updateField('minimum_order_quantity', event.target.value)}
+              />
+            </label>
+            {form.selling_unit !== 'WEIGHT' && (
+              <label>
+                Minimum physical pieces
+                <input
+                  type="number"
+                  step="1"
+                  min="1"
+                  value={form.minimum_physical_units}
+                  onChange={(event) => updateField('minimum_physical_units', event.target.value)}
+                />
+              </label>
+            )}
+            <label>
+              Minimum order amount for this product
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.minimum_order_amount}
+                onChange={(event) => updateField('minimum_order_amount', event.target.value)}
+              />
+            </label>
+            <label>
+              Advance notice
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                value={form.lead_time_value}
+                onChange={(event) => updateField('lead_time_value', event.target.value)}
+              />
+            </label>
+            <label>
+              Advance notice unit
+              <select
+                value={form.lead_time_unit}
+                onChange={(event) =>
+                  updateField('lead_time_unit', event.target.value as LeadTimeUnit)
+                }
+              >
+                <option value="hours">Hours</option>
+                <option value="days">Days</option>
+              </select>
+            </label>
+          </div>
+          <p className="inline-note">
+            Advance notice is how long you need to prepare this product. Pickup times are offered
+            only after the longest advance notice of all your products in the order.
+          </p>
+        </fieldset>
         <label>
           Description
           <textarea

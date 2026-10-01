@@ -4,10 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { env } from '../config/env'
 import { marketplaceService } from '../services/marketplaceService'
 import {
+  packProductFixture,
   productFixture,
   secondProductFixture,
   secondShopFixture,
   shopFixture,
+  weightProductFixture,
 } from '../test/fixtures'
 import { renderPage } from '../test/renderPage'
 import { CartPage } from './CartPage'
@@ -33,6 +35,7 @@ vi.mock('../services/marketplaceService', () => ({
     lookupAddress: vi.fn(),
     getBuyerOrders: vi.fn(),
     getBuyerOrder: vi.fn(),
+    getPickupSchedule: vi.fn(),
   },
 }))
 
@@ -62,6 +65,14 @@ describe('marketplace pages', () => {
     })
     service.lookupAddress.mockResolvedValue(null)
     service.getBuyerOrders.mockResolvedValue([])
+    service.getPickupSchedule.mockResolvedValue({
+      schedulingEnabled: false,
+      timezone: 'Europe/Amsterdam',
+      slotMinutes: 30,
+      requiredLeadTimeHours: 0,
+      earliestAvailablePickup: null,
+      days: [],
+    })
   })
 
   it('renders marketplace shops', async () => {
@@ -968,5 +979,179 @@ describe('marketplace pages', () => {
       'href',
       '/shop/test-shop/',
     )
+  })
+  describe('product selling formats and pickup scheduling', () => {
+    const schedule = {
+      schedulingEnabled: true,
+      timezone: 'Europe/Amsterdam',
+      slotMinutes: 30,
+      requiredLeadTimeHours: 48,
+      earliestAvailablePickup: '2026-10-03T14:00:00+02:00',
+      days: [
+        {
+          date: '2026-10-03',
+          label: 'Saturday 3 October 2026',
+          slots: [
+            {
+              start: '2026-10-03T14:00:00+02:00',
+              end: '2026-10-03T14:30:00+02:00',
+              date: '2026-10-03',
+              label: '14:00–14:30',
+            },
+            {
+              start: '2026-10-03T14:30:00+02:00',
+              end: '2026-10-03T15:00:00+02:00',
+              date: '2026-10-03',
+              label: '14:30–15:00',
+            },
+          ],
+        },
+      ],
+    }
+
+    const fillContact = async () => {
+      await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
+      await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
+      await userEvent.type(screen.getByLabelText('Phone'), '123456')
+      await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+    }
+
+    it('shows pack details, configured rules and a rule-aware quantity selector', async () => {
+      service.getProductDetails.mockResolvedValueOnce(packProductFixture)
+      renderPage(<ProductDetailsPage resolvedSlug="test-shop" />)
+      expect(await screen.findByTestId('product-selling-format')).toHaveTextContent(
+        '2 pieces per pack',
+      )
+      expect(screen.getByText('€5.00 per pack')).toBeInTheDocument()
+      const rules = screen.getByTestId('product-ordering-rules')
+      expect(rules).toHaveTextContent('Minimum order: 10 pieces')
+      expect(rules).toHaveTextContent('Minimum amount: €20.00')
+      expect(rules).toHaveTextContent('Order at least 48 hours in advance')
+      expect(screen.getByTestId('product-quantity')).toHaveTextContent('5')
+      expect(screen.getByTestId('product-physical-total')).toHaveTextContent('10 pieces')
+      expect(screen.getByTestId('product-line-total')).toHaveTextContent('€25.00')
+      expect(screen.getByRole('button', { name: 'Decrease quantity' })).toBeDisabled()
+      await userEvent.click(screen.getByRole('button', { name: 'Increase quantity' }))
+      expect(screen.getByTestId('product-physical-total')).toHaveTextContent('12 pieces')
+      await userEvent.click(screen.getByRole('button', { name: 'Add to cart' }))
+      const stored = JSON.parse(localStorage.getItem('guidewisey-marketplace-cart') ?? '{}')
+      expect(stored.items[0].quantity).toBe(6)
+    })
+
+    it('shows weight totals for weight-based products', async () => {
+      service.getProductDetails.mockResolvedValueOnce(weightProductFixture)
+      renderPage(<ProductDetailsPage resolvedSlug="test-shop" />)
+      expect(await screen.findByTestId('product-selling-format')).toHaveTextContent('250 g')
+      expect(screen.getByTestId('product-ordering-rules')).toHaveTextContent(
+        'Minimum: 2 packs / 500 g',
+      )
+      expect(screen.getByTestId('product-physical-total')).toHaveTextContent('500 g')
+      expect(screen.getByTestId('product-line-total')).toHaveTextContent('€10.00')
+    })
+
+    it('explains unit calculations and rule problems in the cart', async () => {
+      localStorage.setItem(
+        'guidewisey-marketplace-cart',
+        JSON.stringify({
+          items: [
+            { product: packProductFixture, quantity: 3 },
+            { product: weightProductFixture, quantity: 2 },
+          ],
+        }),
+      )
+      renderPage(<CartPage />)
+      const units = screen.getAllByTestId('cart-item-units')
+      expect(units[0]).toHaveTextContent('3 packs × 2 pieces (6 pieces)')
+      expect(units[1]).toHaveTextContent('2 × 250 g (500 g)')
+      expect(screen.getByText(/Samosa: order at least 10 pieces/)).toBeInTheDocument()
+      const select = screen.getAllByLabelText('Quantity')[0]
+      expect(select.querySelector('option')?.textContent).toBe('5')
+    })
+
+    it('requires and submits a backend pickup slot per shop', async () => {
+      service.getPickupSchedule.mockResolvedValue(schedule)
+      localStorage.setItem(
+        'guidewisey-marketplace-cart',
+        JSON.stringify({ items: [{ product: packProductFixture, quantity: 5 }] }),
+      )
+      renderPage(<CheckoutPage />)
+      expect(await screen.findByTestId('required-preparation')).toHaveTextContent(
+        'Required preparation: 48 hours',
+      )
+      expect(service.getPickupSchedule).toHaveBeenCalledWith('test-shop', ['product-pack'])
+      expect(screen.getByText(/5 packs × 2 pieces \(10 pieces\)/)).toBeInTheDocument()
+      await fillContact()
+      expect(screen.getByLabelText('Pickup date')).toBeRequired()
+      expect(screen.getByLabelText('Pickup time')).toBeRequired()
+      await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+      expect(service.createOrderRequest).not.toHaveBeenCalled()
+
+      await userEvent.selectOptions(screen.getByLabelText('Pickup date'), '2026-10-03')
+      await userEvent.selectOptions(
+        screen.getByLabelText('Pickup time'),
+        '2026-10-03T14:30:00+02:00',
+      )
+      expect(screen.getByTestId('checkout-pickup-summary')).toHaveTextContent(
+        'Saturday 3 October 2026, 14:30–15:00',
+      )
+      await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+      await waitFor(() =>
+        expect(service.createOrderRequest).toHaveBeenCalledWith(
+          expect.objectContaining({
+            order_type: 'pickup',
+            pickup_slot_start: '2026-10-03T14:30:00+02:00',
+            items: [{ product_id: Number.NaN, quantity: 5 }],
+          }),
+        ),
+      )
+    })
+
+    it('blocks checkout when a product minimum is not met', async () => {
+      localStorage.setItem(
+        'guidewisey-marketplace-cart',
+        JSON.stringify({ items: [{ product: packProductFixture, quantity: 3 }] }),
+      )
+      renderPage(<CheckoutPage />)
+      await screen.findByRole('radio', { name: 'Pickup' })
+      await fillContact()
+      await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+      expect(screen.getByRole('alert')).toHaveTextContent('Samosa: order at least 10 pieces')
+      expect(service.createOrderRequest).not.toHaveBeenCalled()
+    })
+
+    it('explains a too-early pickup from the backend and reloads the slots', async () => {
+      const { ApiError } = await import('../services/apiClient')
+      service.getPickupSchedule.mockResolvedValue(schedule)
+      service.createOrderRequest.mockRejectedValueOnce(
+        new ApiError('too early', 400, 'PICKUP_TIME_TOO_EARLY', {
+          code: 'PICKUP_TIME_TOO_EARLY',
+          shop_id: 'shop-1',
+          shop_name: 'Test Shop',
+          required_lead_time_hours: 48,
+          earliest_available_pickup: '2026-10-03T14:30:00+02:00',
+        }),
+      )
+      localStorage.setItem(
+        'guidewisey-marketplace-cart',
+        JSON.stringify({ items: [{ product: packProductFixture, quantity: 5 }] }),
+      )
+      renderPage(<CheckoutPage />)
+      await screen.findByLabelText('Pickup date')
+      await fillContact()
+      await userEvent.selectOptions(screen.getByLabelText('Pickup date'), '2026-10-03')
+      await userEvent.selectOptions(
+        screen.getByLabelText('Pickup time'),
+        '2026-10-03T14:00:00+02:00',
+      )
+      const callsBefore = service.getPickupSchedule.mock.calls.length
+      await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'The selected pickup time for Test Shop is too early: the order needs 48 hours of preparation. Earliest available pickup: Saturday 3 October 14:30.',
+      )
+      await waitFor(() =>
+        expect(service.getPickupSchedule.mock.calls.length).toBeGreaterThan(callsBefore),
+      )
+      expect(screen.getByLabelText('Pickup time')).toHaveValue('')
+    })
   })
 })

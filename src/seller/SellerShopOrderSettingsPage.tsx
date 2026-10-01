@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { LoadingState } from '../components/LoadingState'
+import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
 import type { ShopSettings } from '../types/marketplace'
 
@@ -61,8 +62,12 @@ export function SellerShopOrderSettingsPage() {
       setFormData(updated)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch {
-      setError('Failed to save order settings.')
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError && caught.status === 400
+          ? `Failed to save order settings: ${caught.message}`
+          : 'Failed to save order settings.',
+      )
     } finally {
       setSaving(false)
     }
@@ -136,6 +141,63 @@ export function SellerShopOrderSettingsPage() {
                 name="currency"
                 value={formData.currency}
                 onChange={handleChange}
+                className="form-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h3>Pickup scheduling</h3>
+          <p className="form-hint">
+            Customers choose a pickup slot within your opening hours (Shop hours page). The earliest
+            slot respects the longest advance notice of the products in their order.
+          </p>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="pickupSlotMinutes">Pickup slot length (minutes)</label>
+              <input
+                type="number"
+                id="pickupSlotMinutes"
+                name="pickupSlotMinutes"
+                value={formData.pickupSlotMinutes ?? 30}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, pickupSlotMinutes: Number(e.target.value) }))
+                }
+                step="5"
+                min="5"
+                max="1440"
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="pickupBookingWindowDays">Bookable days ahead</label>
+              <input
+                type="number"
+                id="pickupBookingWindowDays"
+                name="pickupBookingWindowDays"
+                value={formData.pickupBookingWindowDays ?? 14}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    pickupBookingWindowDays: Number(e.target.value),
+                  }))
+                }
+                step="1"
+                min="1"
+                max="90"
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="pickupTimezone">Shop timezone</label>
+              <input
+                type="text"
+                id="pickupTimezone"
+                name="pickupTimezone"
+                value={formData.pickupTimezone ?? 'Europe/Amsterdam'}
+                onChange={handleChange}
+                placeholder="Europe/Amsterdam"
                 className="form-input"
               />
             </div>

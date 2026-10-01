@@ -570,6 +570,61 @@ describe('seller portal pages', () => {
     await waitFor(() => expect(service.createSellerProductForm).toHaveBeenCalled())
   })
 
+  it('sends the selling format and ordering requirements of a pack product', async () => {
+    renderPage(
+      <Routes>
+        <Route path="/seller/products/new" element={<SellerProductFormPage />} />
+      </Routes>,
+      '/seller/products/new',
+    )
+    await screen.findByRole('heading', { name: 'Add product' })
+    await userEvent.type(screen.getByLabelText('Name'), 'Samosa')
+    await userEvent.type(screen.getByLabelText('Price'), '5')
+    await userEvent.selectOptions(screen.getByLabelText('Sold as'), 'PACK')
+    await userEvent.type(screen.getByLabelText('Pieces per pack'), '2')
+    await userEvent.type(screen.getByLabelText('Minimum physical pieces'), '10')
+    await userEvent.type(screen.getByLabelText('Minimum order amount for this product'), '20')
+    await userEvent.type(screen.getByLabelText('Advance notice'), '2')
+    await userEvent.selectOptions(screen.getByLabelText('Advance notice unit'), 'days')
+    await userEvent.click(screen.getByRole('button', { name: 'Save product' }))
+    await waitFor(() => expect(service.createSellerProductForm).toHaveBeenCalled())
+    const data = service.createSellerProductForm.mock.calls[0][0] as FormData
+    expect(data.get('selling_unit')).toBe('PACK')
+    expect(data.get('units_per_pack')).toBe('2')
+    expect(data.get('minimum_physical_units')).toBe('10')
+    expect(data.get('minimum_order_amount')).toBe('20')
+    expect(data.get('minimum_order_quantity')).toBe('')
+    expect(data.get('preparation_time_minutes')).toBe('2880')
+  })
+
+  it('loads weight-based selling details when editing a product', async () => {
+    service.getSellerProduct.mockResolvedValueOnce({
+      ...sellerProduct,
+      selling_unit: 'WEIGHT',
+      units_per_pack: null,
+      weight_value: '250.000',
+      weight_unit: 'GRAM',
+      minimum_order_quantity: 2,
+      minimum_physical_units: null,
+      minimum_order_amount: '10.00',
+      preparation_time_minutes: 720,
+    })
+    renderPage(
+      <Routes>
+        <Route path="/seller/products/:id/edit" element={<SellerProductFormPage />} />
+      </Routes>,
+      '/seller/products/1/edit',
+    )
+    await screen.findByDisplayValue('Seller Product')
+    expect(screen.getByLabelText('Sold as')).toHaveValue('WEIGHT')
+    expect(screen.getByLabelText('Weight / volume')).toHaveValue(250)
+    expect(screen.getByLabelText('Unit')).toHaveValue('GRAM')
+    expect(screen.getByLabelText('Minimum cart quantity')).toHaveValue(2)
+    expect(screen.queryByLabelText('Minimum physical pieces')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Advance notice')).toHaveValue(12)
+    expect(screen.getByLabelText('Advance notice unit')).toHaveValue('hours')
+  })
+
   it('loads an existing product, edits, deletes and manages gallery', async () => {
     renderPage(
       <Routes>
