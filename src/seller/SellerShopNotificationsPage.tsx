@@ -46,13 +46,16 @@ export function SellerShopNotificationsPage() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [phoneError, setPhoneError] = useState<string | null>(null)
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [formData, setFormData] = useState<ShopSettings>(defaultSettings())
 
   useEffect(() => {
     const load = async () => {
       try {
         const settings = await marketplaceService.getSellerSettings()
-        if (settings) setFormData(settings)
+        if (!settings) throw new Error('Notification settings are unavailable.')
+        setFormData(settings)
+        setSettingsLoaded(true)
       } catch (loadError) {
         setError(errorMessage(loadError, 'Failed to load notification settings.'))
       } finally {
@@ -74,6 +77,8 @@ export function SellerShopNotificationsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!settingsLoaded) return
+
     const validationError = getPhoneValidationError(
       formData.whatsappNotificationsEnabled,
       formData.whatsappNumber,
@@ -148,6 +153,7 @@ export function SellerShopNotificationsPage() {
               value={formData.notificationEmail}
               onChange={handleChange}
               className="form-input"
+              disabled={!settingsLoaded}
             />
           </div>
         </div>
@@ -160,6 +166,7 @@ export function SellerShopNotificationsPage() {
               name="newOrderEmailEnabled"
               checked={formData.newOrderEmailEnabled}
               onChange={handleChange}
+              disabled={!settingsLoaded}
             />
             <span>New order email notifications</span>
           </label>
@@ -169,6 +176,7 @@ export function SellerShopNotificationsPage() {
               name="cancellationRequestEmailEnabled"
               checked={formData.cancellationRequestEmailEnabled}
               onChange={handleChange}
+              disabled={!settingsLoaded}
             />
             <span>Cancellation request email notifications</span>
           </label>
@@ -178,6 +186,7 @@ export function SellerShopNotificationsPage() {
               name="lowStockNotificationEnabled"
               checked={formData.lowStockNotificationEnabled}
               onChange={handleChange}
+              disabled={!settingsLoaded}
             />
             <span>Low-stock notifications</span>
           </label>
@@ -191,6 +200,7 @@ export function SellerShopNotificationsPage() {
               name="whatsappNotificationsEnabled"
               checked={formData.whatsappNotificationsEnabled}
               onChange={handleChange}
+              disabled={!settingsLoaded}
             />
             <span>Send new order notifications to WhatsApp</span>
           </label>
@@ -207,6 +217,7 @@ export function SellerShopNotificationsPage() {
               inputMode="tel"
               aria-invalid={phoneError !== null}
               aria-describedby="whatsapp-number-hint"
+              disabled={!settingsLoaded}
             />
             <p id="whatsapp-number-hint" className="form-hint">
               This is the shop WhatsApp contact number also shown to customers. Use an international
@@ -222,7 +233,11 @@ export function SellerShopNotificationsPage() {
         </div>
 
         <div className="form-actions">
-          <button type="submit" disabled={saving} className="button button--primary">
+          <button
+            type="submit"
+            disabled={saving || !settingsLoaded}
+            className="button button--primary"
+          >
             {saving ? 'Saving...' : 'Save changes'}
           </button>
         </div>

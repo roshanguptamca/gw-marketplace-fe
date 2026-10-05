@@ -426,6 +426,33 @@ describe('seller portal pages', () => {
     expect(await screen.findByText(/orders could not be loaded/i)).toBeInTheDocument()
   })
 
+  it('selects the requested seller-owned order from the order query parameter', async () => {
+    service.getSellerOrders.mockResolvedValueOnce([
+      {
+        id: 1,
+        order_number: 'GW-1',
+        customer_name: 'Customer One',
+        status: 'pending',
+        total: '14.00',
+        created_at: '2026-01-01',
+      },
+      {
+        id: 2,
+        order_number: 'GW-2',
+        customer_name: 'Customer Two',
+        status: 'accepted',
+        total: '28.00',
+        created_at: '2026-01-02',
+      },
+    ])
+    renderPage(<SellerOrdersPage />, '/seller/orders?order=2')
+
+    expect(await screen.findByText('GW-2')).toBeInTheDocument()
+    expect(screen.getByText('Customer Two')).toBeInTheDocument()
+    expect(screen.queryByText('GW-1')).not.toBeInTheDocument()
+    expect(service.getSellerOrders).toHaveBeenCalledWith({ q: '', status: '' })
+  })
+
   it('updates settings and handles save failures', async () => {
     const first = renderPage(<SellerSettingsPage />)
     const name = await screen.findByLabelText('Shop name')

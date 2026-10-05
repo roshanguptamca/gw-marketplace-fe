@@ -176,6 +176,23 @@ describe('seller WhatsApp order notification settings', () => {
     renderPage(<SellerShopNotificationsPage />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Settings access denied')
+    expect(screen.getByLabelText('Notification email address')).toBeDisabled()
+    expect(screen.getByLabelText('Send new order notifications to WhatsApp')).toBeDisabled()
+    expect(screen.getByLabelText('Shop WhatsApp number')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(service.updateSellerSettings).not.toHaveBeenCalled()
+  })
+
+  it('prevents saving when the settings response is missing', async () => {
+    service.getSellerSettings.mockResolvedValueOnce(undefined)
+    renderPage(<SellerShopNotificationsPage />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Notification settings are unavailable.',
+    )
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled()
+    expect(service.updateSellerSettings).not.toHaveBeenCalled()
   })
 
   it('shows the API error when settings fail to save', async () => {

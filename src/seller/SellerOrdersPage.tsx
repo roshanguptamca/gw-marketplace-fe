@@ -22,13 +22,17 @@ export function SellerOrdersPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedStatus = searchParams.get('status') ?? ''
   const query = searchParams.get('q') ?? ''
+  const selectedOrderId = searchParams.get('order')
   const { data, loading, error } = useMarketplaceData(
     () => marketplaceService.getSellerOrders({ q: query, status: selectedStatus }),
     [refreshKey, query, selectedStatus],
   )
   const [status, setStatus] = useState('')
 
-  const filteredOrders = useMemo(() => data ?? [], [data])
+  const filteredOrders = useMemo(() => {
+    const orders = data ?? []
+    return selectedOrderId ? orders.filter((order) => String(order.id) === selectedOrderId) : orders
+  }, [data, selectedOrderId])
 
   const changeStatus = async (id: number, nextStatus: string) => {
     if (!nextStatus) return
@@ -78,11 +82,7 @@ export function SellerOrdersPage() {
             ))}
           </select>
         </div>
-        <button
-          type="button"
-          className="button button--ghost"
-          onClick={() => setSearchParams({})}
-        >
+        <button type="button" className="button button--ghost" onClick={() => setSearchParams({})}>
           Clear
         </button>
       </div>
