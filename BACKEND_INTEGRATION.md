@@ -128,6 +128,15 @@ Returns and updates shop settings (delivery fees, order acceptance, etc.)
 - `whatsapp_group_url` remains a separate customer-facing group link and is not used as a notification destination
 - The frontend only saves seller configuration; sending WhatsApp notifications and any provider integration are backend responsibilities
 
+### Seller order notification links
+
+`/seller/orders?order=<numeric order ID>` loads the full selected order independently of the
+orders list through `GET /api/seller/orders/<id>/`. This existing owner-scoped seller endpoint
+must enforce shop ownership, including returning 404 for inaccessible orders. The panel shows
+full item names and quantities, customer contact, pickup snapshot and slot times or delivery
+address, instructions, and customer note without notification-length truncation. WhatsApp
+template messages may truncate content; the linked portal provides the authoritative full details.
+
 ## 5. New API Endpoints Required
 
 ### Image Upload: POST /api/seller/shop/upload-image/

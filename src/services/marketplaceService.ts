@@ -19,6 +19,7 @@ import type {
   SellerCategoryInput,
   SellerDashboard,
   SellerOrder,
+  SellerOrderDetail,
   SellerProduct,
   SellerProductImage,
   OpeningHour,
@@ -631,6 +632,8 @@ export const marketplaceService = {
     apiRequest<ApiProduct[]>(`/seller/products/${buildSellerQuery(filters)}`),
   getSellerOrders: (filters: SellerListFilters = {}) =>
     apiRequest<SellerOrder[]>(`/seller/orders/${buildSellerQuery(filters)}`),
+  getSellerOrder: (id: number | string) =>
+    apiRequest<SellerOrderDetail>(`/seller/orders/${encodeURIComponent(String(id))}/`),
   updateSellerOrderStatus: (id: number, status: string) =>
     apiRequest<SellerOrder>(`/seller/orders/${id}/status/`, {
       method: 'PATCH',

@@ -17,6 +17,141 @@ const ORDER_STATUS_FILTERS = [
   { value: 'rejected', label: 'Rejected' },
 ] as const
 
+function SelectedOrderDetails({
+  orderId,
+  refreshKey,
+  onStatusChange,
+}: {
+  orderId: string
+  refreshKey: number
+  onStatusChange: (id: number, status: string) => Promise<void>
+}) {
+  const {
+    data: order,
+    loading,
+    error,
+  } = useMarketplaceData(() => marketplaceService.getSellerOrder(orderId), [orderId, refreshKey])
+  if (loading) return <LoadingState label="Loading selected order" />
+  if (error || !order) {
+    return (
+      <p className="inline-error" role="alert">
+        The selected order could not be loaded, or it does not belong to your shop.
+      </p>
+    )
+  }
+  const snapshot = order.fulfillment_snapshot
+  const pickupAddress =
+    snapshot &&
+    [
+      snapshot.pickup_address_line_1,
+      snapshot.pickup_address_line_2,
+      snapshot.pickup_postal_code,
+      snapshot.pickup_city,
+      snapshot.pickup_country,
+    ]
+      .filter(Boolean)
+      .join(', ')
+  const nextOptions = ORDER_STATUS_TRANSITIONS[order.status] ?? []
+  return (
+    <section className="checkout-summary" aria-label="Selected order details">
+      <h3>Order {order.order_number}</h3>
+      <p>
+        <strong>Customer:</strong> {order.customer_name}
+      </p>
+      <p>
+        <strong>Email:</strong> {order.customer_email}
+      </p>
+      <p>
+        <strong>Phone:</strong> {order.customer_phone}
+      </p>
+      <p>
+        <strong>Status:</strong> {order.status.replaceAll('_', ' ')}
+      </p>
+      <p>
+        <strong>Delivery method:</strong> {order.order_type === 'pickup' ? 'Pickup' : 'Delivery'}
+      </p>
+      {order.order_type === 'delivery' && (
+        <>
+          <p>
+            <strong>Delivery address:</strong> {order.delivery_address}
+          </p>
+          {snapshot?.delivery_instructions && (
+            <p>
+              <strong>Delivery instructions:</strong> {snapshot.delivery_instructions}
+            </p>
+          )}
+        </>
+      )}
+      {order.order_type === 'pickup' && (
+        <>
+          {(snapshot?.pickup_date || snapshot?.pickup_time) && (
+            <p>
+              <strong>Pickup schedule:</strong>{' '}
+              {[snapshot.pickup_date, snapshot.pickup_time].filter(Boolean).join(' ')}
+            </p>
+          )}
+          {order.pickup_slot_start && (
+            <p>
+              <strong>Pickup slot start:</strong> {order.pickup_slot_start}
+            </p>
+          )}
+          {order.pickup_slot_end && (
+            <p>
+              <strong>Pickup slot end:</strong> {order.pickup_slot_end}
+            </p>
+          )}
+          {(pickupAddress || snapshot?.shop_address) && (
+            <p>
+              <strong>Pickup address:</strong> {pickupAddress || snapshot?.shop_address}
+            </p>
+          )}
+          {snapshot?.pickup_instructions && (
+            <p>
+              <strong>Pickup instructions:</strong> {snapshot.pickup_instructions}
+            </p>
+          )}
+        </>
+      )}
+      <h4>Items</h4>
+      <ul className="checkout-items">
+        {order.items.map((item) => (
+          <li key={item.id}>
+            {item.product_name}
+            {item.sku ? ` [${item.sku}]` : ''} × {item.quantity}
+            {item.quantity_description ? ` (${item.quantity_description})` : ''} — €
+            {item.line_total}
+          </li>
+        ))}
+      </ul>
+      <p>
+        <strong>Customer note:</strong> {order.customer_note || 'No customer note.'}
+      </p>
+      {order.seller_note && (
+        <p>
+          <strong>Seller note:</strong> {order.seller_note}
+        </p>
+      )}
+      <p>
+        <strong>Total:</strong> €{order.total}
+      </p>
+      {nextOptions.length > 0 && (
+        <select
+          aria-label={`Update selected order ${order.order_number}`}
+          defaultValue=""
+          onChange={(event) => void onStatusChange(order.id, event.target.value)}
+        >
+          <option value="">Update status</option>
+          {nextOptions.map((option) => (
+            <option key={option} value={option}>
+              {option.replaceAll('_', ' ')}
+            </option>
+          ))}
+        </select>
+      )}
+    </section>
+  )
+}
+
 export function SellerOrdersPage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -51,11 +186,19 @@ export function SellerOrdersPage() {
     setSearchParams(params)
   }
 
-  if (loading) return <LoadingState label="Loading orders" />
   return (
     <section>
       <p className="eyebrow">Fulfilment</p>
       <h2>Orders</h2>
+      {selectedOrderId && (
+        <SelectedOrderDetails
+          key={selectedOrderId}
+          orderId={selectedOrderId}
+          refreshKey={refreshKey}
+          onStatusChange={changeStatus}
+        />
+      )}
+      {loading && <LoadingState label="Loading orders" />}
       <div className="seller-toolbar">
         <div className="form-group form-group--full">
           <label htmlFor="seller-order-search">Search orders</label>

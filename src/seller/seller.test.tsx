@@ -28,6 +28,7 @@ vi.mock('../services/marketplaceService', () => ({
     getSellerDashboard: vi.fn(),
     getSellerProducts: vi.fn(),
     getSellerOrders: vi.fn(),
+    getSellerOrder: vi.fn(),
     updateSellerOrderStatus: vi.fn(),
     getSellerShop: vi.fn(),
     updateSellerShop: vi.fn(),
@@ -173,6 +174,7 @@ describe('seller portal pages', () => {
       ],
     })
     service.getSellerProducts.mockResolvedValue([product])
+    service.getSellerOrder.mockRejectedValue(new Error('Order unavailable'))
     service.getSellerOrders.mockResolvedValue([
       {
         id: 1,

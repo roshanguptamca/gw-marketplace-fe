@@ -388,6 +388,8 @@ export interface BuyerOrder {
   updated_at: string
 }
 
+export type SellerOrderDetail = BuyerOrder
+
 export interface CartItem {
   product: Product
   quantity: number

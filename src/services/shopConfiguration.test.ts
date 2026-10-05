@@ -16,6 +16,12 @@ const request = vi.mocked(apiRequest)
 describe('shop configuration API mapping', () => {
   beforeEach(() => vi.clearAllMocks())
 
+  it('fetches selected orders through the owner-scoped seller detail endpoint', async () => {
+    request.mockResolvedValueOnce({ id: 99, order_number: 'GW-99' })
+    await expect(marketplaceService.getSellerOrder('99')).resolves.toMatchObject({ id: 99 })
+    expect(request).toHaveBeenCalledWith('/seller/orders/99/')
+  })
+
   it('maps public-safe shop settings to storefront and checkout fields', async () => {
     request.mockResolvedValueOnce({
       id: 1,
