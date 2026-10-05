@@ -91,6 +91,8 @@ export interface ShopSettings {
   pickupInstructions?: string
   orderAcceptanceMode: 'manual' | 'auto'
   whatsappNumber: string
+  whatsappNotificationsEnabled: boolean
+  whatsappNotificationPhoneNumber: string
   bankTransferInstructions: string
   notificationEmail: string
   newOrderEmailEnabled: boolean

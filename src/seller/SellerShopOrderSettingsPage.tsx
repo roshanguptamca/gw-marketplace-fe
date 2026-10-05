@@ -15,6 +15,8 @@ function defaultSettings(): ShopSettings {
     deliveryNotes: '',
     orderAcceptanceMode: 'manual',
     whatsappNumber: '',
+    whatsappNotificationsEnabled: false,
+    whatsappNotificationPhoneNumber: '',
     bankTransferInstructions: '',
     notificationEmail: '',
     newOrderEmailEnabled: true,
@@ -48,7 +50,7 @@ export function SellerShopOrderSettingsPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value } as ShopSettings))
+    setFormData((prev) => ({ ...prev, [name]: value }) as ShopSettings)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

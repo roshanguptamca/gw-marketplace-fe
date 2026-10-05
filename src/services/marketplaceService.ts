@@ -109,6 +109,8 @@ interface ApiShopSettings {
   pickup_instructions?: string
   order_acceptance_mode: 'manual' | 'auto'
   whatsapp_number: string
+  whatsapp_notifications_enabled?: boolean
+  whatsapp_notification_phone_number?: string
   bank_transfer_instructions: string
   notification_email: string
   new_order_email_enabled: boolean
@@ -246,6 +248,8 @@ function normalizeShopSettings(settings: ApiShopSettings | undefined): ShopSetti
     pickupInstructions: settings.pickup_instructions ?? '',
     orderAcceptanceMode: settings.order_acceptance_mode ?? 'manual',
     whatsappNumber: settings.whatsapp_number ?? '',
+    whatsappNotificationsEnabled: settings.whatsapp_notifications_enabled ?? false,
+    whatsappNotificationPhoneNumber: settings.whatsapp_notification_phone_number ?? '',
     bankTransferInstructions: settings.bank_transfer_instructions ?? '',
     notificationEmail: settings.notification_email ?? '',
     newOrderEmailEnabled: settings.new_order_email_enabled ?? true,
@@ -645,39 +649,51 @@ export const marketplaceService = {
     const settings = await apiRequest<ApiShopSettings>('/seller/settings/')
     return normalizeShopSettings(settings)
   },
-  updateSellerSettings: (data: Partial<ShopSettings>) =>
-    apiRequest<ApiShopSettings>('/seller/settings/', {
+  updateSellerSettings: (data: Partial<ShopSettings>) => {
+    const payload = {
+      currency: data.currency,
+      min_order_amount:
+        data.minOrderAmount === undefined ? undefined : data.minOrderAmount || '0.00',
+      delivery_fee: data.deliveryFee === undefined ? undefined : data.deliveryFee || '0.00',
+      local_delivery_fee:
+        data.localDeliveryFee === undefined ? undefined : data.localDeliveryFee || '0.00',
+      international_delivery_fee:
+        data.internationalDeliveryFee === undefined
+          ? undefined
+          : data.internationalDeliveryFee || '0.00',
+      free_delivery_above: data.freeDeliveryAbove,
+      delivery_notes: data.deliveryNotes,
+      whatsapp_group_url: data.whatsappGroupUrl,
+      pickup_address_line_1: data.pickupAddressLine1,
+      pickup_address_line_2: data.pickupAddressLine2,
+      pickup_postal_code: data.pickupPostalCode,
+      pickup_city: data.pickupCity,
+      pickup_country: data.pickupCountry,
+      pickup_instructions: data.pickupInstructions,
+      order_acceptance_mode: data.orderAcceptanceMode,
+      whatsapp_number: data.whatsappNumber,
+      whatsapp_notifications_enabled: data.whatsappNotificationsEnabled,
+      whatsapp_notification_phone_number: data.whatsappNotificationPhoneNumber,
+      bank_transfer_instructions: data.bankTransferInstructions,
+      notification_email: data.notificationEmail,
+      new_order_email_enabled: data.newOrderEmailEnabled,
+      cancellation_request_email_enabled: data.cancellationRequestEmailEnabled,
+      low_stock_notification_enabled: data.lowStockNotificationEnabled,
+      supported_delivery_countries: data.supportedDeliveryCountries,
+      pickup_available: data.pickupAvailable,
+      delivery_available: data.deliveryAvailable,
+      pickup_slot_minutes: data.pickupSlotMinutes,
+      pickup_timezone: data.pickupTimezone,
+      pickup_booking_window_days: data.pickupBookingWindowDays,
+    }
+    const definedPayload = Object.fromEntries(
+      Object.entries(payload).filter(([, value]) => value !== undefined),
+    )
+    return apiRequest<ApiShopSettings>('/seller/settings/', {
       method: 'PATCH',
-      body: JSON.stringify({
-        currency: data.currency,
-        min_order_amount: data.minOrderAmount || '0.00',
-        delivery_fee: data.deliveryFee || '0.00',
-        local_delivery_fee: data.localDeliveryFee || '0.00',
-        international_delivery_fee: data.internationalDeliveryFee || '0.00',
-        free_delivery_above: data.freeDeliveryAbove,
-        delivery_notes: data.deliveryNotes,
-        whatsapp_group_url: data.whatsappGroupUrl,
-        pickup_address_line_1: data.pickupAddressLine1,
-        pickup_address_line_2: data.pickupAddressLine2,
-        pickup_postal_code: data.pickupPostalCode,
-        pickup_city: data.pickupCity,
-        pickup_country: data.pickupCountry,
-        pickup_instructions: data.pickupInstructions,
-        order_acceptance_mode: data.orderAcceptanceMode,
-        whatsapp_number: data.whatsappNumber,
-        bank_transfer_instructions: data.bankTransferInstructions,
-        notification_email: data.notificationEmail,
-        new_order_email_enabled: data.newOrderEmailEnabled,
-        cancellation_request_email_enabled: data.cancellationRequestEmailEnabled,
-        low_stock_notification_enabled: data.lowStockNotificationEnabled,
-        supported_delivery_countries: data.supportedDeliveryCountries,
-        pickup_available: data.pickupAvailable,
-        delivery_available: data.deliveryAvailable,
-        pickup_slot_minutes: data.pickupSlotMinutes,
-        pickup_timezone: data.pickupTimezone,
-        pickup_booking_window_days: data.pickupBookingWindowDays,
-      }),
-    }).then((settings) => normalizeShopSettings(settings) as ShopSettings),
+      body: JSON.stringify(definedPayload),
+    }).then((settings) => normalizeShopSettings(settings) as ShopSettings)
+  },
   updateSellerProduct: (id: number, data: Partial<ApiProduct>) =>
     apiRequest<ApiProduct>(`/seller/products/${id}/`, {
       method: 'PATCH',

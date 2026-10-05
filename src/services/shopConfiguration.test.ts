@@ -70,6 +70,8 @@ describe('shop configuration API mapping', () => {
       new_order_email_enabled: true,
       cancellation_request_email_enabled: true,
       low_stock_notification_enabled: false,
+      whatsapp_notifications_enabled: true,
+      whatsapp_notification_phone_number: '+31612345678',
     })
     await marketplaceService.updateSellerSettings({
       whatsappGroupUrl: '',
@@ -77,6 +79,8 @@ describe('shop configuration API mapping', () => {
       pickupCity: 'Town',
       minOrderAmount: '20.00',
       pickupAvailable: true,
+      whatsappNotificationsEnabled: true,
+      whatsappNotificationPhoneNumber: '+31612345678',
     })
     expect(request).toHaveBeenCalledWith(
       '/seller/settings/',
@@ -92,6 +96,99 @@ describe('shop configuration API mapping', () => {
       pickup_city: 'Town',
       min_order_amount: '20.00',
       pickup_available: true,
+      whatsapp_notifications_enabled: true,
+      whatsapp_notification_phone_number: '+31612345678',
+    })
+  })
+
+  it('maps seller WhatsApp notification settings without mixing customer-facing WhatsApp fields', async () => {
+    request.mockResolvedValueOnce({
+      currency: 'EUR',
+      min_order_amount: '0.00',
+      delivery_fee: '0.00',
+      local_delivery_fee: '5.00',
+      international_delivery_fee: '10.00',
+      delivery_notes: '',
+      order_acceptance_mode: 'manual',
+      whatsapp_number: '+31600000000',
+      whatsapp_group_url: 'https://chat.whatsapp.com/CustomerGroup123',
+      whatsapp_notifications_enabled: true,
+      whatsapp_notification_phone_number: '+31612345678',
+      bank_transfer_instructions: '',
+      notification_email: 'seller@example.com',
+      new_order_email_enabled: true,
+      cancellation_request_email_enabled: true,
+      low_stock_notification_enabled: false,
+    })
+
+    await expect(marketplaceService.getSellerSettings()).resolves.toMatchObject({
+      whatsappNumber: '+31600000000',
+      whatsappGroupUrl: 'https://chat.whatsapp.com/CustomerGroup123',
+      whatsappNotificationsEnabled: true,
+      whatsappNotificationPhoneNumber: '+31612345678',
+    })
+  })
+
+  it('defaults WhatsApp order notifications off when older settings responses omit them', async () => {
+    request.mockResolvedValueOnce({
+      currency: 'EUR',
+      min_order_amount: '0.00',
+      delivery_fee: '0.00',
+      local_delivery_fee: '5.00',
+      international_delivery_fee: '10.00',
+      delivery_notes: '',
+      order_acceptance_mode: 'manual',
+      whatsapp_number: '+31600000000',
+      bank_transfer_instructions: '',
+      notification_email: '',
+      new_order_email_enabled: true,
+      cancellation_request_email_enabled: true,
+      low_stock_notification_enabled: false,
+    })
+
+    await expect(marketplaceService.getSellerSettings()).resolves.toMatchObject({
+      whatsappNotificationsEnabled: false,
+      whatsappNotificationPhoneNumber: '',
+    })
+  })
+
+  it('sends only notification fields when updating seller notification preferences', async () => {
+    request.mockResolvedValueOnce({
+      currency: 'EUR',
+      min_order_amount: '25.00',
+      delivery_fee: '0.00',
+      local_delivery_fee: '5.00',
+      international_delivery_fee: '10.00',
+      delivery_notes: 'Leave at the door',
+      order_acceptance_mode: 'manual',
+      whatsapp_number: '+31600000000',
+      whatsapp_group_url: 'https://chat.whatsapp.com/CustomerGroup123',
+      whatsapp_notifications_enabled: true,
+      whatsapp_notification_phone_number: '+31612345678',
+      bank_transfer_instructions: '',
+      notification_email: 'seller@example.com',
+      new_order_email_enabled: true,
+      cancellation_request_email_enabled: false,
+      low_stock_notification_enabled: true,
+    })
+
+    await marketplaceService.updateSellerSettings({
+      notificationEmail: 'seller@example.com',
+      newOrderEmailEnabled: true,
+      cancellationRequestEmailEnabled: false,
+      lowStockNotificationEnabled: true,
+      whatsappNotificationsEnabled: true,
+      whatsappNotificationPhoneNumber: '+31612345678',
+    })
+
+    const body = JSON.parse((request.mock.calls[0][1] as RequestInit).body as string)
+    expect(body).toEqual({
+      notification_email: 'seller@example.com',
+      new_order_email_enabled: true,
+      cancellation_request_email_enabled: false,
+      low_stock_notification_enabled: true,
+      whatsapp_notifications_enabled: true,
+      whatsapp_notification_phone_number: '+31612345678',
     })
   })
 })

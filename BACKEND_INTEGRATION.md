@@ -52,11 +52,15 @@ The frontend now includes comprehensive shop configuration pages. The following 
 - [ ] cancellation_request_email_enabled (BooleanField, default=True)
 - [ ] low_stock_notification_enabled (BooleanField, default=False)
 - [ ] supported_delivery_countries (JSONField or through separate model, stores list of country codes)
+- [ ] whatsapp_notifications_enabled (BooleanField, default=False)
+- [ ] whatsapp_notification_phone_number (CharField, blank=True; E.164 format when supplied)
 
 ### Migration Note
 - Add migration to create notification fields
 - Default notification_email to shop owner's email
 - Update ShopSettingsSerializer to include these fields
+- Validate WhatsApp recipient numbers with `^\+[1-9][0-9]{7,14}$`; blank is allowed only while WhatsApp notifications are disabled
+- Enabling WhatsApp notifications requires a nonblank recipient number
 
 ## 3. OpeningHours Model (New)
 
@@ -73,13 +77,13 @@ class OpeningHours(models.Model):
         (5, 'Friday'),
         (6, 'Saturday'),
     ]
-    
+
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='opening_hours')
     day_of_week = models.IntegerField(choices=DAY_CHOICES)
     is_closed = models.BooleanField(default=False)
     opening_time = models.TimeField(null=True, blank=True)
     closing_time = models.TimeField(null=True, blank=True)
-    
+
     class Meta:
         unique_together = ('shop', 'day_of_week')
         ordering = ['day_of_week']
@@ -119,7 +123,10 @@ Updates shop details (name, description, city, logo, banner, etc.)
 ### GET /api/seller/settings/ & PATCH /api/seller/settings/
 Returns and updates shop settings (delivery fees, order acceptance, etc.)
 - **Authorization**: IsSeller permission
-- Used by: SellerShopDeliveryPage, SellerShopOrderSettingsPage
+- Used by: SellerShopDeliveryPage, SellerShopOrderSettingsPage, SellerShopNotificationsPage
+- WhatsApp order notification fields are `whatsapp_notifications_enabled` and `whatsapp_notification_phone_number`; PATCH may update only those fields (and the notification-email fields) without resending other settings
+- `whatsapp_number` and `whatsapp_group_url` remain separate customer-facing contact/group settings and must not be reused as the order-notification recipient
+- The frontend only saves seller configuration; sending WhatsApp notifications and any provider integration are backend responsibilities
 
 ## 5. New API Endpoints Required
 
@@ -197,6 +204,8 @@ The frontend expects the following API responses:
   newOrderEmailEnabled: boolean
   cancellationRequestEmailEnabled: boolean
   lowStockNotificationEnabled: boolean
+  whatsappNotificationsEnabled: boolean
+  whatsappNotificationPhoneNumber: string
 }
 ```
 
