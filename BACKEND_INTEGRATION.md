@@ -53,14 +53,13 @@ The frontend now includes comprehensive shop configuration pages. The following 
 - [ ] low_stock_notification_enabled (BooleanField, default=False)
 - [ ] supported_delivery_countries (JSONField or through separate model, stores list of country codes)
 - [ ] whatsapp_notifications_enabled (BooleanField, default=False)
-- [ ] whatsapp_notification_phone_number (CharField, blank=True; E.164 format when supplied)
 
 ### Migration Note
 - Add migration to create notification fields
 - Default notification_email to shop owner's email
 - Update ShopSettingsSerializer to include these fields
-- Validate WhatsApp recipient numbers with `^\+[1-9][0-9]{7,14}$`; blank is allowed only while WhatsApp notifications are disabled
-- Enabling WhatsApp notifications requires a nonblank recipient number
+- Validate the existing `whatsapp_number` shop contact as an international number, allowing spaces, hyphens, and parentheses in input and normalizing accepted values to canonical `+digits`
+- A blank `whatsapp_number` is allowed only while WhatsApp notifications are disabled; enabling notifications requires a valid number
 
 ## 3. OpeningHours Model (New)
 
@@ -124,8 +123,9 @@ Updates shop details (name, description, city, logo, banner, etc.)
 Returns and updates shop settings (delivery fees, order acceptance, etc.)
 - **Authorization**: IsSeller permission
 - Used by: SellerShopDeliveryPage, SellerShopOrderSettingsPage, SellerShopNotificationsPage
-- WhatsApp order notification fields are `whatsapp_notifications_enabled` and `whatsapp_notification_phone_number`; PATCH may update only those fields (and the notification-email fields) without resending other settings
-- `whatsapp_number` and `whatsapp_group_url` remain separate customer-facing contact/group settings and must not be reused as the order-notification recipient
+- WhatsApp order notifications use `whatsapp_notifications_enabled` together with the existing `whatsapp_number`; the number is the shared shop contact shown to customers, not a separate notification destination
+- PATCH may update only the WhatsApp toggle, `whatsapp_number`, and notification-email fields without resending other settings
+- `whatsapp_group_url` remains a separate customer-facing group link and is not used as a notification destination
 - The frontend only saves seller configuration; sending WhatsApp notifications and any provider integration are backend responsibilities
 
 ## 5. New API Endpoints Required
@@ -205,7 +205,7 @@ The frontend expects the following API responses:
   cancellationRequestEmailEnabled: boolean
   lowStockNotificationEnabled: boolean
   whatsappNotificationsEnabled: boolean
-  whatsappNotificationPhoneNumber: string
+  whatsappNumber: string
 }
 ```
 

@@ -110,7 +110,6 @@ interface ApiShopSettings {
   order_acceptance_mode: 'manual' | 'auto'
   whatsapp_number: string
   whatsapp_notifications_enabled?: boolean
-  whatsapp_notification_phone_number?: string
   bank_transfer_instructions: string
   notification_email: string
   new_order_email_enabled: boolean
@@ -249,7 +248,6 @@ function normalizeShopSettings(settings: ApiShopSettings | undefined): ShopSetti
     orderAcceptanceMode: settings.order_acceptance_mode ?? 'manual',
     whatsappNumber: settings.whatsapp_number ?? '',
     whatsappNotificationsEnabled: settings.whatsapp_notifications_enabled ?? false,
-    whatsappNotificationPhoneNumber: settings.whatsapp_notification_phone_number ?? '',
     bankTransferInstructions: settings.bank_transfer_instructions ?? '',
     notificationEmail: settings.notification_email ?? '',
     newOrderEmailEnabled: settings.new_order_email_enabled ?? true,
@@ -673,7 +671,6 @@ export const marketplaceService = {
       order_acceptance_mode: data.orderAcceptanceMode,
       whatsapp_number: data.whatsappNumber,
       whatsapp_notifications_enabled: data.whatsappNotificationsEnabled,
-      whatsapp_notification_phone_number: data.whatsappNotificationPhoneNumber,
       bank_transfer_instructions: data.bankTransferInstructions,
       notification_email: data.notificationEmail,
       new_order_email_enabled: data.newOrderEmailEnabled,

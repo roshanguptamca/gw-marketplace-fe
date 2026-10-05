@@ -17,7 +17,6 @@ function defaultSettings(): ShopSettings {
     orderAcceptanceMode: 'manual',
     whatsappNumber: '',
     whatsappNotificationsEnabled: false,
-    whatsappNotificationPhoneNumber: '',
     bankTransferInstructions: '',
     notificationEmail: '',
     newOrderEmailEnabled: true,
@@ -27,11 +26,12 @@ function defaultSettings(): ShopSettings {
   }
 }
 
-function getPhoneValidationError(enabled: boolean, phoneNumber: string): string | null {
-  if (!phoneNumber && enabled)
-    return 'Enter a WhatsApp recipient phone number to enable notifications.'
-  if (phoneNumber && !E164_PHONE_PATTERN.test(phoneNumber)) {
-    return 'Enter a valid phone number in E.164 format.'
+function getPhoneValidationError(enabled: boolean, whatsappNumber: string): string | null {
+  if (!whatsappNumber.trim() && enabled)
+    return 'Enter the shop WhatsApp number to enable order notifications.'
+  const normalizedNumber = whatsappNumber.replace(/[ ()-]/g, '')
+  if (normalizedNumber && !E164_PHONE_PATTERN.test(normalizedNumber)) {
+    return 'Enter a valid international WhatsApp number, including the country code.'
   }
   return null
 }
@@ -67,7 +67,7 @@ export function SellerShopNotificationsPage() {
     const { name, value, type } = e.target
     const finalValue = type === 'checkbox' ? e.target.checked : value
     setFormData((prev) => ({ ...prev, [name]: finalValue }) as ShopSettings)
-    if (name === 'whatsappNotificationsEnabled' || name === 'whatsappNotificationPhoneNumber') {
+    if (name === 'whatsappNotificationsEnabled' || name === 'whatsappNumber') {
       setPhoneError(null)
     }
   }
@@ -76,7 +76,7 @@ export function SellerShopNotificationsPage() {
     e.preventDefault()
     const validationError = getPhoneValidationError(
       formData.whatsappNotificationsEnabled,
-      formData.whatsappNotificationPhoneNumber,
+      formData.whatsappNumber,
     )
     if (validationError) {
       setPhoneError(validationError)
@@ -96,8 +96,8 @@ export function SellerShopNotificationsPage() {
         newOrderEmailEnabled: formData.newOrderEmailEnabled,
         cancellationRequestEmailEnabled: formData.cancellationRequestEmailEnabled,
         lowStockNotificationEnabled: formData.lowStockNotificationEnabled,
+        whatsappNumber: formData.whatsappNumber,
         whatsappNotificationsEnabled: formData.whatsappNotificationsEnabled,
-        whatsappNotificationPhoneNumber: formData.whatsappNotificationPhoneNumber,
       })
       setFormData((prev) => ({
         ...prev,
@@ -105,8 +105,8 @@ export function SellerShopNotificationsPage() {
         newOrderEmailEnabled: updated.newOrderEmailEnabled,
         cancellationRequestEmailEnabled: updated.cancellationRequestEmailEnabled,
         lowStockNotificationEnabled: updated.lowStockNotificationEnabled,
+        whatsappNumber: updated.whatsappNumber,
         whatsappNotificationsEnabled: updated.whatsappNotificationsEnabled,
-        whatsappNotificationPhoneNumber: updated.whatsappNotificationPhoneNumber,
       }))
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
@@ -195,24 +195,23 @@ export function SellerShopNotificationsPage() {
             <span>Send new order notifications to WhatsApp</span>
           </label>
           <div className="form-group">
-            <label htmlFor="whatsappNotificationPhoneNumber">
-              WhatsApp notification recipient phone number
-            </label>
+            <label htmlFor="whatsappNumber">Shop WhatsApp number</label>
             <input
               type="tel"
-              id="whatsappNotificationPhoneNumber"
-              name="whatsappNotificationPhoneNumber"
-              value={formData.whatsappNotificationPhoneNumber}
+              id="whatsappNumber"
+              name="whatsappNumber"
+              value={formData.whatsappNumber}
               onChange={handleChange}
               className="form-input"
               autoComplete="tel"
               inputMode="tel"
               aria-invalid={phoneError !== null}
-              aria-describedby="whatsapp-notification-phone-hint"
+              aria-describedby="whatsapp-number-hint"
             />
-            <p id="whatsapp-notification-phone-hint" className="form-hint">
-              Use E.164 format: a + sign followed by 8–15 digits (starting with 1–9), with no
-              spaces. The recipient must have opted in to receive WhatsApp order notifications.
+            <p id="whatsapp-number-hint" className="form-hint">
+              This is the shop WhatsApp contact number also shown to customers. Use an international
+              number with country code; spaces, hyphens, and parentheses are accepted. The number
+              must have opted in to receive WhatsApp order notifications.
             </p>
             {phoneError && (
               <p className="form-hint" role="alert">

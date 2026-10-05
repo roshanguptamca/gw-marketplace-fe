@@ -71,7 +71,6 @@ describe('shop configuration API mapping', () => {
       cancellation_request_email_enabled: true,
       low_stock_notification_enabled: false,
       whatsapp_notifications_enabled: true,
-      whatsapp_notification_phone_number: '+31612345678',
     })
     await marketplaceService.updateSellerSettings({
       whatsappGroupUrl: '',
@@ -79,8 +78,8 @@ describe('shop configuration API mapping', () => {
       pickupCity: 'Town',
       minOrderAmount: '20.00',
       pickupAvailable: true,
+      whatsappNumber: '+31 (6) 1234-5678',
       whatsappNotificationsEnabled: true,
-      whatsappNotificationPhoneNumber: '+31612345678',
     })
     expect(request).toHaveBeenCalledWith(
       '/seller/settings/',
@@ -96,8 +95,8 @@ describe('shop configuration API mapping', () => {
       pickup_city: 'Town',
       min_order_amount: '20.00',
       pickup_available: true,
+      whatsapp_number: '+31 (6) 1234-5678',
       whatsapp_notifications_enabled: true,
-      whatsapp_notification_phone_number: '+31612345678',
     })
   })
 
@@ -113,7 +112,6 @@ describe('shop configuration API mapping', () => {
       whatsapp_number: '+31600000000',
       whatsapp_group_url: 'https://chat.whatsapp.com/CustomerGroup123',
       whatsapp_notifications_enabled: true,
-      whatsapp_notification_phone_number: '+31612345678',
       bank_transfer_instructions: '',
       notification_email: 'seller@example.com',
       new_order_email_enabled: true,
@@ -125,7 +123,6 @@ describe('shop configuration API mapping', () => {
       whatsappNumber: '+31600000000',
       whatsappGroupUrl: 'https://chat.whatsapp.com/CustomerGroup123',
       whatsappNotificationsEnabled: true,
-      whatsappNotificationPhoneNumber: '+31612345678',
     })
   })
 
@@ -148,7 +145,6 @@ describe('shop configuration API mapping', () => {
 
     await expect(marketplaceService.getSellerSettings()).resolves.toMatchObject({
       whatsappNotificationsEnabled: false,
-      whatsappNotificationPhoneNumber: '',
     })
   })
 
@@ -164,7 +160,6 @@ describe('shop configuration API mapping', () => {
       whatsapp_number: '+31600000000',
       whatsapp_group_url: 'https://chat.whatsapp.com/CustomerGroup123',
       whatsapp_notifications_enabled: true,
-      whatsapp_notification_phone_number: '+31612345678',
       bank_transfer_instructions: '',
       notification_email: 'seller@example.com',
       new_order_email_enabled: true,
@@ -177,8 +172,8 @@ describe('shop configuration API mapping', () => {
       newOrderEmailEnabled: true,
       cancellationRequestEmailEnabled: false,
       lowStockNotificationEnabled: true,
+      whatsappNumber: '+31 6 12345678',
       whatsappNotificationsEnabled: true,
-      whatsappNotificationPhoneNumber: '+31612345678',
     })
 
     const body = JSON.parse((request.mock.calls[0][1] as RequestInit).body as string)
@@ -187,8 +182,8 @@ describe('shop configuration API mapping', () => {
       new_order_email_enabled: true,
       cancellation_request_email_enabled: false,
       low_stock_notification_enabled: true,
+      whatsapp_number: '+31 6 12345678',
       whatsapp_notifications_enabled: true,
-      whatsapp_notification_phone_number: '+31612345678',
     })
   })
 })

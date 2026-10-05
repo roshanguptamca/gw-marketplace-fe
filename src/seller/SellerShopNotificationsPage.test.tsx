@@ -25,7 +25,6 @@ const settings: ShopSettings = {
   orderAcceptanceMode: 'manual',
   whatsappNumber: '+31600000000',
   whatsappNotificationsEnabled: true,
-  whatsappNotificationPhoneNumber: '+31612345678',
   whatsappGroupUrl: 'https://chat.whatsapp.com/CustomerGroup123',
   bankTransferInstructions: '',
   notificationEmail: 'seller@example.com',
@@ -62,66 +61,67 @@ describe('seller WhatsApp order notification settings', () => {
       expect(screen.getByLabelText('Cancellation request email notifications')).not.toBeChecked()
       expect(screen.getByLabelText('Low-stock notifications')).toBeChecked()
       expect(screen.getByLabelText('Send new order notifications to WhatsApp')).toBeChecked()
-      expect(screen.getByLabelText('WhatsApp notification recipient phone number')).toHaveValue(
-        '+31612345678',
-      )
+      expect(screen.getByLabelText('Shop WhatsApp number')).toHaveValue('+31600000000')
+      expect(screen.getByText(/also shown to customers/i)).toBeInTheDocument()
       expect(
-        screen.getByText(/recipient must have opted in to receive WhatsApp order notifications/i),
+        screen.getByText(/must have opted in to receive WhatsApp order notifications/i),
       ).toBeInTheDocument()
     },
   )
 
-  it('allows enabling notifications and editing the recipient number', async () => {
+  it('allows enabling notifications and editing the shared shop contact number', async () => {
     service.getSellerSettings.mockResolvedValueOnce({
       ...settings,
       whatsappNotificationsEnabled: false,
-      whatsappNotificationPhoneNumber: '',
+      whatsappNumber: '',
     })
     renderPage(<SellerShopNotificationsPage />)
 
     const toggle = await screen.findByLabelText('Send new order notifications to WhatsApp')
-    const phoneInput = screen.getByLabelText('WhatsApp notification recipient phone number')
+    const numberInput = screen.getByLabelText('Shop WhatsApp number')
     expect(toggle).not.toBeChecked()
     await userEvent.click(toggle)
-    await userEvent.type(phoneInput, '+31687654321')
+    await userEvent.type(numberInput, '+31 (6) 8765-4321')
     expect(toggle).toBeChecked()
-    expect(phoneInput).toHaveValue('+31687654321')
+    expect(numberInput).toHaveValue('+31 (6) 8765-4321')
   })
 
   it.each([
-    { phoneNumber: '', message: /enter a WhatsApp recipient phone number/i },
-    { phoneNumber: '+123', message: /valid phone number in E\.164 format/i },
-  ])('blocks enabling with an invalid recipient number', async ({ phoneNumber, message }) => {
-    service.getSellerSettings.mockResolvedValueOnce({
-      ...settings,
-      whatsappNotificationsEnabled: false,
-      whatsappNotificationPhoneNumber: '',
-    })
-    renderPage(<SellerShopNotificationsPage />)
+    { whatsappNumber: '', message: /enter the shop WhatsApp number/i },
+    { whatsappNumber: '+123', message: /valid international WhatsApp number/i },
+  ])(
+    'blocks enabling with an invalid shop WhatsApp number',
+    async ({ whatsappNumber, message }) => {
+      service.getSellerSettings.mockResolvedValueOnce({
+        ...settings,
+        whatsappNotificationsEnabled: false,
+        whatsappNumber: '',
+      })
+      renderPage(<SellerShopNotificationsPage />)
 
-    await userEvent.click(await screen.findByLabelText('Send new order notifications to WhatsApp'))
-    if (phoneNumber) {
-      await userEvent.type(
-        screen.getByLabelText('WhatsApp notification recipient phone number'),
-        phoneNumber,
+      await userEvent.click(
+        await screen.findByLabelText('Send new order notifications to WhatsApp'),
       )
-    }
-    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+      if (whatsappNumber) {
+        await userEvent.type(screen.getByLabelText('Shop WhatsApp number'), whatsappNumber)
+      }
+      await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(message)
-    expect(service.updateSellerSettings).not.toHaveBeenCalled()
-  })
+      expect(await screen.findByRole('alert')).toHaveTextContent(message)
+      expect(service.updateSellerSettings).not.toHaveBeenCalled()
+    },
+  )
 
-  it('saves disabled notifications with an empty phone number', async () => {
+  it('saves disabled notifications with a blank shop WhatsApp number', async () => {
     service.getSellerSettings.mockResolvedValueOnce({
       ...settings,
       whatsappNotificationsEnabled: false,
-      whatsappNotificationPhoneNumber: '',
+      whatsappNumber: '',
     })
     service.updateSellerSettings.mockResolvedValueOnce({
       ...settings,
       whatsappNotificationsEnabled: false,
-      whatsappNotificationPhoneNumber: '',
+      whatsappNumber: '',
     })
     renderPage(<SellerShopNotificationsPage />)
 
@@ -133,31 +133,28 @@ describe('seller WhatsApp order notification settings', () => {
         newOrderEmailEnabled: true,
         cancellationRequestEmailEnabled: false,
         lowStockNotificationEnabled: true,
+        whatsappNumber: '',
         whatsappNotificationsEnabled: false,
-        whatsappNotificationPhoneNumber: '',
       }),
     )
     expect(await screen.findByText('✓ Notification settings saved')).toBeInTheDocument()
   })
 
-  it('saves WhatsApp and email preferences without resending unrelated settings', async () => {
+  it('saves the shared contact and email preferences without resending unrelated settings', async () => {
     service.getSellerSettings.mockResolvedValueOnce({
       ...settings,
       whatsappNotificationsEnabled: false,
-      whatsappNotificationPhoneNumber: '',
+      whatsappNumber: '',
     })
     service.updateSellerSettings.mockResolvedValueOnce({
       ...settings,
       whatsappNotificationsEnabled: true,
-      whatsappNotificationPhoneNumber: '+31611112222',
+      whatsappNumber: '+31611112222',
     })
     renderPage(<SellerShopNotificationsPage />)
 
     await userEvent.click(await screen.findByLabelText('Send new order notifications to WhatsApp'))
-    await userEvent.type(
-      screen.getByLabelText('WhatsApp notification recipient phone number'),
-      '+31687654321',
-    )
+    await userEvent.type(screen.getByLabelText('Shop WhatsApp number'), '+31 (6) 8765-4321')
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
 
     await waitFor(() =>
@@ -166,14 +163,12 @@ describe('seller WhatsApp order notification settings', () => {
         newOrderEmailEnabled: true,
         cancellationRequestEmailEnabled: false,
         lowStockNotificationEnabled: true,
+        whatsappNumber: '+31 (6) 8765-4321',
         whatsappNotificationsEnabled: true,
-        whatsappNotificationPhoneNumber: '+31687654321',
       }),
     )
     expect(await screen.findByText('✓ Notification settings saved')).toBeInTheDocument()
-    expect(screen.getByLabelText('WhatsApp notification recipient phone number')).toHaveValue(
-      '+31611112222',
-    )
+    expect(screen.getByLabelText('Shop WhatsApp number')).toHaveValue('+31611112222')
   })
 
   it('shows the API error when settings fail to load', async () => {
@@ -184,11 +179,11 @@ describe('seller WhatsApp order notification settings', () => {
   })
 
   it('shows the API error when settings fail to save', async () => {
-    service.updateSellerSettings.mockRejectedValueOnce(new Error('Recipient number is invalid'))
+    service.updateSellerSettings.mockRejectedValueOnce(new Error('WhatsApp number is invalid'))
     renderPage(<SellerShopNotificationsPage />)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Save changes' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Recipient number is invalid')
+    expect(await screen.findByRole('alert')).toHaveTextContent('WhatsApp number is invalid')
   })
 })

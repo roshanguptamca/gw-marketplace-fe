@@ -31,7 +31,6 @@ function emptySettings(): ShopSettings {
     orderAcceptanceMode: 'manual',
     whatsappNumber: '',
     whatsappNotificationsEnabled: false,
-    whatsappNotificationPhoneNumber: '',
     bankTransferInstructions: '',
     notificationEmail: '',
     newOrderEmailEnabled: true,
