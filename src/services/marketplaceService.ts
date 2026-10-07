@@ -62,6 +62,7 @@ interface ApiShop {
   is_approved?: boolean
   settings?: {
     currency?: string
+    default_vat_rate?: string
     whatsapp_number?: string
     local_delivery_fee?: string
     international_delivery_fee?: string
@@ -358,6 +359,7 @@ function normalizeShop(shop: ApiShop): Shop {
     location: shop.city,
     postalCode: shop.postal_code,
     country: shop.country,
+    defaultVatRate: shop.settings?.default_vat_rate,
     contactEmail: shop.email ?? shop.contact_email,
     contactPhone: shop.phone ?? shop.contact_phone,
     whatsapp: shop.settings?.whatsapp_number,
@@ -405,6 +407,8 @@ export function normalizeProduct(product: ApiProduct, fallbackShopSlug = ''): Pr
     ingredients: product.ingredients ?? '',
     allergens: product.allergens ?? '',
     price: Number(product.price),
+    priceAmount: product.price,
+    vatRate: product.vat_rate ?? shop?.settings?.default_vat_rate ?? null,
     currency: shop?.settings?.currency ?? 'EUR',
     category: product.category_detail?.name ?? 'Products',
     stock: product.stock_quantity,

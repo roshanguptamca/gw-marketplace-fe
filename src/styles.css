@@ -11,6 +11,178 @@
   overflow-wrap: anywhere;
 }
 
+.vat-breakdown {
+  font-size: 0.875rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+}
+
+.vat-breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.vat-breakdown p {
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.order-detail {
+  max-width: 1120px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.order-detail__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.order-detail__header h2 {
+  margin: 0.5rem 0;
+  overflow-wrap: anywhere;
+}
+
+.order-detail__status {
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: var(--interactive-subtle);
+  color: var(--ink);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.order-detail__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 350px);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.order-detail__main {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.order-detail__card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 1.5rem;
+  overflow-wrap: anywhere;
+}
+
+.order-detail__card h3 {
+  margin: 0 0 1rem;
+}
+
+.order-detail__card > .form-section {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.order-detail__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.order-detail__items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.order-detail__items li:last-child {
+  border-bottom: 0;
+}
+
+.order-detail__items p {
+  margin: 0.4rem 0 0;
+  font-size: 0.875rem;
+}
+
+.order-detail__card address {
+  font-style: normal;
+  line-height: 1.7;
+}
+
+.order-detail__note {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: var(--surface-subtle);
+  line-height: 1.6;
+}
+
+.order-detail__contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.order-detail__extra summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.5rem 0;
+}
+
+.order-detail__extra p {
+  font-size: 0.875rem;
+}
+
+.order-detail__prices {
+  margin: 0;
+}
+
+.order-detail__prices > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+}
+
+.order-detail__prices dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.order-detail__total {
+  border-top: 1px solid var(--line);
+  margin-top: 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.order-detail__actions {
+  border-top: 1px solid var(--line);
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+}
+
+@media (max-width: 760px) {
+  .order-detail__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .order-detail__card {
+    padding: 1.1rem;
+  }
+  .order-detail__summary {
+    order: -1;
+  }
+}
+
 :root {
   font-family: 'Inter', system-ui, sans-serif;
   color: #e5e7eb;

@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -93,7 +93,33 @@ describe('buyer orders (My Orders inside marketplace)', () => {
       logout: async () => {},
     })
     expect(await screen.findByRole('heading', { name: 'Order GW-55' })).toBeInTheDocument()
-    expect(screen.getByText(/Total: €12.50/)).toBeInTheDocument()
+    const overview = screen.getByRole('complementary', { name: 'Price overview' })
+    expect(within(overview).getByText('Total incl. VAT').parentElement).toHaveTextContent('€12.50')
+  })
+
+  it('shows invoice-snapshot VAT and keeps secondary details collapsed', async () => {
+    service.getBuyerOrder.mockResolvedValueOnce({
+      ...order,
+      price_breakdown: {
+        currency: 'EUR',
+        net: '11.47',
+        vat: '1.03',
+        gross: '12.50',
+        rates: [{ rate: '9.00', net: '11.47', vat: '1.03', gross: '12.50' }],
+      },
+    })
+    renderPage(<BuyerOrderDetailPage />, '/account/orders/55', {
+      user: loggedInUser,
+      loading: false,
+      logout: async () => {},
+    })
+    expect(await screen.findByText('Included VAT')).toBeInTheDocument()
+    expect(screen.getByText('€1.03')).toBeInTheDocument()
+    expect(screen.getByText('€11.47')).toBeInTheDocument()
+    const secondary = screen.getByText('Customer & payment details').closest('details')
+    expect(secondary).not.toHaveAttribute('open')
+    await userEvent.click(screen.getByText('Customer & payment details'))
+    expect(secondary).toHaveAttribute('open')
   })
 
   it('renders historical pickup details from the order snapshot', async () => {

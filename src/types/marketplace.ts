@@ -43,6 +43,7 @@ export interface Shop {
   location: string
   postalCode?: string
   country?: string
+  defaultVatRate?: string
   contactEmail?: string
   contactPhone?: string
   whatsapp?: string
@@ -286,6 +287,8 @@ export interface Product {
   ingredients?: string
   allergens?: string
   price: number
+  priceAmount?: string
+  vatRate?: string | null
   currency: string
   category: string
   stock: number
@@ -385,10 +388,18 @@ export interface BuyerOrder {
   discount_total: string
   delivery_fee: string
   total: string
+  price_breakdown?: {
+    currency: string
+    net: string
+    vat: string
+    gross: string
+    rates: Array<{ rate: string; net: string; vat: string; gross: string }>
+  } | null
   customer_note: string
   pickup_slot_start?: string | null
   pickup_slot_end?: string | null
   fulfillment_snapshot?: {
+    currency?: string
     order_type?: 'pickup' | 'delivery'
     shop_name?: string
     shop_address?: string

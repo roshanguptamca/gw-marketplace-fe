@@ -4,6 +4,8 @@ import { useCart } from '../cart/CartContext'
 import { groupItemsByShop } from '../cart/groupByShop'
 import { useShopsForItems } from '../cart/useShopsForItems'
 import { EmptyState } from '../components/EmptyState'
+import { InclusiveVat } from '../components/InclusiveVat'
+import { vatPreview } from '../utils/vatPreview'
 import { continueShoppingPath, formatPrice } from '../utils/shopLinks'
 import { getFirstProductImageUrl, handleProductImageError } from '../utils/productImages'
 import {
@@ -161,14 +163,15 @@ export function CartPage() {
             <p className="inline-note">Items from {shopGroups.length} shops ship separately.</p>
           )}
           <div>
-            <span>Subtotal</span>
+            <span>Subtotal incl. VAT</span>
             <strong>{formatPrice(subtotal, currency)}</strong>
           </div>
           <div>
             <span>Shipping</span>
             <span>Calculated at checkout</span>
           </div>
-          <p>Taxes, shipping and seller-specific delivery options are confirmed next.</p>
+          <InclusiveVat breakdown={vatPreview(items, shopsBySlug)} currency={currency} />
+          <p>Shipping and seller-specific delivery options are confirmed at checkout.</p>
           <Link className="button button--wide" to="/checkout">
             Proceed to checkout
           </Link>

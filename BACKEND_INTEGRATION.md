@@ -6,6 +6,17 @@ This document outlines the backend requirements and integration points for the n
 
 ## Implemented marketplace billing integration
 
+Cart and checkout summaries explicitly label inclusive prices and display the
+net amount and included VAT (shipping included at checkout). Preview arithmetic
+uses integer cents with BigInt and the invoice's half-up line-rounding convention,
+using configured product/shop rates. Missing rate metadata never implies a tax
+rate. Completed order details use the backend `price_breakdown`, drawn from the
+immutable invoice, not current catalogue prices or VAT settings.
+
+Order details use responsive item, fulfilment, invoice and price-overview cards.
+Product references and customer/payment information remain accessible in
+collapsed disclosures; cancellation and contact actions retain their behavior.
+
 `/account/orders/:orderId` includes an Invoices / Facturen section, with seller
 name, immutable invoice number, issue date, VAT-inclusive total and authenticated
 PDF downloads. `OrderInvoices` loads
