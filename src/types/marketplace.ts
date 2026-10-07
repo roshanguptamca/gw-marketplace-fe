@@ -102,6 +102,30 @@ export interface ShopSettings {
   pickupSlotMinutes?: number
   pickupTimezone?: string
   pickupBookingWindowDays?: number
+  legalBusinessName?: string
+  kvkNumber?: string
+  vatNumber?: string
+  billingAddressLine1?: string
+  billingAddressLine2?: string
+  billingPostcode?: string
+  billingCity?: string
+  billingCountry?: string
+  invoicePrefix?: string
+  defaultVatRate?: string
+  invoiceFooter?: string
+  invoiceIban?: string
+}
+
+export interface Invoice {
+  id: string
+  invoice_number: string
+  order: number
+  order_number: string
+  shop: number
+  shop_name: string
+  issue_date: string
+  currency: string
+  total_inc_vat: string
 }
 
 export interface User {
@@ -178,6 +202,7 @@ export interface SellerProduct {
   ingredients: string
   allergens: string
   price: string
+  vat_rate?: string | null
   compare_at_price: string | null
   stock_quantity: number
   sku: string

@@ -7,6 +7,7 @@ import { marketplaceService } from '../services/marketplaceService'
 import { ApiError } from '../services/apiClient'
 import type { BuyerOrder } from '../types/marketplace'
 import { WhatsAppGroupLink } from '../components/ShopFulfilment'
+import { OrderInvoices } from '../components/OrderInvoices'
 
 export function BuyerOrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
@@ -167,6 +168,8 @@ export function BuyerOrderDetailPage() {
             <strong>Note from seller:</strong> {displayOrder.seller_note}
           </p>
         )}
+
+        <OrderInvoices key={displayOrder.id} orderId={displayOrder.id} />
 
         {displayOrder.status === 'pending' && (
           <div className="checkout-cancel-order">

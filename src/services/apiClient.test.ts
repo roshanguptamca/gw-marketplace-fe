@@ -9,6 +9,33 @@ import { ApiError, apiRequest, SESSION_EXPIRED_EVENT } from './apiClient'
 describe('apiRequest', () => {
   beforeEach(() => vi.useRealTimers())
 
+  it('downloads binary content with credentials and normal error handling', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response('%PDF-1.7', {
+        status: 200,
+        headers: { 'Content-Type': 'application/pdf' },
+      }),
+    )
+    const blob = await apiRequest<Blob>('/invoice/pdf/', { responseType: 'blob' }, fetcher)
+    const text = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result))
+      reader.onerror = () => reject(reader.error)
+      reader.readAsText(blob)
+    })
+    expect(text).toBe('%PDF-1.7')
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://api.example.test/invoice/pdf/',
+      expect.objectContaining({ credentials: 'include' }),
+    )
+    fetcher.mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: 'Not found.' }), { status: 404 }),
+    )
+    await expect(
+      apiRequest('/invoice/pdf/', { responseType: 'blob' }, fetcher),
+    ).rejects.toMatchObject({ status: 404 })
+  })
+
   it('returns typed JSON and applies headers', async () => {
     const fetcher = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), {

@@ -19,6 +19,7 @@ export class ApiError extends Error {
 export interface RequestOptions extends RequestInit {
   timeoutMs?: number
   csrf?: boolean
+  responseType?: 'json' | 'blob'
 }
 
 function getCookie(name: string): string {
@@ -46,7 +47,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   if (!env.apiBaseUrl) throw new ApiError('Marketplace API URL is not configured', 0)
 
-  const { timeoutMs = 8000, csrf, ...requestInit } = options
+  const { timeoutMs = 8000, csrf, responseType = 'json', ...requestInit } = options
   const controller = new AbortController()
   const timer = window.setTimeout(() => controller.abort(), timeoutMs)
 
@@ -104,6 +105,7 @@ export async function apiRequest<T>(
     }
 
     if (response.status === 204) return undefined as T
+    if (responseType === 'blob') return (await response.blob()) as T
     return (await response.json()) as T
   } catch (error) {
     if (error instanceof ApiError) throw error

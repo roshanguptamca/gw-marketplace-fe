@@ -16,6 +16,17 @@ const request = vi.mocked(apiRequest)
 describe('shop configuration API mapping', () => {
   beforeEach(() => vi.clearAllMocks())
 
+  it('does not reset order thresholds or delivery fees when updating only billing', async () => {
+    request.mockResolvedValueOnce({ legal_business_name: 'Legal Seller', default_vat_rate: '9.00' })
+    const result = await marketplaceService.updateSellerSettings({
+      legalBusinessName: 'Legal Seller',
+      defaultVatRate: '9.00',
+    })
+    const body = JSON.parse((request.mock.calls[0][1] as RequestInit).body as string)
+    expect(body).toEqual({ legal_business_name: 'Legal Seller', default_vat_rate: '9.00' })
+    expect(result).toMatchObject({ legalBusinessName: 'Legal Seller', defaultVatRate: '9.00' })
+  })
+
   it('maps public-safe shop settings to storefront and checkout fields', async () => {
     request.mockResolvedValueOnce({
       id: 1,

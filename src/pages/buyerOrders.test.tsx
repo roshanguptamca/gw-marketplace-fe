@@ -16,6 +16,8 @@ vi.mock('../services/marketplaceService', () => ({
     getBuyerOrders: vi.fn(),
     getBuyerOrder: vi.fn(),
     cancelBuyerOrder: vi.fn(),
+    getOrderInvoices: vi.fn(),
+    downloadInvoice: vi.fn(),
   },
 }))
 
@@ -68,6 +70,7 @@ describe('buyer orders (My Orders inside marketplace)', () => {
   beforeEach(() => {
     service.getBuyerOrders.mockResolvedValue([order])
     service.getBuyerOrder.mockResolvedValue(order)
+    service.getOrderInvoices.mockResolvedValue([])
   })
 
   it('lists the buyer’s orders with a link to /account/orders/:id', async () => {
