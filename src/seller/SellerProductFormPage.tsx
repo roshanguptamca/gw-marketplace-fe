@@ -20,6 +20,7 @@ type LeadTimeUnit = 'hours' | 'days'
 interface ProductFormState {
   name: string
   price: string
+  vat_rate: string
   compare_at_price: string
   stock_quantity: string
   sku: string
@@ -62,6 +63,7 @@ function trimDecimal(value: string | null | undefined): string {
 const EMPTY_FORM: ProductFormState = {
   name: '',
   price: '',
+  vat_rate: '',
   compare_at_price: '',
   stock_quantity: '0',
   sku: '',
@@ -114,6 +116,7 @@ export function SellerProductFormPage() {
           setForm({
             name: product.name,
             price: product.price,
+            vat_rate: product.vat_rate ?? '',
             compare_at_price: product.compare_at_price ?? '',
             stock_quantity: String(product.stock_quantity ?? 0),
             sku: product.sku,
@@ -170,6 +173,7 @@ export function SellerProductFormPage() {
     const formData = new FormData()
     formData.set('name', form.name)
     formData.set('price', form.price)
+    formData.set('vat_rate', form.vat_rate)
     if (form.compare_at_price) formData.set('compare_at_price', form.compare_at_price)
     formData.set('stock_quantity', form.stock_quantity || '0')
     if (form.sku) formData.set('sku', form.sku)
@@ -290,6 +294,17 @@ export function SellerProductFormPage() {
               step="0.01"
               value={form.compare_at_price}
               onChange={(event) => updateField('compare_at_price', event.target.value)}
+            />
+          </label>
+          <label>
+            VAT rate (%) - blank uses shop default
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={form.vat_rate}
+              onChange={(event) => updateField('vat_rate', event.target.value)}
             />
           </label>
           <label>

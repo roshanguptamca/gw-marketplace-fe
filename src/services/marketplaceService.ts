@@ -28,6 +28,7 @@ import type {
   SellingUnit,
   ShopSettings,
   Shop,
+  Invoice,
 } from '../types/marketplace'
 import { ApiError, apiRequest } from './apiClient'
 
@@ -61,6 +62,7 @@ interface ApiShop {
   is_approved?: boolean
   settings?: {
     currency?: string
+    default_vat_rate?: string
     whatsapp_number?: string
     local_delivery_fee?: string
     international_delivery_fee?: string
@@ -120,6 +122,18 @@ interface ApiShopSettings {
   pickup_slot_minutes?: number
   pickup_timezone?: string
   pickup_booking_window_days?: number
+  legal_business_name?: string
+  kvk_number?: string
+  vat_number?: string
+  billing_address_line1?: string
+  billing_address_line2?: string
+  billing_postcode?: string
+  billing_city?: string
+  billing_country?: string
+  invoice_prefix?: string
+  default_vat_rate?: string
+  invoice_footer?: string
+  invoice_iban?: string
 }
 
 interface ApiPickupSchedule {
@@ -170,6 +184,7 @@ export interface ApiProduct {
   ingredients?: string
   allergens?: string
   price: string
+  vat_rate?: string | null
   stock_quantity: number
   image_url: string
   external_image_url: string
@@ -257,6 +272,18 @@ function normalizeShopSettings(settings: ApiShopSettings | undefined): ShopSetti
     pickupSlotMinutes: settings.pickup_slot_minutes ?? 30,
     pickupTimezone: settings.pickup_timezone ?? 'Europe/Amsterdam',
     pickupBookingWindowDays: settings.pickup_booking_window_days ?? 14,
+    legalBusinessName: settings.legal_business_name ?? '',
+    kvkNumber: settings.kvk_number ?? '',
+    vatNumber: settings.vat_number ?? '',
+    billingAddressLine1: settings.billing_address_line1 ?? '',
+    billingAddressLine2: settings.billing_address_line2 ?? '',
+    billingPostcode: settings.billing_postcode ?? '',
+    billingCity: settings.billing_city ?? '',
+    billingCountry: settings.billing_country ?? '',
+    invoicePrefix: settings.invoice_prefix ?? '',
+    defaultVatRate: settings.default_vat_rate ?? '0.00',
+    invoiceFooter: settings.invoice_footer ?? '',
+    invoiceIban: settings.invoice_iban ?? '',
   }
 }
 
@@ -332,6 +359,7 @@ function normalizeShop(shop: ApiShop): Shop {
     location: shop.city,
     postalCode: shop.postal_code,
     country: shop.country,
+    defaultVatRate: shop.settings?.default_vat_rate,
     contactEmail: shop.email ?? shop.contact_email,
     contactPhone: shop.phone ?? shop.contact_phone,
     whatsapp: shop.settings?.whatsapp_number,
@@ -379,6 +407,8 @@ export function normalizeProduct(product: ApiProduct, fallbackShopSlug = ''): Pr
     ingredients: product.ingredients ?? '',
     allergens: product.allergens ?? '',
     price: Number(product.price),
+    priceAmount: product.price,
+    vatRate: product.vat_rate ?? shop?.settings?.default_vat_rate ?? null,
     currency: shop?.settings?.currency ?? 'EUR',
     category: product.category_detail?.name ?? 'Products',
     stock: product.stock_quantity,
@@ -617,6 +647,22 @@ export const marketplaceService = {
   getBuyerOrders: () => apiRequest<BuyerOrder[]>('/buyer/orders/'),
   getBuyerOrder: (id: number | string) =>
     apiRequest<BuyerOrder>(`/buyer/orders/${encodeURIComponent(String(id))}/`),
+  getOrderInvoices: (id: number | string) =>
+    apiRequest<Invoice[]>(`/marketplace/orders/${encodeURIComponent(String(id))}/invoices/`),
+  downloadInvoice: async (invoice: Invoice) => {
+    const blob = await apiRequest<Blob>(
+      `/marketplace/invoices/${encodeURIComponent(invoice.id)}/pdf/`,
+      { responseType: 'blob', timeoutMs: 30000, headers: { Accept: 'application/pdf' } },
+    )
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${invoice.invoice_number}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  },
   // Instant self-serve cancel — only allowed while the order is still
   // "pending" (the seller hasn't accepted it yet), so no approval is needed.
   cancelBuyerOrder: (id: number | string) =>
@@ -650,10 +696,15 @@ export const marketplaceService = {
       method: 'PATCH',
       body: JSON.stringify({
         currency: data.currency,
-        min_order_amount: data.minOrderAmount || '0.00',
-        delivery_fee: data.deliveryFee || '0.00',
-        local_delivery_fee: data.localDeliveryFee || '0.00',
-        international_delivery_fee: data.internationalDeliveryFee || '0.00',
+        min_order_amount:
+          data.minOrderAmount === undefined ? undefined : data.minOrderAmount || '0.00',
+        delivery_fee: data.deliveryFee === undefined ? undefined : data.deliveryFee || '0.00',
+        local_delivery_fee:
+          data.localDeliveryFee === undefined ? undefined : data.localDeliveryFee || '0.00',
+        international_delivery_fee:
+          data.internationalDeliveryFee === undefined
+            ? undefined
+            : data.internationalDeliveryFee || '0.00',
         free_delivery_above: data.freeDeliveryAbove,
         delivery_notes: data.deliveryNotes,
         whatsapp_group_url: data.whatsappGroupUrl,
@@ -676,6 +727,18 @@ export const marketplaceService = {
         pickup_slot_minutes: data.pickupSlotMinutes,
         pickup_timezone: data.pickupTimezone,
         pickup_booking_window_days: data.pickupBookingWindowDays,
+        legal_business_name: data.legalBusinessName,
+        kvk_number: data.kvkNumber,
+        vat_number: data.vatNumber,
+        billing_address_line1: data.billingAddressLine1,
+        billing_address_line2: data.billingAddressLine2,
+        billing_postcode: data.billingPostcode,
+        billing_city: data.billingCity,
+        billing_country: data.billingCountry,
+        invoice_prefix: data.invoicePrefix,
+        default_vat_rate: data.defaultVatRate,
+        invoice_footer: data.invoiceFooter,
+        invoice_iban: data.invoiceIban,
       }),
     }).then((settings) => normalizeShopSettings(settings) as ShopSettings),
   updateSellerProduct: (id: number, data: Partial<ApiProduct>) =>

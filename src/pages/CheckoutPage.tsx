@@ -8,6 +8,8 @@ import { usePickupSchedules } from '../cart/usePickupSchedules'
 import { useShopsForItems } from '../cart/useShopsForItems'
 import { env } from '../config/env'
 import { EmptyState } from '../components/EmptyState'
+import { InclusiveVat } from '../components/InclusiveVat'
+import { vatPreview } from '../utils/vatPreview'
 import { ShopFulfilment } from '../components/ShopFulfilment'
 import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
@@ -806,7 +808,7 @@ export function CheckoutPage() {
             )
           })}
           <div className="checkout-total checkout-total--subtotal">
-            <span>Subtotal</span>
+            <span>Subtotal incl. VAT</span>
             <strong>{formatPrice(subtotal, currency)}</strong>
           </div>
           <div className="checkout-total checkout-total--delivery">
@@ -819,6 +821,17 @@ export function CheckoutPage() {
             <span>{isMultiShop ? 'Grand total' : 'Estimated total'}</span>
             <strong>{formatPrice(estimatedTotal, currency)}</strong>
           </div>
+          <InclusiveVat
+            currency={currency}
+            breakdown={vatPreview(
+              items,
+              shopsBySlug,
+              shopGroupsWithFees.map((group) => ({
+                shopSlug: group.shopSlug,
+                amount: String(group.deliveryFee),
+              })),
+            )}
+          />
           <p className="checkout-total-note">Final delivery fee is confirmed by the seller.</p>
           <label className="terms-check">
             <input

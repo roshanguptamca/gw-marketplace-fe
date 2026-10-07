@@ -35,6 +35,7 @@ import { SellerShopHoursPage } from './seller/SellerShopHoursPage'
 import { SellerShopOrderSettingsPage } from './seller/SellerShopOrderSettingsPage'
 import { SellerShopNotificationsPage } from './seller/SellerShopNotificationsPage'
 import { SellerShopPreviewPage } from './seller/SellerShopPreviewPage'
+import { SellerShopBillingPage } from './seller/SellerShopBillingPage'
 
 export function App() {
   const hostnameShopSlug = getShopSlugFromHostname(window.location.hostname)
@@ -106,6 +107,7 @@ export function App() {
                   <Route path="shop-delivery" element={<SellerShopDeliveryPage />} />
                   <Route path="shop-hours" element={<SellerShopHoursPage />} />
                   <Route path="shop-orders" element={<SellerShopOrderSettingsPage />} />
+                  <Route path="shop-billing" element={<SellerShopBillingPage />} />
                   <Route path="shop-notifications" element={<SellerShopNotificationsPage />} />
                   <Route path="shop-preview" element={<SellerShopPreviewPage />} />
 

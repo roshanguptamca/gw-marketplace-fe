@@ -43,6 +43,7 @@ export interface Shop {
   location: string
   postalCode?: string
   country?: string
+  defaultVatRate?: string
   contactEmail?: string
   contactPhone?: string
   whatsapp?: string
@@ -102,6 +103,30 @@ export interface ShopSettings {
   pickupSlotMinutes?: number
   pickupTimezone?: string
   pickupBookingWindowDays?: number
+  legalBusinessName?: string
+  kvkNumber?: string
+  vatNumber?: string
+  billingAddressLine1?: string
+  billingAddressLine2?: string
+  billingPostcode?: string
+  billingCity?: string
+  billingCountry?: string
+  invoicePrefix?: string
+  defaultVatRate?: string
+  invoiceFooter?: string
+  invoiceIban?: string
+}
+
+export interface Invoice {
+  id: string
+  invoice_number: string
+  order: number
+  order_number: string
+  shop: number
+  shop_name: string
+  issue_date: string
+  currency: string
+  total_inc_vat: string
 }
 
 export interface User {
@@ -178,6 +203,7 @@ export interface SellerProduct {
   ingredients: string
   allergens: string
   price: string
+  vat_rate?: string | null
   compare_at_price: string | null
   stock_quantity: number
   sku: string
@@ -261,6 +287,8 @@ export interface Product {
   ingredients?: string
   allergens?: string
   price: number
+  priceAmount?: string
+  vatRate?: string | null
   currency: string
   category: string
   stock: number
@@ -360,10 +388,18 @@ export interface BuyerOrder {
   discount_total: string
   delivery_fee: string
   total: string
+  price_breakdown?: {
+    currency: string
+    net: string
+    vat: string
+    gross: string
+    rates: Array<{ rate: string; net: string; vat: string; gross: string }>
+  } | null
   customer_note: string
   pickup_slot_start?: string | null
   pickup_slot_end?: string | null
   fulfillment_snapshot?: {
+    currency?: string
     order_type?: 'pickup' | 'delivery'
     shop_name?: string
     shop_address?: string
