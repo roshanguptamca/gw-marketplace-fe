@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { analytics } from '../analytics/analytics'
 import { LoadingState } from '../components/LoadingState'
@@ -12,6 +13,7 @@ import { shopPath } from '../utils/shopLinks'
 import { SellerNotFoundPage } from './SellerNotFoundPage'
 
 export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) {
+  const { t } = useTranslation()
   const params = useParams()
   const location = useLocation()
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -29,7 +31,7 @@ export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) 
     if (shop) analytics.event('view_shop', { shop_id: shop.id })
   }, [shop])
 
-  if (shopLoading) return <LoadingState label="Opening shop" />
+  if (shopLoading) return <LoadingState label={t('openingShop')} />
   if (shopError || !shop) return <SellerNotFoundPage />
   const backTo = (location.state as { returnTo?: string } | undefined)?.returnTo
 
@@ -40,11 +42,11 @@ export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) 
       <div className="page-shell" style={{ paddingTop: '24px' }}>
         <MarketplaceBackNavigation
           items={[
-            { label: 'Marketplace', path: '/' },
-            { label: 'All Shops', path: '/#shops' },
+            { label: t('marketplace'), path: '/' },
+            { label: t('allShops'), path: '/#shops' },
             { label: shop.name, path: shopPath(slug), current: true },
           ]}
-          backLabel="Back to all shops"
+          backLabel={t('backToAllShops')}
           backTo={backTo ?? '/#shops'}
         />
       </div>
@@ -53,15 +55,15 @@ export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) 
       <section className="page-shell section">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Seller picks</p>
-            <h2>Featured products</h2>
+            <p className="eyebrow">{t('sellerPicks')}</p>
+            <h2>{t('featuredProducts')}</h2>
           </div>
           <Link className="text-link" to={shopPath(slug, '/products')}>
-            View all products →
+            {t('viewAllProducts')}
           </Link>
         </div>
         {productsLoading ? (
-          <LoadingState label="Loading products" />
+          <LoadingState label={t('loadingProducts')} />
         ) : (
           <ProductGrid products={featured.length > 0 ? featured : (products ?? [])} />
         )}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { analytics } from '../analytics/analytics'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { CartCallToAction } from '../components/CartCallToAction'
@@ -18,8 +19,10 @@ import {
   sellingUnitOf,
 } from '../utils/productUnits'
 import { ErrorPage } from './ErrorPage'
+import { localizedText } from '../utils/localizedText'
 
 export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) {
+  const { t, i18n } = useTranslation()
   const params = useParams()
   const location = useLocation()
   const shopSlug = resolvedSlug ?? params.shopSlug ?? ''
@@ -46,11 +49,9 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
       })
   }, [product])
 
-  if (loading) return <LoadingState label="Loading product" />
+  if (loading) return <LoadingState label={t('loadingProduct')} />
   if (error || !product) {
-    return (
-      <ErrorPage title="Product not found" message="This product may no longer be available." />
-    )
+    return <ErrorPage title={t('productNotFound')} message={t('productUnavailable')} />
   }
   const backTo = (location.state as { returnTo?: string } | undefined)?.returnTo
   const minimumQuantity = effectiveMinimumQuantity(product)
@@ -63,6 +64,9 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
   const physicalTotal = physicalTotalLabel(product, quantity)
   const ruleLines = orderingRuleLines(product, (value) => formatPrice(value, product.currency))
   const unitWord = sellingUnitOf(product) === 'PACK' ? 'pack' : ''
+  const description = localizedText(product.description, product.translations, 'description', i18n.language)
+  const ingredients = localizedText(product.ingredients, product.translations, 'ingredients', i18n.language)
+  const allergens = localizedText(product.allergens, product.translations, 'allergens', i18n.language)
 
   const handleAdd = () => {
     addItem(product, quantity)
@@ -77,11 +81,11 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
   }
 
   const detailSections = [
-    product.ingredients
-      ? { label: 'Ingredients', value: product.ingredients, testId: 'product-ingredients' }
+    ingredients
+      ? { label: t('ingredients'), value: ingredients, testId: 'product-ingredients' }
       : null,
-    product.allergens
-      ? { label: 'Allergens', value: product.allergens, testId: 'product-allergens' }
+    allergens
+      ? { label: t('allergens'), value: allergens, testId: 'product-allergens' }
       : null,
   ].filter(
     (section): section is { label: string; value: string; testId: string } => section !== null,
@@ -91,11 +95,11 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
     <main className="page-shell section">
       <MarketplaceBackNavigation
         items={[
-          { label: 'Marketplace', path: '/' },
+          { label: t('marketplace'), path: '/' },
           { label: product.shopName ?? shopSlug, path: shopPath(shopSlug) },
           { label: product.name, path: '', current: true },
         ]}
-        backLabel="Back to all products"
+        backLabel={t('backToProducts')}
         backTo={backTo ?? shopPath(shopSlug, '/products')}
       />
       <CartCallToAction />
@@ -142,30 +146,32 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
               ))}
             </ul>
           )}
-          <p className="product-info__description">{product.description}</p>
+          <p className="product-info__description">{description}</p>
           <div className="product-info__stock">
             <span className={product.stock > 0 ? 'status-dot' : 'status-dot status-dot--empty'} />
-            {product.stock > 0 ? `${product.stock} available` : 'Currently out of stock'}
+            {product.stock > 0
+              ? t('available', { count: product.stock })
+              : t('currentlyOutOfStock')}
           </div>
           {added ? (
             <div className="add-to-cart-success">
-              <p className="success-message">✓ Added to cart</p>
+              <p className="success-message">✓ {t('addedToCart')}</p>
               <div className="action-buttons">
                 <button className="button button--secondary" onClick={() => setAdded(false)}>
-                  Continue Shopping
+                  {t('continueShopping')}
                 </button>
                 <Link className="button button--primary" to="/cart">
-                  View Cart
+                  {t('viewCart')}
                 </Link>
                 <Link className="button button--primary" to="/checkout">
-                  Checkout
+                  {t('checkout')}
                 </Link>
               </div>
             </div>
           ) : (
             <>
               {product.stock > 0 && (
-                <div className="quantity-stepper" aria-label="Quantity">
+                <div className="quantity-stepper"                 aria-label={t('quantity')}>
                   <button
                     type="button"
                     className="icon-button"
@@ -207,18 +213,18 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
                 disabled={product.stock === 0 || product.stock < minimumQuantity}
                 onClick={handleAdd}
               >
-                {product.stock === 0 ? 'Out of stock' : 'Add to cart'}
+                {product.stock === 0 ? t('outOfStock') : t('addToCartLabel')}
               </button>
             </>
           )}
           <div className="product-notes">
             <p>
-              <strong>Secure checkout</strong>
-              Your payment details are protected.
+              <strong>{t('secureCheckout')}</strong>
+              {t('paymentProtected')}
             </p>
             <p>
-              <strong>Independent seller</strong>
-              Fulfilled directly by {product.shopSlug}.
+              <strong>{t('independentSeller')}</strong>
+              {t('fulfilledBy', { shop: product.shopName ?? product.shopSlug })}
             </p>
           </div>
           {detailSections.length > 0 && (

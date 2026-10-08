@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 import { useCart } from '../cart/CartContext'
 import { env } from '../config/env'
 import { useTheme } from '../theme/useTheme'
+import i18n from '../i18n'
 
 export function Header() {
   const { t } = useTranslation()
@@ -35,6 +36,18 @@ export function Header() {
             {t('cart')}
             {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
           </Link>
+          <div className="language-switch" role="group" aria-label={t('language')}>
+            {(['en', 'nl'] as const).map((language) => (
+              <button
+                key={language}
+                type="button"
+                aria-pressed={i18n.language === language}
+                onClick={() => void i18n.changeLanguage(language)}
+              >
+                {language.toUpperCase()}
+              </button>
+            ))}
+          </div>
           <button
             className="theme-toggle"
             type="button"
@@ -63,18 +76,18 @@ export function Header() {
                       <span>{user.email}</span>
                     </div>
                     <a role="menuitem" href={`${env.mainFrontendUrl}/#profile`}>
-                      My Account
+                      {t('myAccount')}
                     </a>
                     <Link role="menuitem" to="/account/orders" onClick={() => setMenuOpen(false)}>
-                      My Orders
+                      {t('myOrders')}
                     </Link>
                     {user.is_seller && (
                       <Link role="menuitem" to="/seller" onClick={() => setMenuOpen(false)}>
-                        Seller Portal
+                        {t('sellerPortal')}
                       </Link>
                     )}
                     <button role="menuitem" onClick={() => void logout()}>
-                      Logout
+                      {t('logout')}
                     </button>
                   </div>
                 )}
@@ -82,11 +95,11 @@ export function Header() {
             ) : (
               <div className="header-actions">
                 <a className="header-action header-become-seller" href={env.sellerSignupUrl}>
-                  Become a Seller
+                  {t('becomeSeller')}
                 </a>
                 <a className="header-action header-login" href={env.loginUrl}>
                   <span aria-hidden="true">○</span>
-                  Login
+                  {t('login')}
                 </a>
               </div>
             ))}

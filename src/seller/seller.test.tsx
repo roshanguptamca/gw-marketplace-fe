@@ -412,7 +412,7 @@ describe('seller portal pages', () => {
 
   it('renders orders, allows status update, and errors', async () => {
     const first = renderPage(<SellerOrdersPage />)
-    expect(await screen.findByText('out for delivery')).toBeInTheDocument()
+    expect(await screen.findByRole('cell', { name: 'out for delivery' })).toBeInTheDocument()
     const select = screen.getByLabelText(/update status for order gw-1/i)
     await userEvent.selectOptions(select, 'completed')
     await waitFor(() =>
@@ -486,7 +486,10 @@ describe('seller portal pages', () => {
     )
     await userEvent.type(screen.getByLabelText('Address line 1'), 'Market Lane 7')
     await userEvent.type(screen.getByLabelText('City'), 'Test City')
-    await userEvent.type(screen.getByLabelText('Pickup instructions'), 'Call first')
+    await userEvent.type(
+      screen.getByLabelText('Pickup instructions (English)'),
+      'Call first',
+    )
     await userEvent.clear(screen.getByLabelText('Minimum order amount (€)'))
     await userEvent.type(screen.getByLabelText('Minimum order amount (€)'), '20')
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
@@ -623,6 +626,48 @@ describe('seller portal pages', () => {
     expect(screen.queryByLabelText('Minimum physical pieces')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Advance notice')).toHaveValue(12)
     expect(screen.getByLabelText('Advance notice unit')).toHaveValue('hours')
+  })
+
+  it('lets sellers edit Dutch fields without changing the English content or shared product name', async () => {
+    service.getSellerProduct.mockResolvedValueOnce({
+      ...sellerProduct,
+      name: 'Besan Laddoo',
+      description: 'Original English description',
+      translations: {
+        description: {
+          en: 'Original English description',
+          nl: 'Bestaande Nederlandse beschrijving',
+        },
+      },
+    })
+    renderPage(
+      <Routes>
+        <Route path="/seller/products/:id/edit" element={<SellerProductFormPage />} />
+      </Routes>,
+      '/seller/products/1/edit',
+    )
+
+    await screen.findByRole('heading', { name: 'Edit product' })
+    const dutchDescription = screen.getByLabelText('Description (Dutch)')
+    expect(dutchDescription).toHaveValue('Bestaande Nederlandse beschrijving')
+    await userEvent.clear(dutchDescription)
+    await userEvent.type(dutchDescription, 'Aangepaste Nederlandse beschrijving')
+    await userEvent.click(screen.getByRole('button', { name: 'Save product' }))
+
+    await waitFor(() =>
+      expect(service.updateSellerProductForm).toHaveBeenCalledWith(1, expect.any(FormData)),
+    )
+    const payload = service.updateSellerProductForm.mock.calls[0][1] as FormData
+    expect(payload.get('name')).toBe('Besan Laddoo')
+    expect(payload.get('description')).toBe('Original English description')
+    expect(JSON.parse(String(payload.get('translations')))).toEqual({
+      description: {
+        en: 'Original English description',
+        nl: 'Aangepaste Nederlandse beschrijving',
+      },
+      ingredients: { en: '', nl: '' },
+      allergens: { en: '', nl: '' },
+    })
   })
 
   it('loads an existing product, edits, deletes and manages gallery', async () => {

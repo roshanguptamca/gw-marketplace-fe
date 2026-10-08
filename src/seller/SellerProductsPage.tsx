@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
@@ -27,14 +28,15 @@ function TrashIcon() {
 }
 
 const PRODUCT_STATUS_FILTERS = [
-  { value: '', label: 'All products' },
-  { value: 'active', label: 'Active' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'featured', label: 'Featured' },
-  { value: 'low-stock', label: 'Low stock' },
+  { value: '', key: 'sellerAllProducts' },
+  { value: 'active', key: 'sellerActive' },
+  { value: 'draft', key: 'sellerDraft' },
+  { value: 'featured', key: 'sellerFeatured' },
+  { value: 'low-stock', key: 'sellerLowStockFilter' },
 ] as const
 
 export function SellerProductsPage() {
+  const { t } = useTranslation()
   const [refreshKey, setRefreshKey] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q') ?? ''
@@ -54,40 +56,40 @@ export function SellerProductsPage() {
   }
 
   const removeProduct = async (id: number) => {
-    if (!window.confirm('Delete this product?')) return
+    if (!window.confirm(t('sellerDeleteProductConfirm'))) return
     try {
       await marketplaceService.deleteSellerProduct(id)
       setRefreshKey((key) => key + 1)
     } catch {
-      setStatus('Could not delete product')
+      setStatus(t('sellerDeleteProductFailed'))
     }
   }
 
-  if (loading) return <LoadingState label="Loading products" />
+  if (loading) return <LoadingState label={t('sellerLoadingProducts')} />
   return (
     <section>
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Inventory</p>
-          <h2>Products</h2>
+          <p className="eyebrow">{t('sellerInventory')}</p>
+          <h2>{t('sellerProducts')}</h2>
         </div>
         <Link className="button" to="/seller/products/new">
-          Add product
+          {t('sellerAddProduct')}
         </Link>
       </div>
       <div className="seller-toolbar">
         <div className="form-group form-group--full">
-          <label htmlFor="seller-product-search">Search products</label>
+          <label htmlFor="seller-product-search">{t('sellerSearchProducts')}</label>
           <input
             id="seller-product-search"
             className="form-input"
             value={query}
             onChange={(event) => updateFilter(event.target.value, selectedStatus)}
-            placeholder="Name, SKU, description, category"
+            placeholder={t('sellerProductSearchPlaceholder')}
           />
         </div>
         <div className="form-group">
-          <label htmlFor="seller-product-status">Status</label>
+          <label htmlFor="seller-product-status">{t('sellerStatus')}</label>
           <select
             id="seller-product-status"
             className="form-input"
@@ -96,26 +98,26 @@ export function SellerProductsPage() {
           >
             {PRODUCT_STATUS_FILTERS.map((filter) => (
               <option key={filter.value || 'all'} value={filter.value}>
-                {filter.label}
+                {t(filter.key)}
               </option>
             ))}
           </select>
         </div>
         <button type="button" className="button button--ghost" onClick={() => setSearchParams({})}>
-          Clear
+          {t('sellerClear')}
         </button>
       </div>
-      {error && <p className="inline-error">Products could not be loaded.</p>}
+      {error && <p className="inline-error">{t('sellerProductsLoadFailed')}</p>}
       {status && <p className="inline-error">{status}</p>}
       <div className="seller-table-wrap">
         <table className="seller-table">
           <thead>
             <tr>
-              <th>Product</th>
-              <th>SKU</th>
-              <th>Price</th>
-              <th>Stock</th>
-              <th>Status</th>
+              <th>{t('sellerProduct')}</th>
+              <th>{t('sellerSku')}</th>
+              <th>{t('sellerPrice')}</th>
+              <th>{t('sellerStock')}</th>
+              <th>{t('sellerStatus')}</th>
               <th></th>
             </tr>
           </thead>
@@ -126,21 +128,23 @@ export function SellerProductsPage() {
                 <td>{product.sku || '—'}</td>
                 <td>€{product.price}</td>
                 <td>{product.stock_quantity}</td>
-                <td>{product.is_approved && product.is_active ? 'Live' : 'Draft'}</td>
+                <td>
+                  {product.is_approved && product.is_active ? t('sellerProductLive') : t('sellerDraft')}
+                </td>
                 <td className="seller-actions seller-actions--icons">
                   <Link
                     className="icon-button"
                     to={`/seller/products/${product.id}/edit`}
-                    aria-label={`Edit ${product.name}`}
-                    title={`Edit ${product.name}`}
+                    aria-label={t('sellerEditProduct', { name: product.name })}
+                    title={t('sellerEditProduct', { name: product.name })}
                   >
                     <PencilIcon />
                   </Link>
                   <button
                     className="icon-button icon-button--danger"
                     type="button"
-                    aria-label={`Delete ${product.name}`}
-                    title={`Delete ${product.name}`}
+                    aria-label={t('sellerDeleteProduct', { name: product.name })}
+                    title={t('sellerDeleteProduct', { name: product.name })}
                     onClick={() => void removeProduct(product.id)}
                   >
                     <TrashIcon />

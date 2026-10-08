@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { analytics } from '../analytics/analytics'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
@@ -14,8 +15,10 @@ import {
   handleShopBannerError,
   handleShopLogoError,
 } from '../utils/shopImages'
+import { localizedText } from '../utils/localizedText'
 
 export function MarketplaceHomePage() {
+  const { t, i18n } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   useEffect(() => {
     document.title = 'GuideWisey Marketplace | GuideWisey'
@@ -101,15 +104,15 @@ export function MarketplaceHomePage() {
         <div className="market-hero__content">
           <p className="eyebrow">GuideWisey Marketplace</p>
           <h1 className="market-hero__title">GuideWisey Marketplace</h1>
-          <p>Browse approved GuideWisey sellers and order directly from their shops.</p>
+          <p>{t('homeIntro')}</p>
           <a className="button button--light" href="#shops">
-            Explore shops
+            {t('exploreShops')}
           </a>
         </div>
         <div className="market-hero__art" aria-hidden="true">
-          <span>Made</span>
-          <span>with</span>
-          <strong>care.</strong>
+          <span>{t('made')}</span>
+          <span>{t('with')}</span>
+          <strong>{t('care')}</strong>
         </div>
       </section>
 
@@ -126,22 +129,24 @@ export function MarketplaceHomePage() {
         {isSearchActive ? (
           <>
             {searchError && (
-              <EmptyState title="Search failed" message="Please try again in a moment." />
+              <EmptyState title={t('searchFailed')} message={t('tryAgain')} />
             )}
             {searchResult && (
               <>
                 <div className="section-heading">
                   <div>
-                    <p className="eyebrow">Search results</p>
-                    <h2>Matching shops</h2>
+                    <p className="eyebrow">{t('searchResults')}</p>
+                    <h2>{t('matchingShops')}</h2>
                   </div>
                   <p>
-                    {searchResult.totalShops} shop(s) &middot; {searchResult.totalProducts}{' '}
-                    product(s)
+                    {t('shopsCount', {
+                      shops: searchResult.totalShops,
+                      products: searchResult.totalProducts,
+                    })}
                   </p>
                 </div>
                 {searchResult.shops.length === 0 ? (
-                  <EmptyState title="No shops match your search" message="Try different filters." />
+                  <EmptyState title={t('noShops')} message={t('tryDifferentFilters')} />
                 ) : (
                   <div className="shop-grid">
                     {searchResult.shops.map((shop) => (
@@ -164,7 +169,7 @@ export function MarketplaceHomePage() {
                           />
                           <div>
                             <h3>{shop.name}</h3>
-                            <p>{shop.tagline}</p>
+                            <p>{localizedText(shop.description, shop.translations, 'description', i18n.language)}</p>
                             <span>{shop.categories.join(' · ')}</span>
                           </div>
                         </div>
@@ -174,7 +179,7 @@ export function MarketplaceHomePage() {
                 )}
                 <div className="section-heading">
                   <div>
-                    <h2>Matching products</h2>
+                    <h2>{t('matchingProducts')}</h2>
                   </div>
                 </div>
                 <ProductGrid products={searchResult.products} />
@@ -185,17 +190,17 @@ export function MarketplaceHomePage() {
           <>
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Shop small</p>
-                <h2>Featured sellers</h2>
+                <p className="eyebrow">{t('shopSmall')}</p>
+                <h2>{t('featuredSellers')}</h2>
               </div>
-              <p>Every purchase supports an independent business.</p>
+              <p>{t('supportsBusiness')}</p>
             </div>
-            {shopsLoading && <LoadingState label="Finding shops" />}
+            {shopsLoading && <LoadingState label={t('findingShops')} />}
             {shopsError && (
-              <EmptyState title="Shops are unavailable" message="Please try again in a moment." />
+              <EmptyState title={t('shopsUnavailable')} message={t('tryAgain')} />
             )}
             {shops && shops.length === 0 && (
-              <EmptyState title="No shops yet" message="New sellers are joining soon." />
+              <EmptyState title={t('noShopsYet')} message={t('newSellersSoon')} />
             )}
             {shops && shops.length > 0 && (
               <div className="shop-grid">
@@ -219,7 +224,7 @@ export function MarketplaceHomePage() {
                       />
                       <div>
                         <h3>{shop.name}</h3>
-                        <p>{shop.tagline}</p>
+                        <p>{localizedText(shop.description, shop.translations, 'description', i18n.language)}</p>
                         <span>{shop.categories.join(' · ')}</span>
                       </div>
                     </div>
@@ -230,11 +235,11 @@ export function MarketplaceHomePage() {
 
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Fresh finds</p>
-                <h2>Featured products</h2>
+                <p className="eyebrow">{t('freshFinds')}</p>
+                <h2>{t('featuredProducts')}</h2>
               </div>
             </div>
-            {productsLoading && <LoadingState label="Finding products" />}
+            {productsLoading && <LoadingState label={t('findingProducts')} />}
             {products && <ProductGrid products={products.slice(0, 8)} />}
           </>
         )}

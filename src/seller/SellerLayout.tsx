@@ -1,54 +1,54 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 export function SellerLayout() {
+  const { t } = useTranslation()
   return (
     <main className="page-shell seller-shell">
       <aside className="seller-nav">
-        <p className="eyebrow">Seller portal</p>
-        <h1>Manage shop</h1>
-        <p className="seller-nav__lead">
-          Products, orders, shop settings, and storefront controls.
-        </p>
-        <nav aria-label="Seller navigation">
+        <p className="eyebrow">{t('sellerPortal')}</p>
+        <h1>{t('sellerManageShop')}</h1>
+        <p className="seller-nav__lead">{t('sellerNavLead')}</p>
+        <nav aria-label={t('sellerNavigation')}>
           <div className="seller-nav-section">
-            <p className="seller-nav-section-title">Dashboard</p>
+            <p className="seller-nav-section-title">{t('sellerDashboard')}</p>
             <NavLink end to="/seller">
-              Overview
+              {t('sellerOverview')}
             </NavLink>
           </div>
 
           <div className="seller-nav-section">
-            <p className="seller-nav-section-title">Shop Configuration</p>
-            <NavLink to="/seller/shop-details">Shop Details</NavLink>
-            <NavLink to="/seller/shop-logo-banner">Logo & Banner</NavLink>
-            <NavLink to="/seller/shop-contact">Contact Information</NavLink>
-            <NavLink to="/seller/shop-delivery">Delivery & Pickup</NavLink>
-            <NavLink to="/seller/shop-hours">Opening Hours</NavLink>
-            <NavLink to="/seller/shop-orders">Order Settings</NavLink>
-            <NavLink to="/seller/shop-billing">Billing &amp; Invoices</NavLink>
-            <NavLink to="/seller/shop-notifications">Notifications</NavLink>
-            <NavLink to="/seller/shop-preview">Public Shop Preview</NavLink>
+            <p className="seller-nav-section-title">{t('sellerShopConfiguration')}</p>
+            <NavLink to="/seller/shop-details">{t('sellerShopDetails')}</NavLink>
+            <NavLink to="/seller/shop-logo-banner">{t('sellerLogoBanner')}</NavLink>
+            <NavLink to="/seller/shop-contact">{t('sellerContactInformation')}</NavLink>
+            <NavLink to="/seller/shop-delivery">{t('sellerDeliveryPickup')}</NavLink>
+            <NavLink to="/seller/shop-hours">{t('sellerOpeningHours')}</NavLink>
+            <NavLink to="/seller/shop-orders">{t('sellerOrderSettings')}</NavLink>
+            <NavLink to="/seller/shop-billing">{t('sellerBillingInvoices')}</NavLink>
+            <NavLink to="/seller/shop-notifications">{t('sellerNotifications')}</NavLink>
+            <NavLink to="/seller/shop-preview">{t('sellerPublicPreview')}</NavLink>
           </div>
 
           <div className="seller-nav-section">
-            <p className="seller-nav-section-title">Products</p>
-            <NavLink to="/seller/products">Products</NavLink>
-            <NavLink to="/seller/categories">Categories</NavLink>
+            <p className="seller-nav-section-title">{t('sellerProducts')}</p>
+            <NavLink to="/seller/products">{t('sellerProducts')}</NavLink>
+            <NavLink to="/seller/categories">{t('sellerCategories')}</NavLink>
           </div>
 
           <div className="seller-nav-section">
-            <p className="seller-nav-section-title">Sales</p>
-            <NavLink to="/seller/orders">Orders</NavLink>
-            <NavLink to="/seller/coupons">Coupons</NavLink>
-            <NavLink to="/seller/campaigns">Campaigns</NavLink>
+            <p className="seller-nav-section-title">{t('sellerSales')}</p>
+            <NavLink to="/seller/orders">{t('sellerOrders')}</NavLink>
+            <NavLink to="/seller/coupons">{t('sellerCoupons')}</NavLink>
+            <NavLink to="/seller/campaigns">{t('sellerCampaigns')}</NavLink>
           </div>
 
           <div className="seller-nav-section">
-            <p className="seller-nav-section-title">Advanced</p>
-            <NavLink to="/seller/settings">Settings</NavLink>
-            <NavLink to="/seller/theme">Theme</NavLink>
-            <NavLink to="/seller/domain">Domain</NavLink>
-            <NavLink to="/seller/media">Media</NavLink>
+            <p className="seller-nav-section-title">{t('sellerAdvanced')}</p>
+            <NavLink to="/seller/settings">{t('sellerSettings')}</NavLink>
+            <NavLink to="/seller/theme">{t('sellerTheme')}</NavLink>
+            <NavLink to="/seller/domain">{t('sellerDomain')}</NavLink>
+            <NavLink to="/seller/media">{t('sellerMedia')}</NavLink>
           </div>
         </nav>
       </aside>

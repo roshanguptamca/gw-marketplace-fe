@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
 import type { Shop } from '../types/marketplace'
@@ -7,8 +8,11 @@ interface ShopDetailsForm {
   name: string
   slug: string
   description: string
+  descriptionNl: string
   shortDescription: string
+  shortDescriptionNl: string
   shopType: string
+  shopTypeNl: string
   phone: string
   email: string
   websiteUrl: string
@@ -26,8 +30,11 @@ function mapShopToForm(shop: Shop): ShopDetailsForm {
     name: shop.name,
     slug: shop.slug,
     description: shop.description,
+    descriptionNl: shop.translations?.description?.nl ?? '',
     shortDescription: shop.shortDescription || '',
+    shortDescriptionNl: shop.translations?.short_description?.nl ?? '',
     shopType: shop.shopType || '',
+    shopTypeNl: shop.translations?.shop_type?.nl ?? '',
     phone: shop.phone || '',
     email: shop.email || shop.contactEmail || '',
     websiteUrl: shop.websiteUrl || '',
@@ -42,6 +49,7 @@ function mapShopToForm(shop: Shop): ShopDetailsForm {
 }
 
 export function SellerShopDetailsPage() {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -57,14 +65,14 @@ export function SellerShopDetailsPage() {
         setShop(data)
         setFormData(mapShopToForm(data))
       } catch {
-        setError('Failed to load shop details. Please try again.')
+        setError(t('sellerLoadShopDetailsFailed'))
       } finally {
         setLoading(false)
       }
     }
 
     void loadShopDetails()
-  }, [])
+  }, [t])
 
   const socialLinks = useMemo(
     () =>
@@ -97,6 +105,14 @@ export function SellerShopDetailsPage() {
         description: formData.description,
         short_description: formData.shortDescription,
         shop_type: formData.shopType,
+        translations: {
+          description: { en: formData.description, nl: formData.descriptionNl },
+          short_description: {
+            en: formData.shortDescription,
+            nl: formData.shortDescriptionNl,
+          },
+          shop_type: { en: formData.shopType, nl: formData.shopTypeNl },
+        },
         phone: formData.phone,
         email: formData.email,
         website_url: formData.websiteUrl,
@@ -110,46 +126,46 @@ export function SellerShopDetailsPage() {
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch {
-      setError('Failed to save shop details. Please try again.')
+      setError(t('sellerSaveShopDetailsFailed'))
     } finally {
       setSaving(false)
     }
   }
 
-  if (loading) return <LoadingState label="Loading shop details" />
+  if (loading) return <LoadingState label={t('sellerShopDetails')} />
 
   if (!formData || !shop) {
-    return <div className="alert alert--error">{error || 'Shop details could not be loaded.'}</div>
+    return <div className="alert alert--error">{error || t('sellerShopDetailsUnavailable')}</div>
   }
 
   return (
     <section>
       <div className="seller-page-header">
         <div>
-          <p className="eyebrow">Shop Configuration</p>
-          <h2>Shop Details</h2>
-          <p className="muted">Manage your shop name, contact details, and public profile.</p>
+          <p className="eyebrow">{t('sellerShopConfiguration')}</p>
+          <h2>{t('sellerShopDetails')}</h2>
+          <p className="muted">{t('sellerManageShopProfile')}</p>
         </div>
         <div className="seller-page-status">
           <span className={shop.active ? 'status-pill status-pill--success' : 'status-pill'}>
-            {shop.active ? 'Active' : 'Paused'}
+            {shop.active ? t('sellerActive') : t('sellerPaused')}
           </span>
           <span className="status-pill status-pill--muted">
-            {shop.approved ? 'Approved by admin' : 'Awaiting admin approval'}
+            {shop.approved ? t('sellerApprovedByAdmin') : t('sellerAwaitingApproval')}
           </span>
         </div>
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
-      {success && <div className="alert alert--success">✓ Shop details saved successfully</div>}
+      {success && <div className="alert alert--success">{t('sellerShopDetailsSaved')}</div>}
 
       <form onSubmit={handleSubmit} className="seller-form seller-form--stacked">
         <div className="form-section">
-          <h3>Basic Information</h3>
+          <h3>{t('sellerBasicInformation')}</h3>
 
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="name">Shop Name *</label>
+              <label htmlFor="name">{t('sellerShopName')} *</label>
               <input
                 type="text"
                 id="name"
@@ -162,7 +178,7 @@ export function SellerShopDetailsPage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="slug">Shop Slug</label>
+              <label htmlFor="slug">{t('sellerShopSlug')}</label>
               <input
                 type="text"
                 id="slug"
@@ -171,31 +187,55 @@ export function SellerShopDetailsPage() {
                 disabled
                 className="form-input form-input--disabled"
               />
-              <p className="form-hint">Slug changes are controlled by GuideWisey admin.</p>
+              <p className="form-hint">{t('sellerSlugAdminOnly')}</p>
             </div>
 
             <div className="form-group">
-              <label htmlFor="shopType">Shop Category / Type</label>
+              <label htmlFor="shopType">{t('sellerShopCategoryType')}</label>
               <input
                 type="text"
                 id="shopType"
                 name="shopType"
                 value={formData.shopType}
                 onChange={handleChange}
-                placeholder="Bakery, Coffee, Handmade, Services..."
+                placeholder={t('sellerShopTypePlaceholder')}
                 className="form-input"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="shortDescription">Short Description</label>
+              <label htmlFor="shopTypeNl">{t('sellerShopCategoryTypeDutch')}</label>
+              <input
+                type="text"
+                id="shopTypeNl"
+                name="shopTypeNl"
+                value={formData.shopTypeNl}
+                onChange={handleChange}
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="shortDescription">{t('sellerShortDescription')}</label>
               <input
                 type="text"
                 id="shortDescription"
                 name="shortDescription"
                 value={formData.shortDescription}
                 onChange={handleChange}
-                placeholder="One-line description customers see in cards"
+                placeholder={t('sellerShortDescriptionPlaceholder')}
+                maxLength={240}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="shortDescriptionNl">{t('sellerShortDescriptionDutch')}</label>
+              <input
+                type="text"
+                id="shortDescriptionNl"
+                name="shortDescriptionNl"
+                value={formData.shortDescriptionNl}
+                onChange={handleChange}
                 maxLength={240}
                 className="form-input"
               />
@@ -203,7 +243,7 @@ export function SellerShopDetailsPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="description">Full Description</label>
+            <label htmlFor="description">{t('sellerFullDescriptionEnglish')}</label>
             <textarea
               id="description"
               name="description"
@@ -213,13 +253,24 @@ export function SellerShopDetailsPage() {
               className="form-input"
             />
           </div>
+          <div className="form-group">
+            <label htmlFor="descriptionNl">{t('sellerFullDescriptionDutch')}</label>
+            <textarea
+              id="descriptionNl"
+              name="descriptionNl"
+              value={formData.descriptionNl}
+              onChange={handleChange}
+              rows={5}
+              className="form-input"
+            />
+          </div>
         </div>
 
         <div className="form-section">
-          <h3>Contact and Location</h3>
+          <h3>{t('sellerContactLocation')}</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="phone">Phone</label>
+              <label htmlFor="phone">{t('sellerPhone')}</label>
               <input
                 type="tel"
                 id="phone"
@@ -230,7 +281,7 @@ export function SellerShopDetailsPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">{t('sellerEmail')}</label>
               <input
                 type="email"
                 id="email"
@@ -241,7 +292,7 @@ export function SellerShopDetailsPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="websiteUrl">Website / Social URL</label>
+              <label htmlFor="websiteUrl">{t('sellerWebsiteSocialUrl')}</label>
               <input
                 type="url"
                 id="websiteUrl"
@@ -253,7 +304,7 @@ export function SellerShopDetailsPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="city">City</label>
+              <label htmlFor="city">{t('sellerCity')}</label>
               <input
                 type="text"
                 id="city"
@@ -264,7 +315,7 @@ export function SellerShopDetailsPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="postalCode">Postal Code</label>
+              <label htmlFor="postalCode">{t('sellerPostalCode')}</label>
               <input
                 type="text"
                 id="postalCode"
@@ -275,7 +326,7 @@ export function SellerShopDetailsPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="country">Country</label>
+              <label htmlFor="country">{t('sellerCountry')}</label>
               <input
                 type="text"
                 id="country"
@@ -288,7 +339,7 @@ export function SellerShopDetailsPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="address">Address</label>
+            <label htmlFor="address">{t('sellerAddress')}</label>
             <textarea
               id="address"
               name="address"
@@ -300,7 +351,7 @@ export function SellerShopDetailsPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="socialLinksText">Social links</label>
+            <label htmlFor="socialLinksText">{t('sellerSocialLinks')}</label>
             <textarea
               id="socialLinksText"
               name="socialLinksText"
@@ -308,14 +359,14 @@ export function SellerShopDetailsPage() {
               onChange={handleChange}
               rows={3}
               className="form-input"
-              placeholder="One URL per line"
+              placeholder={t('sellerOneUrlPerLine')}
             />
-            <p className="form-hint">Optional public links for Instagram, Facebook, WhatsApp, or your website.</p>
+            <p className="form-hint">{t('sellerSocialLinksHint')}</p>
           </div>
         </div>
 
         <div className="form-section">
-          <h3>Public Status</h3>
+          <h3>{t('sellerPublicStatus')}</h3>
           <label className="seller-toggle">
             <input
               type="checkbox"
@@ -323,16 +374,16 @@ export function SellerShopDetailsPage() {
               checked={formData.active}
               onChange={handleChange}
             />
-            <span>Shop is active and visible to customers</span>
+            <span>{t('sellerShopActiveVisible')}</span>
           </label>
           <p className="form-hint">
-            Admin approval remains separate. Sellers can pause visibility, but cannot approve their own shop.
+            {t('sellerAdminApprovalSeparate')}
           </p>
         </div>
 
         <div className="form-actions">
           <button type="submit" disabled={saving} className="button button--primary">
-            {saving ? 'Saving...' : 'Save changes'}
+            {saving ? t('sellerSavingChanges') : t('sellerSaveChanges')}
           </button>
         </div>
       </form>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LoadingState } from '../components/LoadingState'
-import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
 import type { ShopSettings } from '../types/marketplace'
 
@@ -25,6 +25,7 @@ function defaultSettings(): ShopSettings {
 }
 
 export function SellerShopOrderSettingsPage() {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -37,14 +38,14 @@ export function SellerShopOrderSettingsPage() {
         const settings = await marketplaceService.getSellerSettings()
         if (settings) setFormData(settings)
       } catch {
-        setError('Failed to load order settings.')
+        setError(t('sellerLoadOrderSettingsFailed'))
       } finally {
         setLoading(false)
       }
     }
 
     void load()
-  }, [])
+  }, [t])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -62,35 +63,31 @@ export function SellerShopOrderSettingsPage() {
       setFormData(updated)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch (caught) {
-      setError(
-        caught instanceof ApiError && caught.status === 400
-          ? `Failed to save order settings: ${caught.message}`
-          : 'Failed to save order settings.',
-      )
+    } catch {
+      setError(t('sellerSaveOrderSettingsFailed'))
     } finally {
       setSaving(false)
     }
   }
 
-  if (loading) return <LoadingState label="Loading order settings" />
+  if (loading) return <LoadingState label={t('sellerOrderSettings')} />
 
   return (
     <section>
       <div className="seller-page-header">
         <div>
-          <p className="eyebrow">Shop Configuration</p>
-          <h2>Order Settings</h2>
-          <p className="muted">Configure how orders are processed.</p>
+          <p className="eyebrow">{t('sellerShopConfiguration')}</p>
+          <h2>{t('sellerOrderSettings')}</h2>
+          <p className="muted">{t('sellerConfigureOrders')}</p>
         </div>
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
-      {success && <div className="alert alert--success">✓ Order settings saved</div>}
+      {success && <div className="alert alert--success">{t('sellerOrderSettingsSaved')}</div>}
 
       <form onSubmit={handleSubmit} className="seller-form seller-form--stacked">
         <div className="form-section">
-          <h3>Acceptance mode</h3>
+          <h3>{t('sellerAcceptanceMode')}</h3>
           <div className="radio-group">
             <label className="radio-label">
               <input
@@ -100,9 +97,9 @@ export function SellerShopOrderSettingsPage() {
                 checked={formData.orderAcceptanceMode === 'manual'}
                 onChange={handleChange}
               />
-              <span>Manual acceptance</span>
+              <span>{t('sellerManualAcceptance')}</span>
             </label>
-            <p className="form-hint">You must manually accept or reject each order.</p>
+            <p className="form-hint">{t('sellerManualAcceptanceHint')}</p>
             <label className="radio-label">
               <input
                 type="radio"
@@ -111,14 +108,14 @@ export function SellerShopOrderSettingsPage() {
                 checked={formData.orderAcceptanceMode === 'auto'}
                 onChange={handleChange}
               />
-              <span>Automatic acceptance</span>
+              <span>{t('sellerAutomaticAcceptance')}</span>
             </label>
-            <p className="form-hint">Orders are accepted automatically once payment is valid.</p>
+            <p className="form-hint">{t('sellerAutomaticAcceptanceHint')}</p>
           </div>
         </div>
 
         <div className="form-section">
-          <h3>Order thresholds</h3>
+          <h3>{t('sellerOrderThresholds')}</h3>
           <div className="form-grid">
             <div className="form-group">
               <label htmlFor="minOrderAmount">Minimum order amount</label>
@@ -134,7 +131,7 @@ export function SellerShopOrderSettingsPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="currency">Currency</label>
+              <label htmlFor="currency">{t('sellerCurrency')}</label>
               <input
                 type="text"
                 id="currency"
@@ -148,14 +145,11 @@ export function SellerShopOrderSettingsPage() {
         </div>
 
         <div className="form-section">
-          <h3>Pickup scheduling</h3>
-          <p className="form-hint">
-            Customers choose a pickup slot within your opening hours (Shop hours page). The earliest
-            slot respects the longest advance notice of the products in their order.
-          </p>
+          <h3>{t('sellerPickupScheduling')}</h3>
+          <p className="form-hint">{t('sellerPickupSchedulingHint')}</p>
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="pickupSlotMinutes">Pickup slot length (minutes)</label>
+              <label htmlFor="pickupSlotMinutes">{t('sellerPickupSlotLength')}</label>
               <input
                 type="number"
                 id="pickupSlotMinutes"
@@ -171,7 +165,7 @@ export function SellerShopOrderSettingsPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="pickupBookingWindowDays">Bookable days ahead</label>
+              <label htmlFor="pickupBookingWindowDays">{t('sellerBookableDaysAhead')}</label>
               <input
                 type="number"
                 id="pickupBookingWindowDays"
@@ -190,7 +184,7 @@ export function SellerShopOrderSettingsPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="pickupTimezone">Shop timezone</label>
+              <label htmlFor="pickupTimezone">{t('sellerShopTimezone')}</label>
               <input
                 type="text"
                 id="pickupTimezone"
@@ -206,7 +200,7 @@ export function SellerShopOrderSettingsPage() {
 
         <div className="form-actions">
           <button type="submit" disabled={saving} className="button button--primary">
-            {saving ? 'Saving...' : 'Save changes'}
+            {saving ? t('sellerSavingChanges') : t('sellerSaveChanges')}
           </button>
         </div>
       </form>

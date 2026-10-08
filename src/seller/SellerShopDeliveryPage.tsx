@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
 import type { ShopSettings } from '../types/marketplace'
 
 const deliveryCountries = [
-  { code: 'NL', name: 'Netherlands' },
-  { code: 'BE', name: 'Belgium' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'FR', name: 'France' },
-  { code: 'AT', name: 'Austria' },
-  { code: 'LU', name: 'Luxembourg' },
+  { code: 'NL', key: 'sellerNetherlands' },
+  { code: 'BE', key: 'sellerBelgium' },
+  { code: 'DE', key: 'sellerGermany' },
+  { code: 'FR', key: 'sellerFrance' },
+  { code: 'AT', key: 'sellerAustria' },
+  { code: 'LU', key: 'sellerLuxembourg' },
 ]
 
 function emptySettings(): ShopSettings {
@@ -21,6 +22,7 @@ function emptySettings(): ShopSettings {
     internationalDeliveryFee: '10.00',
     freeDeliveryAbove: null,
     deliveryNotes: '',
+    translations: {},
     whatsappGroupUrl: '',
     pickupAddressLine1: '',
     pickupAddressLine2: '',
@@ -42,6 +44,7 @@ function emptySettings(): ShopSettings {
 }
 
 export function SellerShopDeliveryPage() {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -55,14 +58,14 @@ export function SellerShopDeliveryPage() {
         const data = await marketplaceService.getSellerSettings()
         if (data) setFormData(data)
       } catch {
-        setError('Failed to load delivery settings.')
+        setError(t('sellerLoadDeliveryFailed'))
       } finally {
         setLoading(false)
       }
     }
 
     void loadConfig()
-  }, [])
+  }, [t])
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -104,37 +107,33 @@ export function SellerShopDeliveryPage() {
       setFormData(updated)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : 'Failed to save delivery settings. Please try again.',
-      )
+    } catch {
+      setError(t('sellerSaveDeliveryFailed'))
     } finally {
       setSaving(false)
     }
   }
 
-  if (loading) return <LoadingState label="Loading delivery settings" />
+  if (loading) return <LoadingState label={t('sellerDeliveryPickup')} />
 
   return (
     <section>
       <div className="seller-page-header">
         <div>
-          <p className="eyebrow">Shop Configuration</p>
-          <h2>Delivery & Pickup</h2>
-          <p className="muted">Configure how customers receive their orders.</p>
+          <p className="eyebrow">{t('sellerShopConfiguration')}</p>
+          <h2>{t('sellerDeliveryPickup')}</h2>
+          <p className="muted">{t('sellerConfigureFulfilment')}</p>
         </div>
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
       {success && (
-        <div className="alert alert--success">✓ Delivery settings saved successfully</div>
+        <div className="alert alert--success">{t('sellerDeliverySettingsSaved')}</div>
       )}
 
       <form onSubmit={handleSubmit} className="seller-form seller-form--stacked">
         <div className="form-section">
-          <h3>Availability</h3>
+          <h3>{t('sellerAvailability')}</h3>
           <div className="form-grid">
             <label className="seller-toggle">
               <input
@@ -143,7 +142,7 @@ export function SellerShopDeliveryPage() {
                 checked={formData.pickupAvailable ?? true}
                 onChange={handleChange}
               />
-              <span>Enable customer pickup</span>
+              <span>{t('sellerEnablePickup')}</span>
             </label>
             <label className="seller-toggle">
               <input
@@ -152,16 +151,16 @@ export function SellerShopDeliveryPage() {
                 checked={formData.deliveryAvailable ?? false}
                 onChange={handleChange}
               />
-              <span>Enable delivery</span>
+              <span>{t('sellerEnableDelivery')}</span>
             </label>
           </div>
         </div>
 
         <div className="form-section">
-          <h3>Ordering and community</h3>
+          <h3>{t('sellerOrderingCommunity')}</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="minOrderAmount">Minimum order amount (€)</label>
+              <label htmlFor="minOrderAmount">{t('sellerMinimumOrderEuro')}</label>
               <input
                 id="minOrderAmount"
                 name="minOrderAmount"
@@ -174,7 +173,7 @@ export function SellerShopDeliveryPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="whatsappGroupUrl">WhatsApp group URL (optional)</label>
+              <label htmlFor="whatsappGroupUrl">{t('sellerWhatsAppUrlOptional')}</label>
               <input
                 id="whatsappGroupUrl"
                 name="whatsappGroupUrl"
@@ -190,15 +189,15 @@ export function SellerShopDeliveryPage() {
         </div>
 
         <div className="form-section">
-          <h3>Pickup address</h3>
+          <h3>{t('sellerPickupAddress')}</h3>
           <div className="form-grid">
             {(
               [
-                ['pickupAddressLine1', 'Address line 1'],
-                ['pickupAddressLine2', 'Address line 2'],
-                ['pickupPostalCode', 'Postal code'],
-                ['pickupCity', 'City'],
-                ['pickupCountry', 'Country'],
+                ['pickupAddressLine1', t('sellerAddressLine1')],
+                ['pickupAddressLine2', t('sellerAddressLine2')],
+                ['pickupPostalCode', t('sellerPostalCode')],
+                ['pickupCity', t('sellerCity')],
+                ['pickupCountry', t('sellerCountry')],
               ] as const
             ).map(([name, label]) => (
               <div className="form-group" key={name}>
@@ -214,7 +213,7 @@ export function SellerShopDeliveryPage() {
             ))}
           </div>
           <div className="form-group">
-            <label htmlFor="pickupInstructions">Pickup instructions</label>
+            <label htmlFor="pickupInstructions">{t('sellerPickupInstructionsEnglish')}</label>
             <textarea
               id="pickupInstructions"
               name="pickupInstructions"
@@ -224,13 +223,35 @@ export function SellerShopDeliveryPage() {
               className="form-input"
             />
           </div>
+          <div className="form-group">
+            <label htmlFor="pickupInstructionsNl">{t('sellerPickupInstructionsDutch')}</label>
+            <textarea
+              id="pickupInstructionsNl"
+              rows={3}
+              value={formData.translations?.pickup_instructions?.nl ?? ''}
+              onChange={(event) =>
+                setFormData((current) => ({
+                  ...current,
+                  translations: {
+                    ...current.translations,
+                    pickup_instructions: {
+                      ...current.translations?.pickup_instructions,
+                      en: current.pickupInstructions ?? '',
+                      nl: event.target.value,
+                    },
+                  },
+                }))
+              }
+              className="form-input"
+            />
+          </div>
         </div>
 
         <div className="form-section">
-          <h3>Delivery fees</h3>
+          <h3>{t('sellerDeliveryFees')}</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="localDeliveryFee">Netherlands delivery fee (€)</label>
+              <label htmlFor="localDeliveryFee">{t('sellerNetherlandsDeliveryFee')}</label>
               <input
                 type="number"
                 id="localDeliveryFee"
@@ -243,7 +264,7 @@ export function SellerShopDeliveryPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="internationalDeliveryFee">International delivery fee (€)</label>
+              <label htmlFor="internationalDeliveryFee">{t('sellerInternationalDeliveryFee')}</label>
               <input
                 type="number"
                 id="internationalDeliveryFee"
@@ -256,7 +277,7 @@ export function SellerShopDeliveryPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="freeDeliveryAbove">Free delivery above (€)</label>
+              <label htmlFor="freeDeliveryAbove">{t('sellerFreeDeliveryAbove')}</label>
               <input
                 type="number"
                 id="freeDeliveryAbove"
@@ -272,9 +293,9 @@ export function SellerShopDeliveryPage() {
         </div>
 
         <div className="form-section">
-          <h3>Pickup and delivery instructions</h3>
+          <h3>{t('sellerPickupDeliveryInstructions')}</h3>
           <div className="form-group">
-            <label htmlFor="deliveryNotes">Delivery notes</label>
+            <label htmlFor="deliveryNotes">{t('sellerDeliveryNotesEnglish')}</label>
             <textarea
               id="deliveryNotes"
               name="deliveryNotes"
@@ -284,10 +305,32 @@ export function SellerShopDeliveryPage() {
               className="form-input"
             />
           </div>
+          <div className="form-group">
+            <label htmlFor="deliveryNotesNl">{t('sellerDeliveryNotesDutch')}</label>
+            <textarea
+              id="deliveryNotesNl"
+              value={formData.translations?.delivery_notes?.nl ?? ''}
+              onChange={(event) =>
+                setFormData((current) => ({
+                  ...current,
+                  translations: {
+                    ...current.translations,
+                    delivery_notes: {
+                      ...current.translations?.delivery_notes,
+                      en: current.deliveryNotes,
+                      nl: event.target.value,
+                    },
+                  },
+                }))
+              }
+              rows={4}
+              className="form-input"
+            />
+          </div>
         </div>
 
         <div className="form-section">
-          <h3>Supported countries</h3>
+          <h3>{t('sellerSupportedCountries')}</h3>
           <div className="countries-grid">
             {deliveryCountries.map((country) => (
               <label key={country.code} className="country-checkbox">
@@ -296,7 +339,7 @@ export function SellerShopDeliveryPage() {
                   checked={formData.supportedDeliveryCountries.includes(country.code)}
                   onChange={() => handleCountryToggle(country.code)}
                 />
-                {country.name}
+                {t(country.key)}
               </label>
             ))}
           </div>
@@ -304,7 +347,7 @@ export function SellerShopDeliveryPage() {
 
         <div className="form-actions">
           <button type="submit" disabled={saving} className="button button--primary">
-            {saving ? 'Saving...' : 'Save changes'}
+            {saving ? t('sellerSavingChanges') : t('sellerSaveChanges')}
           </button>
         </div>
       </form>
