@@ -1,7 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
-import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
 import {
   MEASURE_UNITS,
@@ -26,8 +26,11 @@ interface ProductFormState {
   sku: string
   category: string
   description: string
+  descriptionNl: string
   ingredients: string
+  ingredientsNl: string
   allergens: string
+  allergensNl: string
   is_active: boolean
   is_featured: boolean
   selling_unit: SellingUnit
@@ -69,8 +72,11 @@ const EMPTY_FORM: ProductFormState = {
   sku: '',
   category: '',
   description: '',
+  descriptionNl: '',
   ingredients: '',
+  ingredientsNl: '',
   allergens: '',
+  allergensNl: '',
   is_active: true,
   is_featured: false,
   selling_unit: 'PIECE',
@@ -85,6 +91,7 @@ const EMPTY_FORM: ProductFormState = {
 }
 
 export function SellerProductFormPage() {
+  const { t } = useTranslation()
   const { id } = useParams()
   const productId = id ? Number(id) : null
   const navigate = useNavigate()
@@ -122,8 +129,11 @@ export function SellerProductFormPage() {
             sku: product.sku,
             category: product.category != null ? String(product.category) : '',
             description: product.description,
+            descriptionNl: product.translations?.description?.nl ?? '',
             ingredients: product.ingredients,
+            ingredientsNl: product.translations?.ingredients?.nl ?? '',
             allergens: product.allergens,
+            allergensNl: product.translations?.allergens?.nl ?? '',
             is_active: product.is_active,
             is_featured: product.is_featured,
             selling_unit: product.selling_unit ?? 'PIECE',
@@ -169,7 +179,7 @@ export function SellerProductFormPage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    setStatus('Saving…')
+    setStatus(t('sellerSavingChanges'))
     const formData = new FormData()
     formData.set('name', form.name)
     formData.set('price', form.price)
@@ -181,6 +191,14 @@ export function SellerProductFormPage() {
     formData.set('description', form.description)
     formData.set('ingredients', form.ingredients)
     formData.set('allergens', form.allergens)
+    formData.set(
+      'translations',
+      JSON.stringify({
+        description: { en: form.description, nl: form.descriptionNl },
+        ingredients: { en: form.ingredients, nl: form.ingredientsNl },
+        allergens: { en: form.allergens, nl: form.allergensNl },
+      }),
+    )
     formData.set('is_active', form.is_active ? 'true' : 'false')
     formData.set('is_featured', form.is_featured ? 'true' : 'false')
     const isWeight = form.selling_unit === 'WEIGHT'
@@ -201,43 +219,39 @@ export function SellerProductFormPage() {
     try {
       if (productId) {
         await marketplaceService.updateSellerProductForm(productId, formData)
-        setStatus('Product saved')
+        setStatus(t('sellerProductSaved'))
         void refreshGallery(productId)
       } else {
         const created = await marketplaceService.createSellerProductForm(formData)
         navigate(`/seller/products/${created.id}/edit`)
       }
-    } catch (caught) {
-      setStatus(
-        caught instanceof ApiError && caught.status === 400
-          ? `Could not save product: ${caught.message}`
-          : 'Could not save product',
-      )
+    } catch {
+      setStatus(t('sellerSaveProductFailed'))
     }
   }
 
   const removeProduct = async () => {
     if (!productId) return
-    if (!window.confirm('Delete this product?')) return
+    if (!window.confirm(t('sellerDeleteProductConfirm'))) return
     try {
       await marketplaceService.deleteSellerProduct(productId)
       navigate('/seller/products')
     } catch {
-      setStatus('Could not delete product')
+      setStatus(t('sellerDeleteProductFailedForm'))
     }
   }
 
   const uploadGalleryImage = async () => {
     if (!productId) return
     if (!galleryFile) {
-      setGalleryStatus('Please choose a file first.')
+      setGalleryStatus(t('sellerChooseFileFirst'))
       return
     }
     const formData = new FormData()
     formData.set('image', galleryFile)
     if (gallerySortOrder !== '') formData.set('sort_order', gallerySortOrder)
     if (galleryAltText.trim()) formData.set('alt_text', galleryAltText.trim())
-    setGalleryStatus('Uploading…')
+    setGalleryStatus(t('sellerUploading'))
     try {
       await marketplaceService.addSellerProductImage(productId, formData)
       setGalleryFile(null)
@@ -246,7 +260,7 @@ export function SellerProductFormPage() {
       setGalleryStatus('')
       void refreshGallery(productId)
     } catch {
-      setGalleryStatus('Could not upload image')
+      setGalleryStatus(t('sellerUploadImageFailed'))
     }
   }
 
@@ -256,21 +270,21 @@ export function SellerProductFormPage() {
       await marketplaceService.deleteSellerProductImage(imageId)
       void refreshGallery(productId)
     } catch {
-      setGalleryStatus('Could not remove image')
+      setGalleryStatus(t('sellerRemoveImageFailed'))
     }
   }
 
-  if (loading) return <LoadingState label="Loading product" />
-  if (loadError) return <p className="inline-error">Product could not be loaded.</p>
+  if (loading) return <LoadingState label={t('loadingProduct')} />
+  if (loadError) return <p className="inline-error">{t('sellerLoadProductFailed')}</p>
 
   return (
     <section>
-      <p className="eyebrow">Inventory</p>
-      <h2>{productId ? 'Edit product' : 'Add product'}</h2>
+      <p className="eyebrow">{t('sellerInventory')}</p>
+      <h2>{productId ? t('sellerEditProductTitle') : t('sellerAddProduct')}</h2>
       <form className="seller-form" onSubmit={(event) => void submit(event)}>
         <div className="seller-form-grid">
           <label>
-            Name
+            {t('sellerName')}
             <input
               value={form.name}
               onChange={(event) => updateField('name', event.target.value)}
@@ -278,7 +292,7 @@ export function SellerProductFormPage() {
             />
           </label>
           <label>
-            Price
+            {t('sellerPrice')}
             <input
               type="number"
               step="0.01"
@@ -288,7 +302,7 @@ export function SellerProductFormPage() {
             />
           </label>
           <label>
-            Compare at price
+            {t('sellerCompareAtPrice')}
             <input
               type="number"
               step="0.01"
@@ -297,7 +311,7 @@ export function SellerProductFormPage() {
             />
           </label>
           <label>
-            VAT rate (%) - blank uses shop default
+            {t('sellerVatDefaultHint')}
             <input
               type="number"
               min="0"
@@ -308,7 +322,7 @@ export function SellerProductFormPage() {
             />
           </label>
           <label>
-            Stock
+            {t('sellerStock')}
             <input
               type="number"
               step="1"
@@ -321,12 +335,12 @@ export function SellerProductFormPage() {
             <input value={form.sku} onChange={(event) => updateField('sku', event.target.value)} />
           </label>
           <label>
-            Category
+            {t('sellerCategories')}
             <select
               value={form.category}
               onChange={(event) => updateField('category', event.target.value)}
             >
-              <option value="">None</option>
+              <option value="">{t('sellerNone')}</option>
               {categories.map((category) => (
                 <option value={category.id} key={category.id}>
                   {category.name}
@@ -335,7 +349,7 @@ export function SellerProductFormPage() {
             </select>
           </label>
           <label>
-            Main image
+            {t('sellerMainImage')}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
@@ -346,13 +360,11 @@ export function SellerProductFormPage() {
           </label>
         </div>
         <fieldset className="seller-form-section">
-          <legend>Selling format</legend>
-          <p className="inline-note">
-            How one unit in the customer&apos;s cart is sold. The price above is per unit.
-          </p>
+          <legend>{t('sellerSellingFormat')}</legend>
+          <p className="inline-note">{t('sellerSellingFormatHint')}</p>
           <div className="seller-form-grid">
             <label>
-              Sold as
+              {t('sellerSoldAs')}
               <select
                 value={form.selling_unit}
                 onChange={(event) => updateField('selling_unit', event.target.value as SellingUnit)}
@@ -367,7 +379,7 @@ export function SellerProductFormPage() {
             {form.selling_unit === 'WEIGHT' ? (
               <>
                 <label>
-                  Weight / volume
+                  {t('sellerWeightVolume')}
                   <input
                     type="number"
                     step="0.001"
@@ -386,7 +398,7 @@ export function SellerProductFormPage() {
                     }
                     required
                   >
-                    <option value="">Choose unit</option>
+                    <option value="">{t('sellerChooseUnit')}</option>
                     {MEASURE_UNITS.map((unit) => (
                       <option key={unit} value={unit}>
                         {MEASURE_UNIT_LABELS[unit]}
@@ -398,7 +410,9 @@ export function SellerProductFormPage() {
             ) : (
               form.selling_unit !== 'PIECE' && (
                 <label>
-                  Pieces per {SELLING_UNIT_LABELS[form.selling_unit].toLowerCase()}
+                  {t('sellerPiecesPer', {
+                    unit: SELLING_UNIT_LABELS[form.selling_unit].toLowerCase(),
+                  })}
                   <input
                     type="number"
                     step="1"
@@ -413,15 +427,11 @@ export function SellerProductFormPage() {
           </div>
         </fieldset>
         <fieldset className="seller-form-section">
-          <legend>Ordering requirements</legend>
-          <p className="inline-note">
-            Leave a field empty when it does not apply. Example: if you sell 2 Samosas per pack and
-            require at least 10 Samosas per order, set &quot;Pieces per pack&quot; to 2 and
-            &quot;Minimum physical pieces&quot; to 10 — customers must then order at least 5 packs.
-          </p>
+          <legend>{t('sellerOrderingRequirements')}</legend>
+          <p className="inline-note">{t('sellerOrderRequirementsHint')}</p>
           <div className="seller-form-grid">
             <label>
-              Minimum cart quantity
+              {t('sellerMinimumCartQuantity')}
               <input
                 type="number"
                 step="1"
@@ -432,7 +442,7 @@ export function SellerProductFormPage() {
             </label>
             {form.selling_unit !== 'WEIGHT' && (
               <label>
-                Minimum physical pieces
+                {t('sellerMinimumPhysicalPieces')}
                 <input
                   type="number"
                   step="1"
@@ -443,7 +453,7 @@ export function SellerProductFormPage() {
               </label>
             )}
             <label>
-              Minimum order amount for this product
+              {t('sellerMinimumProductAmount')}
               <input
                 type="number"
                 step="0.01"
@@ -453,7 +463,7 @@ export function SellerProductFormPage() {
               />
             </label>
             <label>
-              Advance notice
+              {t('sellerAdvanceNotice')}
               <input
                 type="number"
                 step="0.5"
@@ -463,25 +473,22 @@ export function SellerProductFormPage() {
               />
             </label>
             <label>
-              Advance notice unit
+              {t('sellerAdvanceNoticeUnit')}
               <select
                 value={form.lead_time_unit}
                 onChange={(event) =>
                   updateField('lead_time_unit', event.target.value as LeadTimeUnit)
                 }
               >
-                <option value="hours">Hours</option>
-                <option value="days">Days</option>
+                <option value="hours">{t('sellerAdvanceNoticeHours')}</option>
+                <option value="days">{t('sellerAdvanceNoticeDays')}</option>
               </select>
             </label>
           </div>
-          <p className="inline-note">
-            Advance notice is how long you need to prepare this product. Pickup times are offered
-            only after the longest advance notice of all your products in the order.
-          </p>
+          <p className="inline-note">{t('sellerAdvanceNoticeHint')}</p>
         </fieldset>
         <label>
-          Description
+          {t('sellerProductDescriptionEnglish')}
           <textarea
             rows={4}
             value={form.description}
@@ -489,7 +496,15 @@ export function SellerProductFormPage() {
           />
         </label>
         <label>
-          Ingredients
+          {t('sellerProductDescriptionDutch')}
+          <textarea
+            rows={4}
+            value={form.descriptionNl}
+            onChange={(event) => updateField('descriptionNl', event.target.value)}
+          />
+        </label>
+        <label>
+          {t('sellerProductIngredientsEnglish')}
           <textarea
             rows={3}
             value={form.ingredients}
@@ -497,11 +512,27 @@ export function SellerProductFormPage() {
           />
         </label>
         <label>
-          Allergens
+          {t('sellerProductIngredientsDutch')}
+          <textarea
+            rows={3}
+            value={form.ingredientsNl}
+            onChange={(event) => updateField('ingredientsNl', event.target.value)}
+          />
+        </label>
+        <label>
+          {t('sellerProductAllergensEnglish')}
           <textarea
             rows={3}
             value={form.allergens}
             onChange={(event) => updateField('allergens', event.target.value)}
+          />
+        </label>
+        <label>
+          {t('sellerProductAllergensDutch')}
+          <textarea
+            rows={3}
+            value={form.allergensNl}
+            onChange={(event) => updateField('allergensNl', event.target.value)}
           />
         </label>
         <label className="seller-checkbox-row">
@@ -510,7 +541,7 @@ export function SellerProductFormPage() {
             checked={form.is_active}
             onChange={(event) => updateField('is_active', event.target.checked)}
           />
-          Active
+          {t('sellerActive')}
         </label>
         <label className="seller-checkbox-row">
           <input
@@ -518,11 +549,11 @@ export function SellerProductFormPage() {
             checked={form.is_featured}
             onChange={(event) => updateField('is_featured', event.target.checked)}
           />
-          Featured
+          {t('sellerProductFeatured')}
         </label>
         <div className="seller-actions">
           <button className="button" type="submit">
-            Save product
+            {t('sellerSaveProduct')}
           </button>
           {productId && (
             <button
@@ -530,7 +561,7 @@ export function SellerProductFormPage() {
               type="button"
               onClick={() => void removeProduct()}
             >
-              Delete
+              {t('sellerDeleteButton')}
             </button>
           )}
         </div>
@@ -539,9 +570,9 @@ export function SellerProductFormPage() {
 
       {productId && (
         <div className="seller-content" style={{ marginTop: '24px' }}>
-          <h3>Gallery images</h3>
+          <h3>{t('sellerGalleryImages')}</h3>
           <div className="seller-gallery">
-            {images.length === 0 && <p className="inline-error">No gallery images yet.</p>}
+            {images.length === 0 && <p className="inline-error">{t('sellerNoGalleryImages')}</p>}
             {images.map((image) => (
               <div className="seller-gallery__item" key={image.id}>
                 <img src={image.image_url} alt={image.alt_text} onError={handleProductImageError} />
@@ -551,7 +582,7 @@ export function SellerProductFormPage() {
                   type="button"
                   onClick={() => void deleteGalleryImage(image.id)}
                 >
-                  Remove
+                  {t('sellerRemove')}
                 </button>
               </div>
             ))}
@@ -567,14 +598,14 @@ export function SellerProductFormPage() {
             <input
               type="number"
               min={0}
-              placeholder="Sort order"
+              placeholder={t('sellerSortOrder')}
               value={gallerySortOrder}
               onChange={(event) => setGallerySortOrder(event.target.value)}
             />
             <input
               type="text"
               maxLength={150}
-              placeholder="Alt text"
+              placeholder={t('sellerAltText')}
               value={galleryAltText}
               onChange={(event) => setGalleryAltText(event.target.value)}
             />

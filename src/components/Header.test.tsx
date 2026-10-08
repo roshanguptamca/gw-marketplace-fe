@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuth } from '../auth/AuthContext'
 import { CartProvider } from '../cart/CartContext'
 import { env } from '../config/env'
-import '../i18n'
+import i18n from '../i18n'
 import type { User } from '../types/marketplace'
 import { productFixture } from '../test/fixtures'
 import { Header } from './Header'
@@ -42,6 +42,8 @@ describe('Header authentication menu', () => {
   beforeEach(() => {
     logout.mockClear()
     mockedUseAuth.mockReturnValue({ user: null, loading: false, logout })
+    localStorage.removeItem('gw-marketplace-language')
+    void i18n.changeLanguage('en')
   })
 
   it('shows the environment-aware login action when logged out', () => {
@@ -116,5 +118,23 @@ describe('Header authentication menu', () => {
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe('light'))
     expect(localStorage.getItem('guidewisey-marketplace-theme')).toBe('light')
     expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeInTheDocument()
+  })
+
+  it('switches EN/NL immediately and persists the selected language', async () => {
+    renderHeader()
+    expect(screen.getByRole('link', { name: 'Browse shops' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'NL' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Winkels bekijken' })).toBeInTheDocument()
+    })
+    expect(localStorage.getItem('gw-marketplace-language')).toBe('nl')
+    expect(document.documentElement).toHaveAttribute('lang', 'nl')
+
+    await userEvent.click(screen.getByRole('button', { name: 'EN' }))
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Browse shops' })).toBeInTheDocument()
+    })
+    expect(localStorage.getItem('gw-marketplace-language')).toBe('en')
   })
 })

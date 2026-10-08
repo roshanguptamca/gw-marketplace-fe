@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { CartCallToAction } from '../components/CartCallToAction'
 import { EmptyState } from '../components/EmptyState'
@@ -11,6 +12,7 @@ import { shopPath } from '../utils/shopLinks'
 import { SellerNotFoundPage } from './SellerNotFoundPage'
 
 export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) {
+  const { t } = useTranslation()
   const params = useParams()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -63,7 +65,7 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
     setSearchParams({})
   }
 
-  if (shopLoading) return <LoadingState label="Opening collection" />
+  if (shopLoading) return <LoadingState label={t('openingCollection')} />
   if (!shop) return <SellerNotFoundPage />
   const backTo = (location.state as { returnTo?: string } | undefined)?.returnTo
   const hasFilters = Boolean(search || category)
@@ -72,21 +74,21 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
     <main className="page-shell section products-page">
       <MarketplaceBackNavigation
         items={[
-          { label: 'Marketplace', path: '/' },
-          { label: 'All Shops', path: '/#shops' },
+          { label: t('marketplace'), path: '/' },
+          { label: t('allShops'), path: '/#shops' },
           { label: shop.name, path: shopPath(slug) },
-          { label: 'All Products', path: shopPath(slug, '/products'), current: true },
+          { label: t('allProducts'), path: shopPath(slug, '/products'), current: true },
         ]}
-        backLabel="Back to shop"
+        backLabel={t('backToShop')}
         backTo={backTo ?? shopPath(slug)}
       />
       <div className="section-heading">
         <div>
           <p className="eyebrow">{shop.name}</p>
-          <h1>All products</h1>
+          <h1>{t('allProducts')}</h1>
         </div>
         <p aria-live="polite">
-          {productsLoading ? 'Loading items' : `${products?.length ?? 0} items`}
+          {productsLoading ? t('loadingItems') : t('itemsCount', { count: products?.length ?? 0 })}
         </p>
       </div>
       <CartCallToAction />
@@ -96,7 +98,7 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
           role="search"
           onSubmit={(event) => event.preventDefault()}
         >
-          <label htmlFor="shop-product-search">Search products in this shop</label>
+          <label htmlFor="shop-product-search">{t('searchProductsInShop')}</label>
           <div className="shop-product-search__input">
             <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
               <path
@@ -108,7 +110,7 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
               id="shop-product-search"
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search products in this shop..."
+              placeholder={t('searchInShop')}
             />
             {searchInput && (
               <button
@@ -120,20 +122,20 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
                   if (category) nextParams.set('category', category)
                   setSearchParams(nextParams)
                 }}
-                aria-label="Clear search"
+                aria-label={t('clearSearch')}
               >
-                Clear
+                {t('clear')}
               </button>
             )}
           </div>
         </form>
-        <div className="category-filter" aria-label="Filter by category">
+        <div className="category-filter" aria-label={t('filterCategory')}>
           <button
             type="button"
             className={category ? '' : 'active'}
             onClick={() => updateCategory('')}
           >
-            All
+            {t('all')}
           </button>
           {categories?.map((item) => (
             <button
@@ -148,7 +150,7 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
         </div>
         {hasFilters && (
           <button type="button" className="shop-product-filters__reset" onClick={resetFilters}>
-            Reset filters
+            {t('resetFilters')}
           </button>
         )}
       </div>
@@ -161,12 +163,12 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
       )}
       {error && (
         <p className="inline-error" role="alert">
-          Products could not be loaded. Please try again.
+        {t('productsCouldNotLoad')}
         </p>
       )}
       {products && products.length > 0 && <ProductGrid products={products} />}
       {products && products.length === 0 && !error && (
-        <EmptyState title="No products found" message="Try a different search or category." />
+        <EmptyState title={t('noProductsFound')} message={t('trySearchOrCategory')} />
       )}
     </main>
   )

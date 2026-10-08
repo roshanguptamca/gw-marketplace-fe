@@ -4,6 +4,9 @@ export interface Category {
   productCount?: number
 }
 
+export type LanguageCode = 'en' | 'nl'
+export type LocalizedFields = Record<string, Partial<Record<LanguageCode, string>>>
+
 export interface MarketplaceSearchFilters {
   q?: string
   category?: string
@@ -30,6 +33,9 @@ export interface Shop {
   shortDescription: string
   shopType: string
   description: string
+  deliveryArea?: string
+  translations?: LocalizedFields
+  settingsTranslations?: LocalizedFields
   phone?: string
   email?: string
   websiteUrl?: string
@@ -83,6 +89,7 @@ export interface ShopSettings {
   internationalDeliveryFee: string
   freeDeliveryAbove?: string | null
   deliveryNotes: string
+  translations?: LocalizedFields
   whatsappGroupUrl?: string
   pickupAddressLine1?: string
   pickupAddressLine2?: string
@@ -202,6 +209,7 @@ export interface SellerProduct {
   description: string
   ingredients: string
   allergens: string
+  translations?: LocalizedFields
   price: string
   vat_rate?: string | null
   compare_at_price: string | null
@@ -286,6 +294,7 @@ export interface Product {
   description: string
   ingredients?: string
   allergens?: string
+  translations?: LocalizedFields
   price: number
   priceAmount?: string
   vatRate?: string | null
@@ -318,6 +327,7 @@ export interface OrderRequest {
   delivery_zone?: 'local' | 'international'
   customer_note: string
   payment_method: 'cash'
+  language?: LanguageCode
   terms_accepted: true
   items: Array<{ product_id: number; quantity: number }>
   pickup_slot_start?: string | null

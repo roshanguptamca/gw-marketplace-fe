@@ -48,7 +48,7 @@ export function ProductCard({ product }: { product: Product }) {
           loading="lazy"
           onError={handleProductImageError}
         />
-        {product.featured && <span className="product-card__badge">Featured</span>}
+        {product.featured && <span className="product-card__badge">{t('featured')}</span>}
       </Link>
       <div className="product-card__body">
         <p className="product-card__category">{product.category}</p>
@@ -74,10 +74,10 @@ export function ProductCard({ product }: { product: Product }) {
           </button>
         </div>
         <span className="product-card__feedback" aria-live="polite">
-          {added ? 'Added to cart' : ''}
+          {added ? t('addedToCart') : ''}
         </span>
         <p className={product.stock > 0 ? 'stock stock--available' : 'stock stock--unavailable'}>
-          {product.stock > 0 ? `${product.stock} in stock` : t('outOfStock')}
+          {product.stock > 0 ? t('inStock', { count: product.stock }) : t('outOfStock')}
         </p>
       </div>
     </article>

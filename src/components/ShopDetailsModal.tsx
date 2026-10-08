@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Shop } from '../types/marketplace'
 import { ShopFulfilment } from './ShopFulfilment'
+import { localizedText } from '../utils/localizedText'
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -13,6 +15,7 @@ export function ShopDetailsModal({
   open: boolean
   onClose: () => void
 }) {
+  const { t, i18n } = useTranslation()
   useEffect(() => {
     if (!open) return
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -23,6 +26,11 @@ export function ShopDetailsModal({
   }, [open, onClose])
 
   if (!open) return null
+  const description = localizedText(shop.description, shop.translations, 'description', i18n.language)
+  const shortDescription =
+    localizedText(shop.shortDescription, shop.translations, 'short_description', i18n.language) ||
+    description
+  const shopType = localizedText(shop.shopType, shop.translations, 'shop_type', i18n.language)
 
   return (
     <div className="shop-details-modal" role="presentation" onClick={onClose}>
@@ -35,35 +43,35 @@ export function ShopDetailsModal({
       >
         <div className="shop-details-modal__header">
           <div>
-            <p className="eyebrow">Shop details</p>
+            <p className="eyebrow">{t('shopDetails')}</p>
             <h2 id="shop-details-title">{shop.name}</h2>
-            <p>{shop.shortDescription || shop.tagline}</p>
+            <p>{shortDescription}</p>
           </div>
           <button type="button" className="button button--ghost" onClick={onClose}>
-            Close
+            {t('close')}
           </button>
         </div>
 
         <div className="shop-details-modal__grid">
           <section className="shop-details-modal__card">
-            <h3>About</h3>
-            <p>{shop.description}</p>
+            <h3>{t('about')}</h3>
+            <p>{description}</p>
             <dl className="shop-details-modal__list">
               <div>
-                <dt>Category</dt>
-                <dd>{shop.shopType || 'General marketplace shop'}</dd>
+                <dt>{t('category')}</dt>
+                <dd>{shopType || t('generalShop')}</dd>
               </div>
               <div>
-                <dt>Location</dt>
+                <dt>{t('location')}</dt>
                 <dd>{[shop.location, shop.country].filter(Boolean).join(', ') || '—'}</dd>
               </div>
               <div>
-                <dt>Website</dt>
+                <dt>{t('website')}</dt>
                 <dd>{shop.websiteUrl ? <a href={shop.websiteUrl}>{shop.websiteUrl}</a> : '—'}</dd>
               </div>
               {shop.contactEmail && (
                 <div>
-                  <dt>Contact email</dt>
+                  <dt>{t('contactEmail')}</dt>
                   <dd>
                     <a href={`mailto:${shop.contactEmail}`}>{shop.contactEmail}</a>
                   </dd>
@@ -71,7 +79,7 @@ export function ShopDetailsModal({
               )}
               {shop.contactPhone && (
                 <div>
-                  <dt>Contact phone</dt>
+                  <dt>{t('contactPhone')}</dt>
                   <dd>
                     <a href={`tel:${shop.contactPhone}`}>{shop.contactPhone}</a>
                   </dd>
@@ -81,7 +89,7 @@ export function ShopDetailsModal({
           </section>
 
           <section className="shop-details-modal__card">
-            <h3>Opening hours</h3>
+            <h3>{t('openingHours')}</h3>
             {shop.openingHours && shop.openingHours.length > 0 ? (
               <ul className="hours-list">
                 {shop.openingHours.map((hour) => (
@@ -89,29 +97,29 @@ export function ShopDetailsModal({
                     <span>{WEEKDAY_LABELS[hour.dayOfWeek]}</span>
                     <strong>
                       {hour.isClosed
-                        ? 'Closed'
+                        ? t('closed')
                         : `${hour.openTime ?? '—'} - ${hour.closeTime ?? '—'}`}
                     </strong>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p>No opening hours have been published yet.</p>
+              <p>{t('noOpeningHours')}</p>
             )}
           </section>
 
           <section className="shop-details-modal__card">
-            <h3>Service</h3>
+            <h3>{t('service')}</h3>
             <ShopFulfilment shop={shop} />
             <p>
               {shop.localDeliveryFee !== undefined
-                ? `Netherlands delivery fee: €${shop.localDeliveryFee.toFixed(2)}`
-                : 'Netherlands delivery fee: —'}
+                ? `${t('dutchDeliveryFee')} €${shop.localDeliveryFee.toFixed(2)}`
+                : `${t('dutchDeliveryFee')} —`}
             </p>
             <p>
               {shop.internationalDeliveryFee !== undefined
-                ? `International delivery fee: €${shop.internationalDeliveryFee.toFixed(2)}`
-                : 'International delivery fee: —'}
+                ? `${t('internationalDeliveryFee')} €${shop.internationalDeliveryFee.toFixed(2)}`
+                : `${t('internationalDeliveryFee')} —`}
             </p>
           </section>
         </div>

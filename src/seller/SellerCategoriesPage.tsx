@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
@@ -18,11 +19,8 @@ function useCategoriesData() {
   return { data, loading, error, refresh: () => setRefreshKey((key) => key + 1) }
 }
 
-function categoryScope(category: SellerCategory) {
-  return category.is_global ? 'Global' : 'Shop'
-}
-
 export function SellerCategoriesPage() {
+  const { t } = useTranslation()
   const { data, loading, error, refresh } = useCategoriesData()
   const [query, setQuery] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
@@ -56,11 +54,11 @@ export function SellerCategoriesPage() {
       return (
         category.name.toLowerCase().includes(normalizedQuery) ||
         category.slug.toLowerCase().includes(normalizedQuery) ||
-        categoryScope(category).toLowerCase().includes(normalizedQuery) ||
-        (category.is_active ? 'active' : 'hidden').includes(normalizedQuery)
+        t(category.is_global ? 'sellerGlobal' : 'sellerShop').toLowerCase().includes(normalizedQuery) ||
+        t(category.is_active ? 'sellerActive' : 'sellerHidden').toLowerCase().includes(normalizedQuery)
       )
     })
-  }, [data, query])
+  }, [data, query, t])
 
   const stats = useMemo(() => {
     const items = data ?? []
@@ -79,10 +77,10 @@ export function SellerCategoriesPage() {
       await marketplaceService.createSellerCategory(form)
       setForm(EMPTY_FORM)
       setCreateOpen(false)
-      setFeedback({ kind: 'success', message: 'Category created' })
+      setFeedback({ kind: 'success', message: t('sellerCategoryCreated') })
       refresh()
     } catch {
-      setFeedback({ kind: 'error', message: 'Could not create category' })
+      setFeedback({ kind: 'error', message: t('sellerCategoryCreateFailed') })
     }
   }
 
@@ -110,11 +108,11 @@ export function SellerCategoriesPage() {
         name: editForm.name,
         is_active: editForm.is_active,
       })
-      setFeedback({ kind: 'success', message: 'Category updated' })
+      setFeedback({ kind: 'success', message: t('sellerCategoryUpdated') })
       cancelEdit()
       refresh()
     } catch {
-      setFeedback({ kind: 'error', message: 'Could not update category' })
+      setFeedback({ kind: 'error', message: t('sellerCategoryUpdateFailed') })
     } finally {
       setSavingId(null)
     }
@@ -122,40 +120,40 @@ export function SellerCategoriesPage() {
 
   const handleDelete = async (category: SellerCategory) => {
     if (category.is_global) return
-    if (!window.confirm(`Delete ${category.name}?`)) return
+    if (!window.confirm(t('sellerCategoryConfirm', { name: category.name }))) return
     setSavingId(category.id)
     setFeedback(null)
     try {
       await marketplaceService.deleteSellerCategory(category.id)
-      setFeedback({ kind: 'success', message: 'Category deleted' })
+      setFeedback({ kind: 'success', message: t('sellerCategoryDeleted') })
       if (editingId === category.id) cancelEdit()
       refresh()
     } catch {
-      setFeedback({ kind: 'error', message: 'Could not delete category' })
+      setFeedback({ kind: 'error', message: t('sellerCategoryDeleteFailed') })
     } finally {
       setSavingId(null)
     }
   }
 
-  if (loading) return <LoadingState label="Loading categories" />
+  if (loading) return <LoadingState label={t('sellerCategories')} />
 
   return (
     <section>
       <div className="seller-page-header">
         <div>
-          <p className="eyebrow">Products</p>
-          <h2>Categories</h2>
-          <p className="muted">Create, edit, and clean up the categories used in your shop.</p>
+          <p className="eyebrow">{t('sellerProducts')}</p>
+          <h2>{t('sellerCategories')}</h2>
+          <p className="muted">{t('sellerManageCategoriesIntro')}</p>
         </div>
-        <div className="seller-page-status" aria-label="Category counts">
-          <span className="status-pill">{stats.total} total</span>
-          <span className="status-pill status-pill--muted">{stats.shop} shop</span>
-          <span className="status-pill status-pill--muted">{stats.global} global</span>
-          <span className="status-pill status-pill--success">{stats.active} active</span>
+        <div className="seller-page-status" aria-label={t('sellerCategoryCounts')}>
+          <span className="status-pill">{t('sellerCategoryTotalCount', { count: stats.total })}</span>
+          <span className="status-pill status-pill--muted">{t('sellerCategoryShopCount', { count: stats.shop })}</span>
+          <span className="status-pill status-pill--muted">{t('sellerCategoryGlobalCount', { count: stats.global })}</span>
+          <span className="status-pill status-pill--success">{t('sellerCategoryActiveCount', { count: stats.active })}</span>
         </div>
       </div>
 
-      {error && <div className="alert alert--error">Categories could not be loaded.</div>}
+      {error && <div className="alert alert--error">{t('sellerCategoriesLoadFailed')}</div>}
       {feedback && (
         <div className={feedback.kind === 'success' ? 'alert alert--success' : 'alert alert--error'}>
           {feedback.message}
@@ -164,13 +162,13 @@ export function SellerCategoriesPage() {
 
       <div className="seller-toolbar seller-toolbar--compact">
         <div className="form-group form-group--full">
-          <label htmlFor="seller-category-search">Search categories</label>
+          <label htmlFor="seller-category-search">{t('sellerSearchCategories')}</label>
           <input
             id="seller-category-search"
             className="form-input"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Name, slug, scope, status"
+            placeholder={t('sellerCategorySearchPlaceholder')}
           />
         </div>
         <button
@@ -182,7 +180,7 @@ export function SellerCategoriesPage() {
             setCreateOpen((current) => !current)
           }}
         >
-          {createOpen ? 'Close add form' : 'Add category'}
+          {createOpen ? t('sellerCloseAddForm') : t('sellerAddCategory')}
         </button>
       </div>
 
@@ -190,18 +188,18 @@ export function SellerCategoriesPage() {
         <div className="seller-section-card">
           <div className="seller-section-card__header">
             <div>
-              <p className="eyebrow">Add category</p>
-              <h3>New shop category</h3>
+              <p className="eyebrow">{t('sellerAddCategory')}</p>
+              <h3>{t('sellerNewCategory')}</h3>
             </div>
-            <span className="status-pill status-pill--muted">Slugs are generated automatically</span>
+            <span className="status-pill status-pill--muted">{t('sellerSlugsGenerated')}</span>
           </div>
           <form className="seller-form seller-category-form" onSubmit={(event) => void handleCreate(event)}>
             <label>
-              Name
+              {t('sellerCategoryName')}
               <input
                 value={form.name}
                 onChange={(event) => setForm({ ...form, name: event.target.value })}
-                placeholder="Example: Bakery"
+                placeholder={t('sellerExampleBakery')}
                 required
               />
             </label>
@@ -211,11 +209,11 @@ export function SellerCategoriesPage() {
                 checked={form.is_active}
                 onChange={(event) => setForm({ ...form, is_active: event.target.checked })}
               />
-              Active
+              {t('sellerActive')}
             </label>
             <div className="seller-actions seller-actions--tight">
               <button className="button" type="submit">
-                Create category
+                {t('sellerCreateCategory')}
               </button>
             </div>
           </form>
@@ -225,28 +223,26 @@ export function SellerCategoriesPage() {
       <div className="seller-section-card">
         <div className="seller-section-card__header">
           <div>
-            <p className="eyebrow">Category list</p>
-            <h3>All categories</h3>
+            <p className="eyebrow">{t('sellerCategoryList')}</p>
+            <h3>{t('sellerAllCategories')}</h3>
           </div>
-          <p className="muted">
-            Global categories are read-only. Shop categories can be edited or removed here.
-          </p>
+          <p className="muted">{t('sellerCategoryReadOnly')}</p>
         </div>
 
         {categories.length === 0 ? (
           <div className="seller-empty-state">
-            <h4>No categories found</h4>
-            <p>Adjust the search or add a new category to keep the catalog organized.</p>
+            <h4>{t('sellerNoCategories')}</h4>
+            <p>{t('sellerAdjustCategorySearch')}</p>
           </div>
         ) : (
           <div className="seller-table-wrap">
             <table className="seller-table seller-table--actions">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Slug</th>
-                  <th>Scope</th>
-                  <th>Status</th>
+                  <th>{t('sellerCategoryName')}</th>
+                  <th>{t('sellerCategorySlug')}</th>
+                  <th>{t('sellerCategoryScope')}</th>
+                  <th>{t('sellerStatus')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -280,8 +276,12 @@ export function SellerCategoriesPage() {
                       </td>
                       <td>{category.slug}</td>
                       <td>
-                        <span className={category.is_global ? 'status-pill' : 'status-pill status-pill--muted'}>
-                          {categoryScope(category)}
+                        <span
+                          className={
+                            category.is_global ? 'status-pill' : 'status-pill status-pill--muted'
+                          }
+                        >
+                          {t(category.is_global ? 'sellerGlobal' : 'sellerShop')}
                         </span>
                       </td>
                       <td>
@@ -297,7 +297,7 @@ export function SellerCategoriesPage() {
                                 }))
                               }
                             />
-                            {current.is_active ? 'Active' : 'Hidden'}
+                            {t(current.is_active ? 'sellerActive' : 'sellerHidden')}
                           </label>
                         ) : (
                           <span
@@ -307,7 +307,7 @@ export function SellerCategoriesPage() {
                                 : 'status-pill status-pill--muted'
                             }
                           >
-                            {category.is_active ? 'Active' : 'Hidden'}
+                            {t(category.is_active ? 'sellerActive' : 'sellerHidden')}
                           </span>
                         )}
                       </td>
@@ -320,7 +320,7 @@ export function SellerCategoriesPage() {
                               disabled={savingId === category.id}
                               onClick={() => void handleSave(category)}
                             >
-                              {savingId === category.id ? 'Saving…' : 'Save'}
+                              {savingId === category.id ? t('sellerSaving') : t('sellerSave')}
                             </button>
                             <button
                               className="button button--ghost button--small"
@@ -328,7 +328,7 @@ export function SellerCategoriesPage() {
                               disabled={savingId === category.id}
                               onClick={cancelEdit}
                             >
-                              Cancel
+                              {t('sellerCancel')}
                             </button>
                           </>
                         ) : (
@@ -339,7 +339,7 @@ export function SellerCategoriesPage() {
                               disabled={!canManage}
                               onClick={() => beginEdit(category)}
                             >
-                              Edit
+                              {t('sellerEdit')}
                             </button>
                             <button
                               className="button button--danger button--small"
@@ -347,7 +347,7 @@ export function SellerCategoriesPage() {
                               disabled={!canManage || savingId === category.id}
                               onClick={() => void handleDelete(category)}
                             >
-                              Delete
+                              {t('sellerDeleteButton')}
                             </button>
                           </>
                         )}
@@ -362,8 +362,7 @@ export function SellerCategoriesPage() {
       </div>
 
       <p className="form-hint" style={{ marginTop: '16px' }}>
-        Global categories are controlled by GuideWisey. Shop categories stay editable for the
-        seller.
+        {t('sellerGlobalCategoryNote')}
       </p>
     </section>
   )

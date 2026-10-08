@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { analytics } from '../analytics/analytics'
 import { useCart } from '../cart/CartContext'
 import { groupItemsByShop } from '../cart/groupByShop'
@@ -8,6 +9,7 @@ import { InclusiveVat } from '../components/InclusiveVat'
 import { vatPreview } from '../utils/vatPreview'
 import { continueShoppingPath, formatPrice } from '../utils/shopLinks'
 import { getFirstProductImageUrl, handleProductImageError } from '../utils/productImages'
+import { describeProductRuleViolation } from '../utils/orderRuleErrors'
 import {
   describeQuantity,
   effectiveMinimumQuantity,
@@ -22,6 +24,7 @@ function quantityOptions(minimum: number, stock: number, current: number): numbe
 }
 
 export function CartPage() {
+  const { t, i18n } = useTranslation()
   const { items, subtotal, updateQuantity, removeItem } = useCart()
   const { shopsBySlug, error: shopError } = useShopsForItems(items)
 
@@ -29,11 +32,11 @@ export function CartPage() {
     return (
       <main className="page-shell section">
         <EmptyState
-          title="Your cart is empty"
-          message="Explore independent shops and find something worth keeping."
+          title={t('yourCartEmpty')}
+          message={t('cartEmptyMessage')}
           action={
             <Link className="button" to="/">
-              Browse shops
+              {t('browse')}
             </Link>
           }
         />
@@ -50,10 +53,10 @@ export function CartPage() {
     <main className="page-shell section">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Your selection</p>
-          <h1>Shopping cart</h1>
+          <p className="eyebrow">{t('yourSelection')}</p>
+          <h1>{t('shoppingCart')}</h1>
         </div>
-        <p>{items.length} unique items</p>
+        <p>{t('uniqueItems', { count: items.length })}</p>
       </div>
       <div className="cart-layout">
         {shopError && <p role="alert">{shopError}</p>}
@@ -70,8 +73,8 @@ export function CartPage() {
                 )}
                 {Number(shop?.minimumOrderAmount ?? 0) > 0 && (
                   <div className="shop-minimum">
-                    <p>Products subtotal: {formatPrice(group.subtotal, currency)}</p>
-                    <p>Minimum order: {formatPrice(Number(shop?.minimumOrderAmount), currency)}</p>
+                    <p>{t('productsSubtotal')} {formatPrice(group.subtotal, currency)}</p>
+                    <p>{t('minimumOrder')} {formatPrice(Number(shop?.minimumOrderAmount), currency)}</p>
                     {Math.round(group.subtotal * 100) <
                       Math.round(Number(shop?.minimumOrderAmount) * 100) && (
                       <p>
@@ -81,7 +84,7 @@ export function CartPage() {
                             100,
                           currency,
                         )}{' '}
-                        more required to place an order.
+                        {t('moreRequired')}
                       </p>
                     )}
                   </div>
@@ -112,7 +115,16 @@ export function CartPage() {
                         )}
                         {violations.map((violation) => (
                           <p className="cart-item__rules" role="alert" key={violation.code}>
-                            {violation.message}
+                            {i18n.language === 'nl'
+                              ? describeProductRuleViolation(
+                                  product,
+                                  quantity,
+                                  violation.code,
+                                  product.currency,
+                                  (key, values) => t(key, values),
+                                  i18n.language,
+                                ) ?? violation.message
+                              : violation.message}
                           </p>
                         ))}
                         <button
@@ -127,11 +139,11 @@ export function CartPage() {
                             removeItem(product.id)
                           }}
                         >
-                          Remove
+                          {t('remove')}
                         </button>
                       </div>
                       <label className="quantity">
-                        <span>Quantity</span>
+                        <span>{t('quantity')}</span>
                         <select
                           value={quantity}
                           onChange={(event) =>
@@ -158,25 +170,25 @@ export function CartPage() {
           })}
         </section>
         <aside className="order-summary">
-          <h2>Order summary</h2>
+          <h2>{t('orderSummary')}</h2>
           {isMultiShop && (
-            <p className="inline-note">Items from {shopGroups.length} shops ship separately.</p>
+            <p className="inline-note">{t('separateShipping', { count: shopGroups.length })}</p>
           )}
           <div>
-            <span>Subtotal incl. VAT</span>
+            <span>{t('subtotalInclVat')}</span>
             <strong>{formatPrice(subtotal, currency)}</strong>
           </div>
           <div>
-            <span>Shipping</span>
-            <span>Calculated at checkout</span>
+            <span>{t('shipping')}</span>
+            <span>{t('calculatedAtCheckout')}</span>
           </div>
           <InclusiveVat breakdown={vatPreview(items, shopsBySlug)} currency={currency} />
-          <p>Shipping and seller-specific delivery options are confirmed at checkout.</p>
+          <p>{t('deliveryAtCheckout')}</p>
           <Link className="button button--wide" to="/checkout">
-            Proceed to checkout
+            {t('proceedToCheckout')}
           </Link>
           <Link className="back-link cart-continue-shopping" to={continuePath}>
-            ← Continue shopping
+            ← {t('continueShopping')}
           </Link>
         </aside>
       </div>

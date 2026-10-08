@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LoadingState } from '../components/LoadingState'
 import { EmptyState } from '../components/EmptyState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
-import { ApiError } from '../services/apiClient'
 import type { BuyerOrder } from '../types/marketplace'
 
 export function BuyerOrdersPage() {
+  const { t, i18n } = useTranslation()
   const { data, loading, error } = useMarketplaceData(() => marketplaceService.getBuyerOrders(), [])
   const [orders, setOrders] = useState<BuyerOrder[] | null>(null)
   const [cancellingId, setCancellingId] = useState<number | null>(null)
@@ -15,7 +16,7 @@ export function BuyerOrdersPage() {
   const displayOrders = orders ?? data ?? []
 
   const handleCancel = async (order: BuyerOrder) => {
-    if (!window.confirm('Cancel this order? This cannot be undone.')) return
+    if (!window.confirm(t('cancelOrderConfirm'))) return
     setCancellingId(order.id)
     setRowError(null)
     try {
@@ -24,26 +25,31 @@ export function BuyerOrdersPage() {
     } catch (caught) {
       setRowError({
         id: order.id,
-        message: caught instanceof ApiError ? caught.message : 'Could not cancel the order.',
+        message:
+          i18n.language === 'nl'
+            ? t('couldNotCancel')
+            : caught instanceof Error
+              ? caught.message
+              : t('couldNotCancel'),
       })
     } finally {
       setCancellingId(null)
     }
   }
 
-  if (loading) return <LoadingState label="Loading your orders" />
+  if (loading) return <LoadingState label={t('loadingYourOrders')} />
   if (error) {
-    return <EmptyState title="Orders unavailable" message="We could not load your orders. Please try again later." />
+    return <EmptyState title={t('ordersUnavailable')} message={t('ordersLoadFailed')} />
   }
 
   if (displayOrders.length === 0) {
     return (
       <EmptyState
-        title="No orders yet"
-        message="Once you place an order with a GuideWisey seller, it will show up here."
+        title={t('noOrdersYet')}
+        message={t('ordersAppearHere')}
         action={
           <Link className="btn btn-primary" to="/">
-            Browse the marketplace
+            {t('browseMarketplace')}
           </Link>
         }
       />
@@ -52,16 +58,16 @@ export function BuyerOrdersPage() {
 
   return (
     <section>
-      <p className="eyebrow">Marketplace</p>
-      <h2>My Orders</h2>
+      <p className="eyebrow">{t('marketplace')}</p>
+      <h2>{t('myOrdersTitle')}</h2>
       <div className="seller-table-wrap">
         <table className="seller-table">
           <thead>
             <tr>
-              <th>Order</th>
-              <th>Shop</th>
-              <th>Status</th>
-              <th>Total</th>
+              <th>{t('order')}</th>
+              <th>{t('shop')}</th>
+              <th>{t('status')}</th>
+              <th>{t('total')}</th>
               <th></th>
             </tr>
           </thead>
@@ -70,10 +76,10 @@ export function BuyerOrdersPage() {
               <tr key={order.id}>
                 <td>{order.order_number}</td>
                 <td>{order.shop_name}</td>
-                <td>{order.status.replaceAll('_', ' ')}</td>
+                <td>{t(`status_${order.status}`, { defaultValue: order.status.replaceAll('_', ' ') })}</td>
                 <td>€{order.total}</td>
                 <td>
-                  <Link to={`/account/orders/${order.id}`}>View order</Link>
+                  <Link to={`/account/orders/${order.id}`}>{t('viewOrder')}</Link>
                   {order.status === 'pending' && (
                     <>
                       {' · '}
@@ -83,7 +89,7 @@ export function BuyerOrdersPage() {
                         onClick={() => handleCancel(order)}
                         disabled={cancellingId === order.id}
                       >
-                        {cancellingId === order.id ? 'Cancelling…' : 'Cancel'}
+                        {cancellingId === order.id ? t('cancelling') : t('cancel')}
                       </button>
                     </>
                   )}

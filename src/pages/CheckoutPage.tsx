@@ -1,4 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { analytics } from '../analytics/analytics'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
@@ -15,8 +16,12 @@ import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
 import type { OrderConfirmation, OrderRequest, Shop } from '../types/marketplace'
 import { continueShoppingPath, formatPrice } from '../utils/shopLinks'
+import { languageCode } from '../utils/localizedText'
 import { getFirstProductImageUrl, handleProductImageError } from '../utils/productImages'
-import { describeOrderRuleError } from '../utils/orderRuleErrors'
+import {
+  describeOrderRuleError,
+  describeProductRuleViolation,
+} from '../utils/orderRuleErrors'
 import {
   describeQuantity,
   formatLeadTime,
@@ -74,6 +79,7 @@ function computeShopDeliveryFee(
 }
 
 export function CheckoutPage() {
+  const { t, i18n } = useTranslation()
   const { items, subtotal, clearCart, removeItem } = useCart()
   const { user } = useAuth()
   const [fields, setFields] = useState(initialFields)
@@ -164,7 +170,7 @@ export function CheckoutPage() {
     setError('')
     setErrorCode('')
     if (shopError || shopGroups.some((group) => !shopsBySlug[group.shopSlug])) {
-      setError(shopError || 'Shop configuration is still loading. Please try again.')
+      setError(t('shopSettingsLoading'))
       return
     }
     for (const group of shopGroups) {
@@ -173,7 +179,11 @@ export function CheckoutPage() {
       const remaining = minimum - Math.round(group.subtotal * 100)
       if (remaining > 0) {
         setError(
-          `Minimum order for ${shop.name} is ${formatPrice(minimum / 100, currency)}. Please add ${formatPrice(remaining / 100, currency)} more to place your order.`,
+          t('shopMinimumError', {
+            shop: shop.name,
+            amount: formatPrice(minimum / 100, currency),
+            remaining: formatPrice(remaining / 100, currency),
+          }),
         )
         shopRefs.current[group.shopSlug]?.scrollIntoView?.({ block: 'center' })
         shopRefs.current[group.shopSlug]?.focus()
@@ -183,22 +193,37 @@ export function CheckoutPage() {
         (methodFor(group.shopSlug) === 'pickup' && shop.pickupAvailable === false) ||
         (methodFor(group.shopSlug) === 'delivery' && shop.deliveryAvailable !== true)
       ) {
-        setError(`${shop.name} does not offer the selected fulfilment method.`)
+        setError(t('fulfilmentUnavailable', { shop: shop.name }))
         shopRefs.current[group.shopSlug]?.focus()
         return
       }
-      const violation = group.items
-        .flatMap(({ product, quantity }) =>
-          productRuleViolations(product, quantity, (value) => formatPrice(value, currency)),
+      const firstViolation = group.items
+        .map(({ product, quantity }) => ({
+          product,
+          quantity,
+          violation: productRuleViolations(product, quantity, (value) =>
+            formatPrice(value, currency),
+          )[0],
+        }))
+        .find((entry) => entry.violation)
+      if (firstViolation?.violation) {
+        setError(
+          i18n.language === 'nl'
+            ? describeProductRuleViolation(
+                firstViolation.product,
+                firstViolation.quantity,
+                firstViolation.violation.code,
+                currency,
+                (key, values) => t(key, values),
+                i18n.language,
+              ) ?? firstViolation.violation.message
+            : firstViolation.violation.message,
         )
-        .at(0)
-      if (violation) {
-        setError(violation.message)
         shopRefs.current[group.shopSlug]?.focus()
         return
       }
       if (pickupSchedulingFor(group.shopSlug) && !selectedSlotFor(group.shopSlug)) {
-        setError(`Please choose a pickup date and time for ${shop.name}.`)
+        setError(t('choosePickupTime', { shop: shop.name }))
         shopRefs.current[group.shopSlug]?.scrollIntoView?.({ block: 'center' })
         shopRefs.current[group.shopSlug]?.focus()
         return
@@ -208,15 +233,15 @@ export function CheckoutPage() {
     const requestingAccount = !user && fields.createAccount && !accountCreated
     if (requestingAccount) {
       if (!fields.password || !fields.passwordConfirm) {
-        setError('Please enter and confirm a password to create your account.')
+        setError(t('accountPasswordRequired'))
         return
       }
       if (fields.password.length < MIN_PASSWORD_LENGTH) {
-        setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`)
+        setError(t('passwordMinimum', { count: MIN_PASSWORD_LENGTH }))
         return
       }
       if (fields.password !== fields.passwordConfirm) {
-        setError('Passwords do not match.')
+        setError(t('passwordsMismatch'))
         return
       }
     }
@@ -224,7 +249,7 @@ export function CheckoutPage() {
     const groups = new Map<string, typeof items>()
     for (const item of items) {
       if (!item.product.shopId || !Number.isFinite(Number(item.product.shopId))) {
-        setError('A product is missing seller information. Please remove it and add it again.')
+        setError(t('productMissingShop'))
         return
       }
       groups.set(item.product.shopId, [...(groups.get(item.product.shopId) ?? []), item])
@@ -261,6 +286,7 @@ export function CheckoutPage() {
           delivery_zone: 'local',
           customer_note: fields.notes,
           payment_method: 'cash',
+          language: languageCode(i18n.language),
           terms_accepted: true,
           items: shopItems.map((item) => ({
             product_id: Number(item.product.id),
@@ -301,13 +327,16 @@ export function CheckoutPage() {
         if (requestingAccount) setAccountCreated(true)
       }
       const partialMessage = created.length
-        ? `${created.length} shop order${created.length === 1 ? '' : 's'} already placed (${created.map((order) => order.order_number).join(', ')}). Those items were removed from your cart. Please submit the remaining shop orders separately. `
+        ? `${t('partialOrderNotice', {
+            count: created.length,
+            orders: created.map((order) => order.order_number).join(', '),
+          })} `
         : ''
       if (caught instanceof ApiError && caught.code === 'ACCOUNT_ALREADY_EXISTS') {
         setErrorCode('ACCOUNT_ALREADY_EXISTS')
         setError(
           partialMessage +
-            'An account already exists with this email. Please log in to continue and track your order.',
+            t('existingAccountMessage'),
         )
       } else if (caught instanceof ApiError && caught.code === 'SHOP_MINIMUM_ORDER_NOT_MET') {
         const detail = caught.details
@@ -317,8 +346,12 @@ export function CheckoutPage() {
         setError(
           partialMessage +
             (Number.isFinite(minimum) && Number.isFinite(remaining)
-              ? `Minimum order for ${shopName} is ${formatPrice(minimum, currency)}. Please add ${formatPrice(remaining, currency)} more to place your order.`
-              : caught.message),
+              ? t('shopMinimumError', {
+                  shop: shopName,
+                  amount: formatPrice(minimum, currency),
+                  remaining: formatPrice(remaining, currency),
+                })
+              : t('orderRequestFailed')),
         )
         const group = shopGroups.find(
           (item) => shopsBySlug[item.shopSlug]?.id === String(detail?.shop_id),
@@ -329,9 +362,24 @@ export function CheckoutPage() {
         }
       } else if (
         caught instanceof ApiError &&
-        describeOrderRuleError(caught.code, caught.details, currency)
+        describeOrderRuleError(
+          caught.code,
+          caught.details,
+          currency,
+          (key, values) => t(key, values),
+          i18n.language,
+        )
       ) {
-        setError(partialMessage + describeOrderRuleError(caught.code, caught.details, currency))
+        setError(
+          partialMessage +
+            describeOrderRuleError(
+              caught.code,
+              caught.details,
+              currency,
+              (key, values) => t(key, values),
+              i18n.language,
+            ),
+        )
         if (caught.code?.startsWith('PICKUP_')) {
           const group = shopGroups.find(
             (item) => shopsBySlug[item.shopSlug]?.id === String(caught.details?.shop_id),
@@ -349,7 +397,9 @@ export function CheckoutPage() {
       } else {
         setError(
           partialMessage +
-            (caught instanceof Error ? caught.message : 'The order request could not be sent.'),
+            (i18n.language !== 'nl' && caught instanceof Error
+              ? caught.message
+              : t('orderRequestFailed')),
         )
       }
     } finally {
@@ -363,38 +413,36 @@ export function CheckoutPage() {
         <span className="confirmation-mark" aria-hidden="true">
           ✓
         </span>
-        <p className="eyebrow">Order request received</p>
-        <h1>Your order request has been sent to the seller.</h1>
-        <p>
-          No payment was collected. The seller will contact you to confirm fulfilment and payment.
-        </p>
+        <p className="eyebrow">{t('orderRequestReceived')}</p>
+        <h1>{t('orderSent')}</h1>
+        <p>{t('noPayment')}</p>
         <div className="confirmation-references">
           {confirmations.map((confirmation) => (
             <div key={confirmation.order_number}>
-              <span>{confirmation.shop_name || 'Seller'} reference</span>
+              <span>{t('sellerReference', { shop: confirmation.shop_name || 'Seller' })}</span>
               <strong>{confirmation.order_number}</strong>
             </div>
           ))}
         </div>
         {user ? (
           <Link className="button" to="/account/orders">
-            View order
+            {t('viewOrder')}
           </Link>
         ) : accountCreated ? (
           <p className="confirmation-verify-note">
-            We&apos;ve created your account. Check <strong>{fields.email}</strong> for a
-            verification email to confirm it and start tracking your orders.
+            {t('verifyAccountBefore')} <strong>{fields.email}</strong>{' '}
+            {t('verifyAccountAfter')}
           </p>
         ) : (
           <a
             className="button"
             href={`${env.mainFrontendUrl}/#signup?next=${encodeURIComponent(env.marketplaceUrl)}`}
           >
-            Create account to track your order
+            {t('createAccountTrack')}
           </a>
         )}
         <Link className="button button--ghost" to="/">
-          Continue shopping
+          {t('continueShopping')}
         </Link>
       </main>
     )
@@ -404,11 +452,11 @@ export function CheckoutPage() {
     return (
       <main className="page-shell section">
         <EmptyState
-          title="Your cart is empty"
-          message="Add a product before starting checkout."
+          title={t('yourCartEmpty')}
+          message={t('addProductBeforeCheckout')}
           action={
             <Link className="button" to="/">
-              Browse shops
+              {t('browse')}
             </Link>
           }
         />
@@ -420,20 +468,19 @@ export function CheckoutPage() {
     <main className="page-shell section checkout">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Order request</p>
-          <h1>Checkout</h1>
+          <p className="eyebrow">{t('orderRequest')}</p>
+          <h1>{t('checkout')}</h1>
         </div>
-        <p>No online payment is collected.</p>
+        <p>{t('noPaymentCollected')}</p>
       </div>
       <form className="checkout-layout" onSubmit={(event) => void submit(event)}>
         <section className="checkout-form">
           {showAccountPrompt && (
             <div className="checkout-account-prompt" role="note">
               <div>
-                <h2>Save your orders &amp; track deliveries</h2>
+                <h2>{t('saveTrackOrders')}</h2>
                 <p>
-                  Create a free account to view order history, request cancellations, and get faster
-                  checkout next time.
+                  {t('accountBenefit')}
                 </p>
               </div>
               <label className="checkout-account-prompt__checkbox">
@@ -454,12 +501,12 @@ export function CheckoutPage() {
                     }
                   }}
                 />
-                <span>Create an account to track my order</span>
+                <span>{t('createAccountTrackOrder')}</span>
               </label>
               {fields.createAccount ? (
                 <div className="form-grid">
                   <label className="form-field">
-                    Password
+                    {t('password')}
                     <input
                       type="password"
                       autoComplete="new-password"
@@ -469,7 +516,7 @@ export function CheckoutPage() {
                     />
                   </label>
                   <label className="form-field">
-                    Confirm password
+                    {t('confirmPassword')}
                     <input
                       type="password"
                       autoComplete="new-password"
@@ -486,17 +533,17 @@ export function CheckoutPage() {
                     className="button button--ghost"
                     onClick={() => setContinuingAsGuest(true)}
                   >
-                    Continue as guest
+                    {t('continueGuest')}
                   </button>
                 </div>
               )}
             </div>
           )}
 
-          <h2>Contact details</h2>
+          <h2>{t('contactDetails')}</h2>
           <div className="form-grid">
             <label className="form-field form-field--wide">
-              Full name
+              {t('fullName')}
               <input
                 autoComplete="name"
                 value={fields.fullName}
@@ -505,7 +552,7 @@ export function CheckoutPage() {
               />
             </label>
             <label className="form-field">
-              Email
+              {t('email')}
               <input
                 type="email"
                 autoComplete="email"
@@ -515,7 +562,7 @@ export function CheckoutPage() {
               />
             </label>
             <label className="form-field">
-              Phone
+              {t('phone')}
               <input
                 type="tel"
                 autoComplete="tel"
@@ -537,8 +584,8 @@ export function CheckoutPage() {
                   shopRefs.current[group.shopSlug] = node
                 }}
               >
-                <legend>{shop?.name ?? group.shopSlug} — Delivery method</legend>
-                {!shop && <p>Loading shop fulfilment options…</p>}
+                <legend>{shop?.name ?? group.shopSlug} — {t('deliveryMethod')}</legend>
+                {!shop && <p>{t('loadingFulfilment')}</p>}
                 {shop?.pickupAvailable !== false && shop && (
                   <label>
                     <input
@@ -557,7 +604,7 @@ export function CheckoutPage() {
                       }}
                     />
                     <span>
-                      <strong>Pickup</strong>
+                      <strong>{t('pickup')}</strong>
                     </span>
                   </label>
                 )}
@@ -579,7 +626,7 @@ export function CheckoutPage() {
                       }}
                     />
                     <span>
-                      <strong>Delivery</strong>
+                      <strong>{t('delivery')}</strong>
                     </span>
                   </label>
                 )}
@@ -598,7 +645,7 @@ export function CheckoutPage() {
                   />
                 )}
                 {shop && !shop.pickupAvailable && !shop.deliveryAvailable && (
-                  <p role="alert">This shop has no available fulfilment methods.</p>
+                  <p role="alert">{t('noFulfilment')}</p>
                 )}
               </fieldset>
             )
@@ -609,7 +656,7 @@ export function CheckoutPage() {
               {env.addressLookupEnabled && (
                 <div className="form-grid address-lookup">
                   <label className="form-field">
-                    Postcode
+                    {t('postcode')}
                     <input
                       autoComplete="postal-code"
                       placeholder="1234AB"
@@ -621,7 +668,7 @@ export function CheckoutPage() {
                     />
                   </label>
                   <label className="form-field">
-                    House number
+                    {t('houseNumber')}
                     <input
                       value={fields.houseNumber}
                       onChange={(event) => {
@@ -631,7 +678,7 @@ export function CheckoutPage() {
                     />
                   </label>
                   <label className="form-field">
-                    Addition
+                    {t('addition')}
                     <input
                       value={fields.houseNumberAddition}
                       onChange={(event) => update('houseNumberAddition', event.target.value)}
@@ -646,19 +693,19 @@ export function CheckoutPage() {
                         lookupState === 'loading' || !fields.postalCode || !fields.houseNumber
                       }
                     >
-                      {lookupState === 'loading' ? 'Looking up address…' : 'Find address'}
+                      {lookupState === 'loading' ? t('lookingUpAddress') : t('findAddress')}
                     </button>
                   </div>
                   {lookupState === 'not-found' && (
                     <p className="inline-note form-field--wide">
-                      We could not find the address automatically. Please enter it manually.
+                      {t('addressLookupFailed')}
                     </p>
                   )}
                 </div>
               )}
               <div className="form-grid">
                 <label className="form-field form-field--wide">
-                  Street and house number
+                  {t('streetAndHouseNumber')}
                   <input
                     autoComplete="street-address"
                     value={fields.street}
@@ -669,7 +716,7 @@ export function CheckoutPage() {
                 {!env.addressLookupEnabled && (
                   <>
                     <label className="form-field">
-                      House number
+                      {t('houseNumber')}
                       <input
                         value={fields.houseNumber}
                         onChange={(event) => update('houseNumber', event.target.value)}
@@ -677,7 +724,7 @@ export function CheckoutPage() {
                       />
                     </label>
                     <label className="form-field">
-                      Postal code
+                      {t('postcode')}
                       <input
                         autoComplete="postal-code"
                         value={fields.postalCode}
@@ -688,7 +735,7 @@ export function CheckoutPage() {
                   </>
                 )}
                 <label className="form-field">
-                  City
+                  {t('city')}
                   <input
                     autoComplete="address-level2"
                     value={fields.city}
@@ -697,7 +744,7 @@ export function CheckoutPage() {
                   />
                 </label>
                 <label className="form-field">
-                  Country
+                  {t('country')}
                   <input
                     autoComplete="country-name"
                     value={fields.country}
@@ -710,22 +757,21 @@ export function CheckoutPage() {
           )}
 
           <label className="form-field">
-            Notes to seller
+            {t('notesToSeller')}
             <textarea
               rows={4}
               value={fields.notes}
               onChange={(event) => update('notes', event.target.value)}
-              placeholder="Allergies, preferred pickup time, or other useful details"
+              placeholder={t('notesPlaceholder')}
             />
           </label>
         </section>
 
         <aside className="checkout-order">
-          <h2>Order summary</h2>
+          <h2>{t('orderSummary')}</h2>
           {isMultiShop && (
             <p className="inline-note checkout-multi-shop-note">
-              Your cart has items from {shopGroupsWithFees.length} shops. Each shop ships as a
-              separate order.
+              {t('eachShopSeparate', { count: shopGroupsWithFees.length })}
             </p>
           )}
           {shopGroupsWithFees.map((group) => {
@@ -755,7 +801,7 @@ export function CheckoutPage() {
                 {Number(shop?.minimumOrderAmount ?? 0) > 0 && (
                   <div className="shop-minimum">
                     <span>
-                      Minimum order: {formatPrice(Number(shop?.minimumOrderAmount), currency)}
+                      {t('minimumOrder')} {formatPrice(Number(shop?.minimumOrderAmount), currency)}
                     </span>
                     {Math.round(group.subtotal * 100) <
                       Math.round(Number(shop?.minimumOrderAmount) * 100) && (
@@ -766,7 +812,7 @@ export function CheckoutPage() {
                             100,
                           currency,
                         )}{' '}
-                        more required to place an order.
+                        {t('moreRequired')}
                       </p>
                     )}
                   </div>
@@ -781,25 +827,25 @@ export function CheckoutPage() {
                 {isMultiShop && (
                   <>
                     <div className="checkout-total checkout-total--subtotal">
-                      <span>Shop subtotal</span>
+                      <span>{t('shopSubtotal')}</span>
                       <strong>{formatPrice(group.subtotal, currency)}</strong>
                     </div>
                     <div className="checkout-total checkout-total--delivery">
-                      <span>Delivery method</span>
+                      <span>{t('deliveryMethod')}</span>
                       <strong>
-                        {methodFor(group.shopSlug) === 'pickup' ? 'Pickup' : 'Delivery'}
+                        {methodFor(group.shopSlug) === 'pickup' ? t('pickup') : t('delivery')}
                       </strong>
                     </div>
                     <div className="checkout-total checkout-total--delivery">
-                      <span>Delivery fee</span>
+                      <span>{t('deliveryFee')}</span>
                       <strong>
                         {methodFor(group.shopSlug) === 'pickup' || group.deliveryFee === 0
-                          ? 'Free'
+                          ? t('free')
                           : formatPrice(group.deliveryFee, currency)}
                       </strong>
                     </div>
                     <div className="checkout-total checkout-total--shop-total">
-                      <span>Shop total</span>
+                      <span>{t('shopTotal')}</span>
                       <strong>{formatPrice(group.subtotal + group.deliveryFee, currency)}</strong>
                     </div>
                   </>
@@ -808,17 +854,17 @@ export function CheckoutPage() {
             )
           })}
           <div className="checkout-total checkout-total--subtotal">
-            <span>Subtotal incl. VAT</span>
+            <span>{t('subtotalInclVat')}</span>
             <strong>{formatPrice(subtotal, currency)}</strong>
           </div>
           <div className="checkout-total checkout-total--delivery">
-            <span>Delivery fee</span>
+            <span>{t('deliveryFee')}</span>
             <strong>
-              {estimatedDeliveryFee > 0 ? formatPrice(estimatedDeliveryFee, currency) : 'Free'}
+              {estimatedDeliveryFee > 0 ? formatPrice(estimatedDeliveryFee, currency) : t('free')}
             </strong>
           </div>
           <div className="checkout-total">
-            <span>{isMultiShop ? 'Grand total' : 'Estimated total'}</span>
+            <span>{isMultiShop ? t('grandTotal') : t('estimatedTotal')}</span>
             <strong>{formatPrice(estimatedTotal, currency)}</strong>
           </div>
           <InclusiveVat
@@ -832,7 +878,7 @@ export function CheckoutPage() {
               })),
             )}
           />
-          <p className="checkout-total-note">Final delivery fee is confirmed by the seller.</p>
+          <p className="checkout-total-note">{t('finalDeliveryFee')}</p>
           <label className="terms-check">
             <input
               type="checkbox"
@@ -841,15 +887,15 @@ export function CheckoutPage() {
               required
             />
             <span>
-              I have read and agree to the{' '}
+              {t('termsAgree')}{' '}
               <a href={env.termsUrl} target="_blank" rel="noreferrer">
-                Terms &amp; Conditions
+                {t('termsAndConditions')}
               </a>{' '}
-              and{' '}
+              {t('and')}{' '}
               <a href={env.privacyUrl} target="_blank" rel="noreferrer">
-                Privacy Policy
+                {t('privacyPolicy')}
               </a>{' '}
-              of GuideWisey Marketplace. <span aria-hidden="true">*</span>
+              {t('termsSuffix')} <span aria-hidden="true">*</span>
             </span>
           </label>
           {error && (
@@ -859,7 +905,7 @@ export function CheckoutPage() {
           )}
           {errorCode === 'ACCOUNT_ALREADY_EXISTS' && (
             <a className="button button--wide" href={env.loginUrlWithNext('/checkout')}>
-              Log in to continue
+              {t('logInContinue')}
             </a>
           )}
           <button
@@ -871,13 +917,13 @@ export function CheckoutPage() {
               shopGroups.some((group) => !shopsBySlug[group.shopSlug])
             }
           >
-            {submitting ? 'Sending order request…' : 'Submit order request'}
+            {submitting ? t('sendingOrder') : t('submitOrder')}
           </button>
           <Link className="checkout-back" to="/cart">
-            ← Back to cart
+            ← {t('backToCart')}
           </Link>
           <Link className="checkout-back checkout-continue-shopping" to={continueShoppingLink}>
-            ← Continue shopping
+            ← {t('continueShopping')}
           </Link>
         </aside>
       </form>
@@ -896,16 +942,17 @@ function PickupSlotPicker({
   selection: { date: string; start: string } | undefined
   onChange: (selection: { date: string; start: string }) => void
 }) {
+  const { t, i18n } = useTranslation()
   if (!state) return null
-  if (state.error) return <p className="inline-note">{state.error}</p>
+  if (state.error) return <p className="inline-note">{t('orderRequestFailed')}</p>
   const schedule = state.schedule
-  if (!schedule) return state.loading ? <p className="inline-note">Loading pickup times…</p> : null
+  if (!schedule) return state.loading ? <p className="inline-note">{t('loadingPickupTimes')}</p> : null
   if (!schedule.schedulingEnabled) return null
   const lead = formatLeadTime(schedule.requiredLeadTimeHours)
   if (schedule.days.length === 0) {
     return (
       <p role="alert">
-        {shopName} has no pickup times available in the booking window. Please contact the seller.
+        {t('noPickupTimes', { shop: shopName })}
       </p>
     )
   }
@@ -914,29 +961,32 @@ function PickupSlotPicker({
     <div className="pickup-slot-picker">
       {lead && (
         <p className="inline-note" data-testid="required-preparation">
-          Required preparation: {lead}
+          {t('requiredPreparation')} {lead}
         </p>
       )}
       <div className="form-grid">
         <label className="form-field">
-          Pickup date
+          {t('pickupDate')}
           <select
             value={selection?.date ?? ''}
             onChange={(event) => onChange({ date: event.target.value, start: '' })}
             required
           >
             <option value="" disabled>
-              Choose a date
+              {t('chooseDate')}
             </option>
             {schedule.days.map((candidate) => (
               <option key={candidate.date} value={candidate.date}>
-                {candidate.label}
+                {new Date(`${candidate.date}T00:00:00`).toLocaleDateString(
+                  i18n.language === 'nl' ? 'nl-NL' : 'en-GB',
+                  { weekday: 'long', day: 'numeric', month: 'long' },
+                )}
               </option>
             ))}
           </select>
         </label>
         <label className="form-field">
-          Pickup time
+          {t('pickupTime')}
           <select
             value={selection?.start ?? ''}
             onChange={(event) =>
@@ -946,7 +996,7 @@ function PickupSlotPicker({
             required
           >
             <option value="" disabled>
-              Choose a time
+              {t('chooseTime')}
             </option>
             {day?.slots.map((slot) => (
               <option key={slot.start} value={slot.start}>
@@ -967,8 +1017,14 @@ function PickupSummary({
 }: {
   shop: Shop | undefined
   leadTimeHours: number
-  selected: { day: { label: string }; slot: { label: string } } | null
+  selected: { day: { label: string; date: string }; slot: { label: string } } | null
 }) {
+  const { t, i18n } = useTranslation()
+  const selectedDateValue = selected ? new Date(`${selected.day.date}T00:00:00`) : null
+  const dateLocale = i18n.language === 'nl' ? 'nl-NL' : 'en-GB'
+  const selectedDate = selectedDateValue
+    ? `${selectedDateValue.toLocaleDateString(dateLocale, { weekday: 'long' })} ${selectedDateValue.toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', year: 'numeric' })}`
+    : ''
   const address = shop?.pickupAddress
     ? [
         shop.pickupAddress.addressLine1,
@@ -984,17 +1040,17 @@ function PickupSummary({
     <div className="checkout-pickup-summary" data-testid="checkout-pickup-summary">
       {selected && (
         <p>
-          <strong>Pickup</strong> {selected.day.label}, {selected.slot.label}
+          <strong>{t('pickup')}</strong> {selectedDate}, {selected.slot.label}
         </p>
       )}
       {address && (
         <p>
-          <strong>Pickup location</strong> {address}
+          <strong>{t('pickupLocation')}</strong> {address}
         </p>
       )}
       {leadTimeHours > 0 && (
         <p>
-          <strong>Preparation requirement</strong> {formatLeadTime(leadTimeHours)}
+          <strong>{t('preparationRequirement')}</strong> {formatLeadTime(leadTimeHours)}
         </p>
       )}
     </div>

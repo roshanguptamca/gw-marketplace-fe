@@ -29,6 +29,7 @@ import type {
   ShopSettings,
   Shop,
   Invoice,
+  LocalizedFields,
 } from '../types/marketplace'
 import { ApiError, apiRequest } from './apiClient'
 
@@ -39,8 +40,10 @@ interface ApiShop {
   slug: string
   name: string
   description: string
+  delivery_area?: string
   short_description?: string
   shop_type?: string
+  translations?: LocalizedFields
   phone?: string
   email?: string
   website_url?: string
@@ -77,6 +80,7 @@ interface ApiShop {
     pickup_city?: string
     pickup_country?: string
     pickup_instructions?: string
+    translations?: LocalizedFields
     order_acceptance_mode?: 'manual' | 'auto'
     bank_transfer_instructions?: string
     notification_email?: string
@@ -102,6 +106,7 @@ interface ApiShopSettings {
   international_delivery_fee: string
   free_delivery_above?: string | null
   delivery_notes: string
+  translations?: LocalizedFields
   whatsapp_group_url?: string | null
   pickup_address_line_1?: string
   pickup_address_line_2?: string
@@ -183,6 +188,7 @@ export interface ApiProduct {
   description: string
   ingredients?: string
   allergens?: string
+  translations?: LocalizedFields
   price: string
   vat_rate?: string | null
   stock_quantity: number
@@ -252,6 +258,7 @@ function normalizeShopSettings(settings: ApiShopSettings | undefined): ShopSetti
     internationalDeliveryFee: settings.international_delivery_fee ?? '0.00',
     freeDeliveryAbove: settings.free_delivery_above ?? null,
     deliveryNotes: settings.delivery_notes ?? '',
+    translations: settings.translations ?? {},
     whatsappGroupUrl: settings.whatsapp_group_url ?? '',
     pickupAddressLine1: settings.pickup_address_line_1 ?? '',
     pickupAddressLine2: settings.pickup_address_line_2 ?? '',
@@ -346,6 +353,9 @@ function normalizeShop(shop: ApiShop): Shop {
     shortDescription: shop.short_description ?? '',
     shopType: shop.shop_type ?? '',
     description: shop.description,
+    deliveryArea: shop.delivery_area ?? '',
+    translations: shop.translations ?? {},
+    settingsTranslations: shop.settings?.translations ?? {},
     phone: shop.phone,
     email: shop.email ?? shop.contact_email,
     websiteUrl: shop.website_url,
@@ -406,6 +416,7 @@ export function normalizeProduct(product: ApiProduct, fallbackShopSlug = ''): Pr
     description: product.description,
     ingredients: product.ingredients ?? '',
     allergens: product.allergens ?? '',
+    translations: product.translations ?? {},
     price: Number(product.price),
     priceAmount: product.price,
     vatRate: product.vat_rate ?? shop?.settings?.default_vat_rate ?? null,
@@ -714,6 +725,7 @@ export const marketplaceService = {
         pickup_city: data.pickupCity,
         pickup_country: data.pickupCountry,
         pickup_instructions: data.pickupInstructions,
+        translations: data.translations,
         order_acceptance_mode: data.orderAcceptanceMode,
         whatsapp_number: data.whatsappNumber,
         bank_transfer_instructions: data.bankTransferInstructions,

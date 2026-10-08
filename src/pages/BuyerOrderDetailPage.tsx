@@ -1,16 +1,17 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
 import { EmptyState } from '../components/EmptyState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
-import { ApiError } from '../services/apiClient'
 import type { BuyerOrder } from '../types/marketplace'
 import { WhatsAppGroupLink } from '../components/ShopFulfilment'
 import { OrderInvoices } from '../components/OrderInvoices'
 import { InclusiveVat } from '../components/InclusiveVat'
 
 export function BuyerOrderDetailPage() {
+  const { t, i18n } = useTranslation()
   const { orderId } = useParams<{ orderId: string }>()
   const {
     data: order,
@@ -26,7 +27,7 @@ export function BuyerOrderDetailPage() {
 
   const handleCancel = async () => {
     if (!displayOrder) return
-    if (!window.confirm('Cancel this order? This cannot be undone.')) return
+    if (!window.confirm(t('cancelOrderConfirm'))) return
     setCancelling(true)
     setCancelError('')
     try {
@@ -34,24 +35,26 @@ export function BuyerOrderDetailPage() {
       setLocalOrder(updated)
     } catch (caught) {
       setCancelError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not cancel the order. Please try again.',
+        i18n.language === 'nl'
+          ? t('couldNotCancel')
+          : caught instanceof Error
+            ? caught.message
+            : t('couldNotCancel'),
       )
     } finally {
       setCancelling(false)
     }
   }
 
-  if (loading) return <LoadingState label="Loading order" />
+  if (loading) return <LoadingState label={t('loadingOrder')} />
   if (error || !displayOrder) {
     return (
       <EmptyState
-        title="Order not found"
-        message="We could not find this order, or it does not belong to your account."
+        title={t('orderNotFound')}
+        message={t('orderNotFoundMessage')}
         action={
           <Link className="btn btn-secondary" to="/account/orders">
-            Back to my orders
+            {t('backToMyOrders')}
           </Link>
         }
       />
@@ -78,30 +81,33 @@ export function BuyerOrderDetailPage() {
   return (
     <section className="order-detail">
       <Link className="back-link" to="/account/orders">
-        ← Back to my orders
+        ← {t('backToMyOrders')}
       </Link>
       <header className="order-detail__header">
         <div>
           <p className="eyebrow">{displayOrder.shop_name}</p>
-          <h2>Order {displayOrder.order_number}</h2>
+          <h2>{t('orderNumber', { number: displayOrder.order_number })}</h2>
           <p className="muted">
-            Placed{' '}
-            {new Date(displayOrder.created_at).toLocaleDateString(undefined, {
+            {t('placed')}{' '}
+            {new Date(displayOrder.created_at).toLocaleDateString(
+              i18n.language === 'nl' ? 'nl-NL' : 'en-GB',
+              {
               day: 'numeric',
               month: 'long',
               year: 'numeric',
-            })}
+              },
+            )}
           </p>
         </div>
         <span className={`order-detail__status order-detail__status--${displayOrder.status}`}>
-          {displayOrder.status.replaceAll('_', ' ')}
+          {t(`status_${displayOrder.status}`, { defaultValue: displayOrder.status.replaceAll('_', ' ') })}
         </span>
       </header>
 
       <div className="order-detail__layout">
         <div className="order-detail__main">
           <section className="order-detail__card">
-            <h3>Your items</h3>
+            <h3>{t('yourItems')}</h3>
             <ul className="order-detail__items">
               {displayOrder.items.map((item) => (
                 <li key={item.id}>
@@ -117,7 +123,7 @@ export function BuyerOrderDetailPage() {
             </ul>
             {displayOrder.items.some((item) => item.sku) && (
               <details className="order-detail__extra">
-                <summary>Product references</summary>
+                <summary>{t('productReferences')}</summary>
                 {displayOrder.items
                   .filter((item) => item.sku)
                   .map((item) => (
@@ -130,10 +136,10 @@ export function BuyerOrderDetailPage() {
           </section>
 
           <section className="order-detail__card">
-            <h3>{pickup ? 'Pickup details' : 'Delivery details'}</h3>
+            <h3>{pickup ? t('pickupDetails') : t('deliveryDetails')}</h3>
             {snapshot?.pickup_date && pickup && (
               <p className="order-detail__schedule" data-testid="order-pickup-slot">
-                <strong>Pickup:</strong> {snapshot.pickup_date}
+                <strong>{t('pickupLabel')}</strong> {snapshot.pickup_date}
                 {snapshot.pickup_time ? `, ${snapshot.pickup_time}` : ''}
               </p>
             )}
@@ -144,11 +150,11 @@ export function BuyerOrderDetailPage() {
               </p>
             )}
             {snapshot?.required_lead_time_hours ? (
-              <p className="muted">Preparation time: {snapshot.required_lead_time_hours} hours</p>
+              <p className="muted">{t('preparationTime')} {snapshot.required_lead_time_hours} {t('hours')}</p>
             ) : null}
             {displayOrder.seller_note && (
               <p className="order-detail__note">
-                <strong>Note from seller:</strong> {displayOrder.seller_note}
+                <strong>{t('noteFromSeller')}</strong> {displayOrder.seller_note}
               </p>
             )}
             <div className="order-detail__contact">
@@ -167,55 +173,53 @@ export function BuyerOrderDetailPage() {
           </section>
 
           <details className="order-detail__card order-detail__extra">
-            <summary>Customer &amp; payment details</summary>
+            <summary>{t('customerPaymentDetails')}</summary>
             <p>{displayOrder.customer_name}</p>
             <p>
               {displayOrder.customer_email} {displayOrder.customer_phone}
             </p>
-            <p>Payment method: {displayOrder.payment_method.replaceAll('_', ' ')}</p>
-            <p>Payment status: {displayOrder.payment_status.replaceAll('_', ' ')}</p>
-            {displayOrder.customer_note && <p>Your note: {displayOrder.customer_note}</p>}
+            <p>{t('paymentMethod')} {t(`payment_${displayOrder.payment_method}`, { defaultValue: displayOrder.payment_method.replaceAll('_', ' ') })}</p>
+            <p>{t('paymentStatus')} {t(`payment_${displayOrder.payment_status}`, { defaultValue: displayOrder.payment_status.replaceAll('_', ' ') })}</p>
+            {displayOrder.customer_note && <p>{t('yourNote')} {displayOrder.customer_note}</p>}
           </details>
         </div>
 
-        <aside className="order-detail__card order-detail__summary" aria-label="Price overview">
-          <h3>Price overview</h3>
+        <aside className="order-detail__card order-detail__summary" aria-label={t('priceOverview')}>
+          <h3>{t('priceOverview')}</h3>
           <dl className="order-detail__prices">
             <div>
-              <dt>Subtotal incl. VAT</dt>
+              <dt>{t('subtotalInclVat')}</dt>
               <dd>{money(displayOrder.subtotal)}</dd>
             </div>
             {Number(displayOrder.discount_total) > 0 && (
               <div>
-                <dt>Discount</dt>
+                <dt>{t('discount')}</dt>
                 <dd>-{money(displayOrder.discount_total)}</dd>
               </div>
             )}
             <div>
-              <dt>{pickup ? 'Pickup' : 'Shipping'}</dt>
+              <dt>{pickup ? t('pickup') : t('shipping')}</dt>
               <dd>
-                {Number(displayOrder.delivery_fee) > 0 ? money(displayOrder.delivery_fee) : 'Free'}
+                {Number(displayOrder.delivery_fee) > 0 ? money(displayOrder.delivery_fee) : t('free')}
               </dd>
             </div>
             <div className="order-detail__total">
-              <dt>Total incl. VAT</dt>
+              <dt>{t('totalInclVat')}</dt>
               <dd>{money(displayOrder.total)}</dd>
             </div>
           </dl>
           <InclusiveVat breakdown={displayOrder.price_breakdown ?? null} currency={currency} />
           {displayOrder.price_breakdown && displayOrder.price_breakdown.rates.length > 1 && (
             <details className="order-detail__extra">
-              <summary>VAT by rate</summary>
+              <summary>{t('vatByRate')}</summary>
               {displayOrder.price_breakdown.rates.map((row) => (
-                <p key={row.rate}>
-                  {row.rate}% VAT: {money(row.vat)}
-                </p>
+                <p key={row.rate}>{row.rate}% {t('vat')}: {money(row.vat)}</p>
               ))}
             </details>
           )}
           {displayOrder.status === 'pending' && (
             <div className="order-detail__actions">
-              <p className="muted">You can cancel while the seller is reviewing your order.</p>
+              <p className="muted">{t('canCancelWhileReviewing')}</p>
               {cancelError && (
                 <p className="inline-error" role="alert">
                   {cancelError}
@@ -227,12 +231,12 @@ export function BuyerOrderDetailPage() {
                 onClick={handleCancel}
                 disabled={cancelling}
               >
-                {cancelling ? 'Cancelling…' : 'Cancel order'}
+                {cancelling ? t('cancelling') : t('cancelOrder')}
               </button>
             </div>
           )}
           {displayOrder.status === 'accepted' && (
-            <p className="muted">Your order is accepted. Contact the shop if you need to cancel.</p>
+            <p className="muted">{t('acceptedContactShop')}</p>
           )}
         </aside>
       </div>

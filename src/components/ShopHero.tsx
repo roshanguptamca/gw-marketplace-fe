@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { Shop } from '../types/marketplace'
 import { WhatsAppGroupLink } from './ShopFulfilment'
 import {
@@ -6,8 +7,14 @@ import {
   handleShopBannerError,
   handleShopLogoError,
 } from '../utils/shopImages'
+import { localizedText } from '../utils/localizedText'
 
 export function ShopHero({ shop, onMoreDetails }: { shop: Shop; onMoreDetails?: () => void }) {
+  const { t, i18n } = useTranslation()
+  const shortDescription =
+    localizedText(shop.shortDescription, shop.translations, 'short_description', i18n.language) ||
+    localizedText(shop.description, shop.translations, 'description', i18n.language)
+  const shopType = localizedText(shop.shopType, shop.translations, 'shop_type', i18n.language)
   return (
     <section className="shop-hero">
       <img
@@ -25,9 +32,9 @@ export function ShopHero({ shop, onMoreDetails }: { shop: Shop; onMoreDetails?: 
           onError={handleShopLogoError}
         />
         <div className="shop-hero__copy">
-          <p className="eyebrow">{shop.shopType || shop.location}</p>
+          <p className="eyebrow">{shopType || shop.location}</p>
           <h1>{shop.name}</h1>
-          <p className="shop-hero__tagline">{shop.shortDescription || shop.tagline}</p>
+          <p className="shop-hero__tagline">{shortDescription}</p>
           <WhatsAppGroupLink url={shop.whatsappGroupUrl} />
           {onMoreDetails && (
             <button
@@ -35,7 +42,7 @@ export function ShopHero({ shop, onMoreDetails }: { shop: Shop; onMoreDetails?: 
               className="button button--ghost shop-hero__details-button"
               onClick={onMoreDetails}
             >
-              More details about shop
+              {t('moreShopDetails')}
             </button>
           )}
         </div>
