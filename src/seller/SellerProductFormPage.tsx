@@ -13,7 +13,7 @@ import {
   type SellingUnit,
 } from '../types/marketplace'
 import { handleProductImageError } from '../utils/productImages'
-import { MEASURE_UNIT_LABELS, SELLING_UNIT_LABELS } from '../utils/productUnits'
+import { measureUnitLabel, sellingUnitLabel } from '../utils/productUnits'
 
 type LeadTimeUnit = 'hours' | 'days'
 
@@ -371,7 +371,7 @@ export function SellerProductFormPage() {
               >
                 {SELLING_UNITS.map((unit) => (
                   <option key={unit} value={unit}>
-                    {SELLING_UNIT_LABELS[unit]}
+                    {sellingUnitLabel(unit)}
                   </option>
                 ))}
               </select>
@@ -401,7 +401,7 @@ export function SellerProductFormPage() {
                     <option value="">{t('sellerChooseUnit')}</option>
                     {MEASURE_UNITS.map((unit) => (
                       <option key={unit} value={unit}>
-                        {MEASURE_UNIT_LABELS[unit]}
+                        {measureUnitLabel(unit)}
                       </option>
                     ))}
                   </select>
@@ -411,7 +411,7 @@ export function SellerProductFormPage() {
               form.selling_unit !== 'PIECE' && (
                 <label>
                   {t('sellerPiecesPer', {
-                    unit: SELLING_UNIT_LABELS[form.selling_unit].toLowerCase(),
+                    unit: sellingUnitLabel(form.selling_unit).toLowerCase(),
                   })}
                   <input
                     type="number"

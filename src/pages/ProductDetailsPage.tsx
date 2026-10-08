@@ -17,6 +17,7 @@ import {
   physicalTotalLabel,
   sellingFormatLabel,
   sellingUnitOf,
+  unitName,
 } from '../utils/productUnits'
 import { ErrorPage } from './ErrorPage'
 import { localizedText } from '../utils/localizedText'
@@ -63,10 +64,25 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
   const formatLabel = hasSellingFormatDetails(product) ? sellingFormatLabel(product) : ''
   const physicalTotal = physicalTotalLabel(product, quantity)
   const ruleLines = orderingRuleLines(product, (value) => formatPrice(value, product.currency))
-  const unitWord = sellingUnitOf(product) === 'PACK' ? 'pack' : ''
-  const description = localizedText(product.description, product.translations, 'description', i18n.language)
-  const ingredients = localizedText(product.ingredients, product.translations, 'ingredients', i18n.language)
-  const allergens = localizedText(product.allergens, product.translations, 'allergens', i18n.language)
+  const unitWord = sellingUnitOf(product) === 'PACK' ? unitName('PACK', 1) : ''
+  const description = localizedText(
+    product.description,
+    product.translations,
+    'description',
+    i18n.language,
+  )
+  const ingredients = localizedText(
+    product.ingredients,
+    product.translations,
+    'ingredients',
+    i18n.language,
+  )
+  const allergens = localizedText(
+    product.allergens,
+    product.translations,
+    'allergens',
+    i18n.language,
+  )
 
   const handleAdd = () => {
     addItem(product, quantity)
@@ -84,9 +100,7 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
     ingredients
       ? { label: t('ingredients'), value: ingredients, testId: 'product-ingredients' }
       : null,
-    allergens
-      ? { label: t('allergens'), value: allergens, testId: 'product-allergens' }
-      : null,
+    allergens ? { label: t('allergens'), value: allergens, testId: 'product-allergens' } : null,
   ].filter(
     (section): section is { label: string; value: string; testId: string } => section !== null,
   )
@@ -113,13 +127,13 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
             />
           </div>
           {product.images.length > 1 && (
-            <div className="gallery__thumbs" aria-label="Product images">
+            <div className="gallery__thumbs" aria-label={t('productImagesAria')}>
               {product.images.map((image, index) => (
                 <button
                   key={image}
                   className={selectedImage === index ? 'active' : ''}
                   onClick={() => setSelectedImage(index)}
-                  aria-label={`Show image ${index + 1}`}
+                  aria-label={t('showImage', { number: index + 1 })}
                 >
                   <img src={image} alt="" onError={handleProductImageError} />
                 </button>
@@ -132,12 +146,12 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
           <h1>{product.name}</h1>
           {formatLabel && (
             <p className="product-info__format" data-testid="product-selling-format">
-              {unitWord ? `${formatLabel} per ${unitWord}` : formatLabel}
+              {unitWord ? t('perUnit', { value: formatLabel, unit: unitWord }) : formatLabel}
             </p>
           )}
           <p className="product-info__price">
             {formatPrice(product.price, product.currency)}
-            {unitWord ? ` per ${unitWord}` : ''}
+            {unitWord ? ` ${t('perUnitSuffix', { unit: unitWord })}` : ''}
           </p>
           {ruleLines.length > 0 && (
             <ul className="product-rules" data-testid="product-ordering-rules">
@@ -171,11 +185,11 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
           ) : (
             <>
               {product.stock > 0 && (
-                <div className="quantity-stepper"                 aria-label={t('quantity')}>
+                <div className="quantity-stepper" aria-label={t('quantity')}>
                   <button
                     type="button"
                     className="icon-button"
-                    aria-label="Decrease quantity"
+                    aria-label={t('decreaseQuantity')}
                     disabled={quantity <= minimumQuantity}
                     onClick={() => setSelectedQuantity(quantity - 1)}
                   >
@@ -187,7 +201,7 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
                   <button
                     type="button"
                     className="icon-button"
-                    aria-label="Increase quantity"
+                    aria-label={t('increaseQuantity')}
                     disabled={quantity >= maximumQuantity}
                     onClick={() => setSelectedQuantity(quantity + 1)}
                   >

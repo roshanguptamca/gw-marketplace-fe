@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
 import type { Invoice } from '../types/marketplace'
 
 export function OrderInvoices({ orderId }: { orderId: number }) {
+  const { t } = useTranslation()
   const [retry, setRetry] = useState(0)
   const { data, loading, error } = useMarketplaceData(
     () => marketplaceService.getOrderInvoices(orderId),
@@ -18,32 +20,36 @@ export function OrderInvoices({ orderId }: { orderId: number }) {
     try {
       await marketplaceService.downloadInvoice(invoice)
     } catch (caught) {
-      setDownloadError(caught instanceof Error ? caught.message : 'Could not download invoice.')
+      setDownloadError(caught instanceof Error ? caught.message : t('invoiceDownloadFailed'))
     } finally {
       setDownloading(null)
     }
   }
 
   return (
-    <section className="form-section" aria-label="Invoices">
-      <h3>Invoices / Facturen</h3>
-      {loading && <p role="status">Loading invoices...</p>}
+    <section className="form-section" aria-label={t('invoicesAria')}>
+      <h3>{t('invoicesHeading')}</h3>
+      {loading && <p role="status">{t('loadingInvoices')}</p>}
       {error && (
         <div role="alert">
-          <p className="inline-error">Could not load invoices: {error.message}</p>
+          <p className="inline-error">{t('invoicesLoadFailed', { message: error.message })}</p>
           <button className="button" type="button" onClick={() => setRetry((value) => value + 1)}>
-            Retry
+            {t('retryAction')}
           </button>
         </div>
       )}
-      {!loading && !error && !data?.length && <p>No invoices available for this order yet.</p>}
+      {!loading && !error && !data?.length && <p>{t('noInvoices')}</p>}
       {data?.map((invoice) => (
         <div className="invoice-card" key={invoice.id}>
           <div>
             <strong>{invoice.shop_name}</strong>
             <p>{invoice.invoice_number}</p>
             <p>
-              {invoice.issue_date} | {invoice.currency} {invoice.total_inc_vat} incl. VAT
+              {invoice.issue_date} |{' '}
+              {t('invoiceTotalInclVat', {
+                currency: invoice.currency,
+                amount: invoice.total_inc_vat,
+              })}
             </p>
           </div>
           <button
@@ -52,7 +58,7 @@ export function OrderInvoices({ orderId }: { orderId: number }) {
             disabled={downloading !== null}
             onClick={() => void download(invoice)}
           >
-            {downloading === invoice.id ? 'Downloading...' : 'Download invoice'}
+            {downloading === invoice.id ? t('downloadingInvoice') : t('downloadInvoice')}
           </button>
         </div>
       ))}

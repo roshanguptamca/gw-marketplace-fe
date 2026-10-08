@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Category, MarketplaceSearchFilters, Shop } from '../types/marketplace'
 
 export interface MarketplaceSearchProps {
@@ -21,6 +22,7 @@ export function MarketplaceSearch({
   onClear,
   loading = false,
 }: MarketplaceSearchProps) {
+  const { t } = useTranslation()
   const [q, setQ] = useState(initialFilters?.q ?? '')
   const [category, setCategory] = useState(initialFilters?.category ?? '')
   const [shop, setShop] = useState(initialFilters?.shop ?? '')
@@ -99,30 +101,30 @@ export function MarketplaceSearch({
   }
 
   return (
-    <div className="market-search-card" role="search" aria-label="Marketplace search and filters">
+    <div className="market-search-card" role="search" aria-label={t('searchRegionAria')}>
       <div className="market-search-row">
         <label className="market-search-field market-search-field--query">
-          <span>Search</span>
+          <span>{t('searchFieldLabel')}</span>
           <input
             type="text"
-            placeholder="Products or shops…"
+            placeholder={t('searchPlaceholder')}
             value={q}
             onChange={(event) => setQ(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') runSearch()
             }}
-            aria-label="Search products or shops"
+            aria-label={t('searchInputAria')}
           />
         </label>
 
         <label className="market-search-field">
-          <span>Category</span>
+          <span>{t('searchCategoryLabel')}</span>
           <select
             value={category}
             onChange={(event) => setCategory(event.target.value)}
-            aria-label="Filter by category"
+            aria-label={t('filterCategoryAria')}
           >
-            <option value="">All categories</option>
+            <option value="">{t('allCategoriesOption')}</option>
             {categories.map((item) => (
               <option key={item.slug} value={item.slug}>
                 {item.name}
@@ -133,16 +135,16 @@ export function MarketplaceSearch({
         </label>
 
         <label className="market-search-field">
-          <span>Country</span>
+          <span>{t('filterCountry')}</span>
           <select
             value={country}
             onChange={(event) => {
               setCountry(event.target.value)
               setCity('')
             }}
-            aria-label="Filter by country"
+            aria-label={t('filterCountryAria')}
           >
-            <option value="">All countries</option>
+            <option value="">{t('allCountriesOption')}</option>
             {countries.map((item) => (
               <option key={item} value={item}>
                 {item}
@@ -152,13 +154,13 @@ export function MarketplaceSearch({
         </label>
 
         <label className="market-search-field">
-          <span>City</span>
+          <span>{t('filterCity')}</span>
           <select
             value={city}
             onChange={(event) => setCity(event.target.value)}
-            aria-label="Filter by city"
+            aria-label={t('filterCityAria')}
           >
-            <option value="">All cities</option>
+            <option value="">{t('allCitiesOption')}</option>
             {cities.map((item) => (
               <option key={item} value={item}>
                 {item}
@@ -168,13 +170,13 @@ export function MarketplaceSearch({
         </label>
 
         <label className="market-search-field">
-          <span>Shop</span>
+          <span>{t('filterShop')}</span>
           <select
             value={shop}
             onChange={(event) => setShop(event.target.value)}
-            aria-label="Filter by shop"
+            aria-label={t('filterShopAria')}
           >
-            <option value="">All shops</option>
+            <option value="">{t('allShopsOption')}</option>
             {shops.map((item) => (
               <option key={item.slug} value={item.slug}>
                 {item.name}
@@ -184,26 +186,26 @@ export function MarketplaceSearch({
         </label>
 
         <label className="market-search-field market-search-field--price">
-          <span>Min €</span>
+          <span>{t('minPriceLabel')}</span>
           <input
             type="number"
             min="0"
             placeholder="0"
             value={minPrice}
             onChange={(event) => setMinPrice(event.target.value)}
-            aria-label="Minimum price in euros"
+            aria-label={t('minPriceAria')}
           />
         </label>
 
         <label className="market-search-field market-search-field--price">
-          <span>Max €</span>
+          <span>{t('maxPriceLabel')}</span>
           <input
             type="number"
             min="0"
             placeholder="999"
             value={maxPrice}
             onChange={(event) => setMaxPrice(event.target.value)}
-            aria-label="Maximum price in euros"
+            aria-label={t('maxPriceAria')}
           />
         </label>
 
@@ -212,17 +214,17 @@ export function MarketplaceSearch({
             type="checkbox"
             checked={inStock}
             onChange={(event) => setInStock(event.target.checked)}
-            aria-label="In stock only"
+            aria-label={t('inStockOnlyAria')}
           />
-          <span>In stock</span>
+          <span>{t('inStockFilter')}</span>
         </label>
 
         <div className="market-search-actions">
           <button type="button" className="button" onClick={runSearch} disabled={loading}>
-            {loading ? 'Searching…' : 'Search'}
+            {loading ? t('searchingButton') : t('searchButton')}
           </button>
           <button type="button" className="button button--ghost" onClick={clearFilters}>
-            Clear
+            {t('clearFilters')}
           </button>
         </div>
       </div>

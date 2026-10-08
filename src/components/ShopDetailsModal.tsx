@@ -4,7 +4,15 @@ import type { Shop } from '../types/marketplace'
 import { ShopFulfilment } from './ShopFulfilment'
 import { localizedText } from '../utils/localizedText'
 
-const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+// 1 January 2023 was a Sunday, matching dayOfWeek 0.
+function weekdayLabel(dayOfWeek: number, language: string): string {
+  return new Date(2023, 0, 1 + dayOfWeek).toLocaleDateString(
+    language === 'nl' ? 'nl-NL' : 'en-GB',
+    {
+      weekday: 'short',
+    },
+  )
+}
 
 export function ShopDetailsModal({
   shop,
@@ -26,7 +34,12 @@ export function ShopDetailsModal({
   }, [open, onClose])
 
   if (!open) return null
-  const description = localizedText(shop.description, shop.translations, 'description', i18n.language)
+  const description = localizedText(
+    shop.description,
+    shop.translations,
+    'description',
+    i18n.language,
+  )
   const shortDescription =
     localizedText(shop.shortDescription, shop.translations, 'short_description', i18n.language) ||
     description
@@ -94,7 +107,7 @@ export function ShopDetailsModal({
               <ul className="hours-list">
                 {shop.openingHours.map((hour) => (
                   <li key={hour.dayOfWeek}>
-                    <span>{WEEKDAY_LABELS[hour.dayOfWeek]}</span>
+                    <span>{weekdayLabel(hour.dayOfWeek, i18n.language)}</span>
                     <strong>
                       {hour.isClosed
                         ? t('closed')

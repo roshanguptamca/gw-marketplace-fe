@@ -40,7 +40,7 @@ export function ProductCard({ product }: { product: Product }) {
         to={href}
         state={{ returnTo }}
         className="product-card__image-link"
-        aria-label={`View ${product.name}`}
+        aria-label={t('viewProductAria', { name: product.name })}
       >
         <img
           src={getFirstProductImageUrl(product.images)}
@@ -66,7 +66,7 @@ export function ProductCard({ product }: { product: Product }) {
             onClick={handleAdd}
             aria-label={
               product.stock === 0
-                ? `${product.name} is out of stock`
+                ? t('productOutOfStockAria', { name: product.name })
                 : `${t('addToCart')}: ${product.name}`
             }
           >

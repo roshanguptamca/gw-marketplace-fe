@@ -59,8 +59,8 @@ export function CartPage() {
         <p>{t('uniqueItems', { count: items.length })}</p>
       </div>
       <div className="cart-layout">
-        {shopError && <p role="alert">{shopError}</p>}
-        <section className="cart-items" aria-label="Cart items">
+        {shopError && <p role="alert">{t('shopConfigUnavailable')}</p>}
+        <section className="cart-items" aria-label={t('cartItemsAria')}>
           {shopGroups.map((group) => {
             const shop = shopsBySlug[group.shopSlug]
             return (
@@ -73,8 +73,12 @@ export function CartPage() {
                 )}
                 {Number(shop?.minimumOrderAmount ?? 0) > 0 && (
                   <div className="shop-minimum">
-                    <p>{t('productsSubtotal')} {formatPrice(group.subtotal, currency)}</p>
-                    <p>{t('minimumOrder')} {formatPrice(Number(shop?.minimumOrderAmount), currency)}</p>
+                    <p>
+                      {t('productsSubtotal')} {formatPrice(group.subtotal, currency)}
+                    </p>
+                    <p>
+                      {t('minimumOrder')} {formatPrice(Number(shop?.minimumOrderAmount), currency)}
+                    </p>
                     {Math.round(group.subtotal * 100) <
                       Math.round(Number(shop?.minimumOrderAmount) * 100) && (
                       <p>
@@ -116,14 +120,14 @@ export function CartPage() {
                         {violations.map((violation) => (
                           <p className="cart-item__rules" role="alert" key={violation.code}>
                             {i18n.language === 'nl'
-                              ? describeProductRuleViolation(
+                              ? (describeProductRuleViolation(
                                   product,
                                   quantity,
                                   violation.code,
                                   product.currency,
                                   (key, values) => t(key, values),
                                   i18n.language,
-                                ) ?? violation.message
+                                ) ?? violation.message)
                               : violation.message}
                           </p>
                         ))}

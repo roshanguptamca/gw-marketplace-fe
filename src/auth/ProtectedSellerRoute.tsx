@@ -1,9 +1,11 @@
 import { useEffect, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { env } from '../config/env'
 import { LoadingState } from '../components/LoadingState'
 import { useAuth } from './AuthContext'
 
 export function ProtectedSellerRoute({ children }: { children: ReactNode }) {
+  const { t } = useTranslation()
   const { user, loading } = useAuth()
 
   useEffect(() => {
@@ -13,7 +15,7 @@ export function ProtectedSellerRoute({ children }: { children: ReactNode }) {
   }, [loading, user])
 
   if (loading || !user || !user.is_seller) {
-    return <LoadingState label="Checking seller access" />
+    return <LoadingState label={t('checkingSellerAccess')} />
   }
   return children
 }

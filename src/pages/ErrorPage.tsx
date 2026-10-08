@@ -1,21 +1,17 @@
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 
-export function ErrorPage({
-  title = 'This page wandered off',
-  message = 'The page you requested does not exist or has moved.',
-}: {
-  title?: string
-  message?: string
-}) {
+export function ErrorPage({ title, message }: { title?: string; message?: string }) {
+  const { t } = useTranslation()
   return (
     <main className="page-shell section">
       <EmptyState
-        title={title}
-        message={message}
+        title={title ?? t('pageNotFoundTitle')}
+        message={message ?? t('pageNotFoundMessage')}
         action={
           <Link className="button" to="/">
-            Back to marketplace
+            {t('backToMarketplace')}
           </Link>
         }
       />

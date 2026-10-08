@@ -155,7 +155,7 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
         )}
       </div>
       {productsLoading && (
-        <div className="product-grid product-grid--skeleton" aria-label="Loading products">
+        <div className="product-grid product-grid--skeleton" aria-label={t('loadingProducts')}>
           {[1, 2, 3, 4].map((item) => (
             <div key={item} className="product-card-skeleton" />
           ))}
@@ -163,7 +163,7 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
       )}
       {error && (
         <p className="inline-error" role="alert">
-        {t('productsCouldNotLoad')}
+          {t('productsCouldNotLoad')}
         </p>
       )}
       {products && products.length > 0 && <ProductGrid products={products} />}

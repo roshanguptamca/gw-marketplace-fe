@@ -26,11 +26,11 @@ export function Header() {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <Link to="/" className="brand" aria-label="GuideWisey Marketplace home">
+        <Link to="/" className="brand" aria-label={t('brandHomeAria')}>
           <span className="brand__mark">G</span>
           <span>{t('brand')}</span>
         </Link>
-        <nav aria-label="Main navigation">
+        <nav aria-label={t('mainNavigationAria')}>
           <Link to="/">{t('browse')}</Link>
           <Link to="/cart" className="cart-link">
             {t('cart')}
@@ -51,8 +51,8 @@ export function Header() {
           <button
             className="theme-toggle"
             type="button"
-            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label={theme === 'dark' ? t('switchToLightMode') : t('switchToDarkMode')}
+            title={theme === 'dark' ? t('switchToLightMode') : t('switchToDarkMode')}
             onClick={toggleTheme}
           >
             <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
@@ -62,7 +62,7 @@ export function Header() {
               <div className="user-menu" ref={menuRef}>
                 <button
                   className="user-menu__trigger"
-                  aria-label="User menu"
+                  aria-label={t('userMenuAria')}
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   onClick={() => setMenuOpen((open) => !open)}

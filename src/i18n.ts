@@ -1,5 +1,6 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
+import { customerCopyEn, customerCopyNl } from './locales/customerCopy'
 
 const savedLanguage = window.localStorage.getItem('gw-marketplace-language')
 const initialLanguage = savedLanguage === 'nl' ? 'nl' : 'en'
@@ -11,6 +12,7 @@ void i18n.use(initReactI18next).init({
   resources: {
     en: {
       translation: {
+        ...customerCopyEn,
         brand: 'GuideWisey Marketplace',
         browse: 'Browse shops',
         cart: 'Cart',
@@ -75,7 +77,8 @@ void i18n.use(initReactI18next).init({
         subtotalInclVat: 'Subtotal incl. VAT',
         shipping: 'Shipping',
         calculatedAtCheckout: 'Calculated at checkout',
-        deliveryAtCheckout: 'Shipping and seller-specific delivery options are confirmed at checkout.',
+        deliveryAtCheckout:
+          'Shipping and seller-specific delivery options are confirmed at checkout.',
         proceedToCheckout: 'Proceed to checkout',
         moreShopDetails: 'More details about shop',
         shopDetails: 'Shop details',
@@ -117,32 +120,41 @@ void i18n.use(initReactI18next).init({
         freshFinds: 'Fresh finds',
         findingShops: 'Finding shops',
         findingProducts: 'Finding products',
-        shopMinimumError: 'Minimum order for {{shop}} is {{amount}}. Please add {{remaining}} more to place your order.',
+        shopMinimumError:
+          'Minimum order for {{shop}} is {{amount}}. Please add {{remaining}} more to place your order.',
         fulfilmentUnavailable: '{{shop}} does not offer the selected fulfilment method.',
         choosePickupTime: 'Please choose a pickup date and time for {{shop}}.',
         accountPasswordRequired: 'Please enter and confirm a password to create your account.',
         passwordMinimum: 'Password must be at least {{count}} characters.',
         passwordsMismatch: 'Passwords do not match.',
-        productMissingShop: 'A product is missing seller information. Please remove it and add it again.',
-        partialOrderNotice: '{{count}} shop order(s) have already been placed ({{orders}}). Those items were removed from your cart. Please submit the remaining shop orders separately.',
-        existingAccountMessage: 'An account already exists with this email. Please log in to continue and track your order.',
-        accountAlreadyExists: 'An account already exists with this email. Please log in to track this order.',
+        productMissingShop:
+          'A product is missing seller information. Please remove it and add it again.',
+        partialOrderNotice:
+          '{{count}} shop order(s) have already been placed ({{orders}}). Those items were removed from your cart. Please submit the remaining shop orders separately.',
+        existingAccountMessage:
+          'An account already exists with this email. Please log in to continue and track your order.',
+        accountAlreadyExists:
+          'An account already exists with this email. Please log in to track this order.',
         shopSettingsLoading: 'Shop configuration is still loading. Please try again.',
         choosePickup: 'Please choose a pickup date and time for {{shop}}.',
         orderRequestFailed: 'The order request could not be sent. Please try again.',
         orderRequestReceived: 'Order request received',
         orderSent: 'Your order request has been sent to the seller.',
-        noPayment: 'No payment was collected. The seller will contact you to confirm fulfilment and payment.',
+        noPayment:
+          'No payment was collected. The seller will contact you to confirm fulfilment and payment.',
         sellerReference: '{{shop}} reference',
         viewOrder: 'View order',
-        verifyAccount: "We've created your account. Check {{email}} for a verification email to confirm it and start tracking your orders.",
+        verifyAccount:
+          "We've created your account. Check {{email}} for a verification email to confirm it and start tracking your orders.",
         verifyAccountBefore: "We've created your account. Check",
-        verifyAccountAfter: 'for a verification email to confirm it and start tracking your orders.',
+        verifyAccountAfter:
+          'for a verification email to confirm it and start tracking your orders.',
         createAccountTrack: 'Create account to track your order',
         orderRequest: 'Order request',
         noPaymentCollected: 'No online payment is collected.',
         saveTrackOrders: 'Save your orders & track deliveries',
-        accountBenefit: 'Create a free account to view order history, request cancellations, and get faster checkout next time.',
+        accountBenefit:
+          'Create a free account to view order history, request cancellations, and get faster checkout next time.',
         createAccountTrackOrder: 'Create an account to track my order',
         continueGuest: 'Continue as guest',
         confirmPassword: 'Confirm password',
@@ -158,13 +170,15 @@ void i18n.use(initReactI18next).init({
         addition: 'Addition',
         lookingUpAddress: 'Looking up address…',
         findAddress: 'Find address',
-        addressLookupFailed: 'We could not find the address automatically. Please enter it manually.',
+        addressLookupFailed:
+          'We could not find the address automatically. Please enter it manually.',
         streetAndHouseNumber: 'Street and house number',
         city: 'City',
         country: 'Country',
         notesToSeller: 'Notes to seller',
         notesPlaceholder: 'Allergies, preferred pickup time, or other useful details',
-        eachShopSeparate: 'Your cart has items from {{count}} shops. Each shop ships as a separate order.',
+        eachShopSeparate:
+          'Your cart has items from {{count}} shops. Each shop ships as a separate order.',
         free: 'Free',
         shopSubtotal: 'Shop subtotal',
         shopTotal: 'Shop total',
@@ -185,7 +199,8 @@ void i18n.use(initReactI18next).init({
         chooseDate: 'Choose a date',
         chooseTime: 'Choose a time',
         requiredPreparation: 'Required preparation:',
-        noPickupTimes: '{{shop}} has no pickup times available in the booking window. Please contact the seller.',
+        noPickupTimes:
+          '{{shop}} has no pickup times available in the booking window. Please contact the seller.',
         contactSeller: 'Please contact the seller.',
         openingDate: 'Opening date',
         addProductBeforeCheckout: 'Add a product before starting checkout.',
@@ -212,7 +227,8 @@ void i18n.use(initReactI18next).init({
         cancel: 'Cancel',
         couldNotCancel: 'Could not cancel the order. Please try again.',
         orderNotFound: 'Order not found',
-        orderNotFoundMessage: 'We could not find this order, or it does not belong to your account.',
+        orderNotFoundMessage:
+          'We could not find this order, or it does not belong to your account.',
         backToMyOrders: 'Back to my orders',
         orderNumber: 'Order {{number}}',
         placed: 'Placed',
@@ -259,10 +275,14 @@ void i18n.use(initReactI18next).init({
         clearSearch: 'Clear search',
         filterCategory: 'Filter by category',
         productMinQuantity: '{{name}} requires a minimum order quantity of {{minimum}}.',
-        productMinUnits: '{{name}} requires at least {{minimum}} pieces (you selected {{current}}).',
-        productMinAmount: '{{name}} requires a minimum order of {{minimum}} (currently {{current}}).',
-        pickupTooEarly: 'The selected pickup time for {{shop}} is too early: the order needs {{lead}} of preparation.{{earliest}} Please choose a new time.',
-        pickupInvalid: 'The selected pickup time for {{shop}} is no longer available. Please choose another time.',
+        productMinUnits:
+          '{{name}} requires at least {{minimum}} pieces (you selected {{current}}).',
+        productMinAmount:
+          '{{name}} requires a minimum order of {{minimum}} (currently {{current}}).',
+        pickupTooEarly:
+          'The selected pickup time for {{shop}} is too early: the order needs {{lead}} of preparation.{{earliest}} Please choose a new time.',
+        pickupInvalid:
+          'The selected pickup time for {{shop}} is no longer available. Please choose another time.',
         earliestPickup: ' Earliest available pickup: {{time}}.',
         sellerManageShop: 'Manage shop',
         sellerNavigation: 'Seller navigation',
@@ -357,9 +377,11 @@ void i18n.use(initReactI18next).init({
         sellerCategorySearchPlaceholder: 'Name, slug, scope, status',
         sellerCategoryList: 'Category list',
         sellerAllCategories: 'All categories',
-        sellerCategoryReadOnly: 'Global categories are read-only. Shop categories can be edited or removed here.',
+        sellerCategoryReadOnly:
+          'Global categories are read-only. Shop categories can be edited or removed here.',
         sellerNoCategories: 'No categories found',
-        sellerAdjustCategorySearch: 'Adjust the search or add a new category to keep the catalog organized.',
+        sellerAdjustCategorySearch:
+          'Adjust the search or add a new category to keep the catalog organized.',
         sellerCategoryCounts: 'Category counts',
         sellerGlobal: 'Global',
         sellerShop: 'Shop',
@@ -379,7 +401,8 @@ void i18n.use(initReactI18next).init({
         sellerExampleBakery: 'Example: Bakery',
         sellerSlugsGenerated: 'Slugs are generated automatically',
         sellerCategoryCount: '{{count}} {{label}}',
-        sellerGlobalCategoryNote: 'Global categories are controlled by GuideWisey. Shop categories stay editable for the seller.',
+        sellerGlobalCategoryNote:
+          'Global categories are controlled by GuideWisey. Shop categories stay editable for the seller.',
         sellerCategoryTotalCount: '{{count}} total',
         sellerCategoryShopCount: '{{count}} shop',
         sellerCategoryGlobalCount: '{{count}} global',
@@ -416,10 +439,12 @@ void i18n.use(initReactI18next).init({
         sellerAddress: 'Address',
         sellerSocialLinks: 'Social links',
         sellerOneUrlPerLine: 'One URL per line',
-        sellerSocialLinksHint: 'Optional public links for Instagram, Facebook, WhatsApp, or your website.',
+        sellerSocialLinksHint:
+          'Optional public links for Instagram, Facebook, WhatsApp, or your website.',
         sellerPublicStatus: 'Public Status',
         sellerShopActiveVisible: 'Shop is active and visible to customers',
-        sellerAdminApprovalSeparate: 'Admin approval remains separate. Sellers can pause visibility, but cannot approve their own shop.',
+        sellerAdminApprovalSeparate:
+          'Admin approval remains separate. Sellers can pause visibility, but cannot approve their own shop.',
         sellerLoadDeliveryFailed: 'Failed to load delivery settings.',
         sellerSaveDeliveryFailed: 'Failed to save delivery settings. Please try again.',
         sellerDeliverySettingsSaved: '✓ Delivery settings saved successfully',
@@ -463,7 +488,8 @@ void i18n.use(initReactI18next).init({
         sellerOrderThresholds: 'Order thresholds',
         sellerCurrency: 'Currency',
         sellerPickupScheduling: 'Pickup scheduling',
-        sellerPickupSchedulingHint: 'Customers choose a pickup slot within your opening hours (Shop hours page). The earliest slot respects the longest advance notice of the products in their order.',
+        sellerPickupSchedulingHint:
+          'Customers choose a pickup slot within your opening hours (Shop hours page). The earliest slot respects the longest advance notice of the products in their order.',
         sellerPickupSlotLength: 'Pickup slot length (minutes)',
         sellerBookableDaysAhead: 'Bookable days ahead',
         sellerShopTimezone: 'Shop timezone',
@@ -474,13 +500,15 @@ void i18n.use(initReactI18next).init({
         sellerNone: 'None',
         sellerMainImage: 'Main image',
         sellerSellingFormat: 'Selling format',
-        sellerSellingFormatHint: "How one unit in the customer's cart is sold. The price above is per unit.",
+        sellerSellingFormatHint:
+          "How one unit in the customer's cart is sold. The price above is per unit.",
         sellerSoldAs: 'Sold as',
         sellerWeightVolume: 'Weight / volume',
         sellerChooseUnit: 'Choose unit',
         sellerPiecesPer: 'Pieces per {{unit}}',
         sellerOrderingRequirements: 'Ordering requirements',
-        sellerOrderRequirementsHint: 'Leave a field empty when it does not apply. Example: if you sell 2 Samosas per pack and require at least 10 Samosas per order, set "Pieces per pack" to 2 and "Minimum physical pieces" to 10 — customers must then order at least 5 packs.',
+        sellerOrderRequirementsHint:
+          'Leave a field empty when it does not apply. Example: if you sell 2 Samosas per pack and require at least 10 Samosas per order, set "Pieces per pack" to 2 and "Minimum physical pieces" to 10 — customers must then order at least 5 packs.',
         sellerMinimumCartQuantity: 'Minimum cart quantity',
         sellerMinimumPhysicalPieces: 'Minimum physical pieces',
         sellerMinimumProductAmount: 'Minimum order amount for this product',
@@ -488,7 +516,8 @@ void i18n.use(initReactI18next).init({
         sellerAdvanceNoticeUnit: 'Advance notice unit',
         sellerAdvanceNoticeHours: 'Hours',
         sellerAdvanceNoticeDays: 'Days',
-        sellerAdvanceNoticeHint: 'Advance notice is how long you need to prepare this product. Pickup times are offered only after the longest advance notice of all your products in the order.',
+        sellerAdvanceNoticeHint:
+          'Advance notice is how long you need to prepare this product. Pickup times are offered only after the longest advance notice of all your products in the order.',
         sellerProductDescriptionEnglish: 'Description (English)',
         sellerProductDescriptionDutch: 'Description (Dutch)',
         sellerProductIngredientsEnglish: 'Ingredients (English)',
@@ -515,6 +544,7 @@ void i18n.use(initReactI18next).init({
     },
     nl: {
       translation: {
+        ...customerCopyNl,
         brand: 'GuideWisey Marketplace',
         browse: 'Winkels bekijken',
         cart: 'Winkelwagen',
@@ -543,12 +573,14 @@ void i18n.use(initReactI18next).init({
         viewCart: 'Winkelwagen bekijken',
         checkout: 'Afrekenen',
         addToCartLabel: 'In winkelwagen',
-        minimumOrderStock: 'Er is niet genoeg voorraad voor de minimale bestelling van dit product.',
+        minimumOrderStock:
+          'Er is niet genoeg voorraad voor de minimale bestelling van dit product.',
         secureCheckout: 'Veilig afrekenen',
         paymentProtected: 'Je betaalgegevens zijn beschermd.',
         independentSeller: 'Onafhankelijke verkoper',
         fulfilledBy: 'Rechtstreeks geleverd door {{shop}}.',
-        homeIntro: 'Bekijk goedgekeurde verkopers op GuideWisey en bestel rechtstreeks bij hun winkels.',
+        homeIntro:
+          'Bekijk goedgekeurde verkopers op GuideWisey en bestel rechtstreeks bij hun winkels.',
         exploreShops: 'Ontdek winkels',
         made: 'Met',
         with: 'veel',
@@ -579,7 +611,8 @@ void i18n.use(initReactI18next).init({
         subtotalInclVat: 'Subtotaal incl. btw',
         shipping: 'Verzending',
         calculatedAtCheckout: 'Wordt berekend bij het afrekenen',
-        deliveryAtCheckout: 'Verzending en bezorgopties van de verkoper worden bevestigd bij het afrekenen.',
+        deliveryAtCheckout:
+          'Verzending en bezorgopties van de verkoper worden bevestigd bij het afrekenen.',
         proceedToCheckout: 'Doorgaan naar afrekenen',
         moreShopDetails: 'Meer informatie over de winkel',
         shopDetails: 'Winkelgegevens',
@@ -621,32 +654,42 @@ void i18n.use(initReactI18next).init({
         freshFinds: 'Nieuwe vondsten',
         findingShops: 'Winkels zoeken',
         findingProducts: 'Producten zoeken',
-        shopMinimumError: 'De minimale bestelling bij {{shop}} is {{amount}}. Voeg nog {{remaining}} toe om je bestelling te plaatsen.',
+        shopMinimumError:
+          'De minimale bestelling bij {{shop}} is {{amount}}. Voeg nog {{remaining}} toe om je bestelling te plaatsen.',
         fulfilmentUnavailable: '{{shop}} biedt deze afhaal- of bezorgoptie niet aan.',
         choosePickupTime: 'Kies een afhaaldatum en -tijd voor {{shop}}.',
-        accountPasswordRequired: 'Vul een wachtwoord in en bevestig het om een account aan te maken.',
+        accountPasswordRequired:
+          'Vul een wachtwoord in en bevestig het om een account aan te maken.',
         passwordMinimum: 'Het wachtwoord moet minimaal {{count}} tekens bevatten.',
         passwordsMismatch: 'De wachtwoorden komen niet overeen.',
-        productMissingShop: 'Bij een product ontbreken verkopersgegevens. Verwijder het en voeg het opnieuw toe.',
-        partialOrderNotice: '{{count}} winkelbestelling(en) zijn al geplaatst ({{orders}}). De bijbehorende artikelen zijn uit je winkelwagen verwijderd. Plaats de overige bestellingen apart.',
-        existingAccountMessage: 'Er bestaat al een account met dit e-mailadres. Log in om verder te gaan en je bestelling te volgen.',
-        accountAlreadyExists: 'Er bestaat al een account met dit e-mailadres. Log in om deze bestelling te volgen.',
+        productMissingShop:
+          'Bij een product ontbreken verkopersgegevens. Verwijder het en voeg het opnieuw toe.',
+        partialOrderNotice:
+          '{{count}} winkelbestelling(en) zijn al geplaatst ({{orders}}). De bijbehorende artikelen zijn uit je winkelwagen verwijderd. Plaats de overige bestellingen apart.',
+        existingAccountMessage:
+          'Er bestaat al een account met dit e-mailadres. Log in om verder te gaan en je bestelling te volgen.',
+        accountAlreadyExists:
+          'Er bestaat al een account met dit e-mailadres. Log in om deze bestelling te volgen.',
         shopSettingsLoading: 'De winkelinstellingen worden nog geladen. Probeer het opnieuw.',
         choosePickup: 'Kies een afhaaldatum en -tijd voor {{shop}}.',
         orderRequestFailed: 'De bestelling kon niet worden verstuurd. Probeer het opnieuw.',
         orderRequestReceived: 'Bestelling ontvangen',
         orderSent: 'Je bestelling is naar de verkoper verstuurd.',
-        noPayment: 'Er is geen betaling geïnd. De verkoper neemt contact met je op om de bestelling en betaling te bevestigen.',
+        noPayment:
+          'Er is geen betaling geïnd. De verkoper neemt contact met je op om de bestelling en betaling te bevestigen.',
         sellerReference: 'Referentie van {{shop}}',
         viewOrder: 'Bestelling bekijken',
-        verifyAccount: 'Je account is aangemaakt. Controleer {{email}} op de bevestigingsmail om je account te activeren en je bestellingen te volgen.',
+        verifyAccount:
+          'Je account is aangemaakt. Controleer {{email}} op de bevestigingsmail om je account te activeren en je bestellingen te volgen.',
         verifyAccountBefore: 'Je account is aangemaakt. Controleer',
-        verifyAccountAfter: 'voor de bevestigingsmail om je account te activeren en je bestellingen te volgen.',
+        verifyAccountAfter:
+          'voor de bevestigingsmail om je account te activeren en je bestellingen te volgen.',
         createAccountTrack: 'Account aanmaken om je bestelling te volgen',
         orderRequest: 'Bestelling',
         noPaymentCollected: 'Er wordt geen online betaling geïnd.',
         saveTrackOrders: 'Bewaar je bestellingen en volg de bezorging',
-        accountBenefit: 'Maak gratis een account aan om je bestelgeschiedenis te bekijken, annuleringen aan te vragen en de volgende keer sneller af te rekenen.',
+        accountBenefit:
+          'Maak gratis een account aan om je bestelgeschiedenis te bekijken, annuleringen aan te vragen en de volgende keer sneller af te rekenen.',
         createAccountTrackOrder: 'Maak een account aan om mijn bestelling te volgen',
         continueGuest: 'Doorgaan als gast',
         confirmPassword: 'Wachtwoord bevestigen',
@@ -662,13 +705,15 @@ void i18n.use(initReactI18next).init({
         addition: 'Toevoeging',
         lookingUpAddress: 'Adres opzoeken…',
         findAddress: 'Adres zoeken',
-        addressLookupFailed: 'Het adres kon niet automatisch worden gevonden. Vul het handmatig in.',
+        addressLookupFailed:
+          'Het adres kon niet automatisch worden gevonden. Vul het handmatig in.',
         streetAndHouseNumber: 'Straat en huisnummer',
         city: 'Plaats',
         country: 'Land',
         notesToSeller: 'Opmerking voor de verkoper',
         notesPlaceholder: 'Allergieën, gewenste afhaaltijd of andere nuttige informatie',
-        eachShopSeparate: 'Je winkelwagen bevat artikelen van {{count}} winkels. Elke winkel verstuurt een aparte bestelling.',
+        eachShopSeparate:
+          'Je winkelwagen bevat artikelen van {{count}} winkels. Elke winkel verstuurt een aparte bestelling.',
         free: 'Gratis',
         shopSubtotal: 'Subtotaal winkel',
         shopTotal: 'Totaal winkel',
@@ -689,7 +734,8 @@ void i18n.use(initReactI18next).init({
         chooseDate: 'Kies een datum',
         chooseTime: 'Kies een tijd',
         requiredPreparation: 'Benodigde voorbereiding:',
-        noPickupTimes: 'Voor {{shop}} zijn binnen de boekingsperiode geen afhaaltijden beschikbaar. Neem contact op met de verkoper.',
+        noPickupTimes:
+          'Voor {{shop}} zijn binnen de boekingsperiode geen afhaaltijden beschikbaar. Neem contact op met de verkoper.',
         contactSeller: 'Neem contact op met de verkoper.',
         openingDate: 'Openingsdatum',
         addProductBeforeCheckout: 'Voeg een product toe voordat je afrekent.',
@@ -716,7 +762,8 @@ void i18n.use(initReactI18next).init({
         cancel: 'Annuleren',
         couldNotCancel: 'De bestelling kon niet worden geannuleerd. Probeer het opnieuw.',
         orderNotFound: 'Bestelling niet gevonden',
-        orderNotFoundMessage: 'We konden deze bestelling niet vinden of de bestelling hoort niet bij je account.',
+        orderNotFoundMessage:
+          'We konden deze bestelling niet vinden of de bestelling hoort niet bij je account.',
         backToMyOrders: 'Terug naar mijn bestellingen',
         orderNumber: 'Bestelling {{number}}',
         placed: 'Geplaatst op',
@@ -735,9 +782,11 @@ void i18n.use(initReactI18next).init({
         discount: 'Korting',
         totalInclVat: 'Totaal incl. btw',
         vatByRate: 'Btw per tarief',
-        canCancelWhileReviewing: 'Je kunt annuleren zolang de verkoper je bestelling nog beoordeelt.',
+        canCancelWhileReviewing:
+          'Je kunt annuleren zolang de verkoper je bestelling nog beoordeelt.',
         cancelOrder: 'Bestelling annuleren',
-        acceptedContactShop: 'Je bestelling is geaccepteerd. Neem contact op met de winkel als je wilt annuleren.',
+        acceptedContactShop:
+          'Je bestelling is geaccepteerd. Neem contact op met de winkel als je wilt annuleren.',
         marketplaceFooter: 'Onafhankelijke winkels, bijzondere vondsten.',
         status_pending: 'In afwachting',
         status_accepted: 'Geaccepteerd',
@@ -763,10 +812,14 @@ void i18n.use(initReactI18next).init({
         clearSearch: 'Zoekopdracht wissen',
         filterCategory: 'Filteren op categorie',
         productMinQuantity: '{{name}} moet minimaal {{minimum}} worden besteld.',
-        productMinUnits: '{{name}} moet minimaal {{minimum}} stuks bevatten (je hebt {{current}} gekozen).',
-        productMinAmount: 'De minimale bestelling van {{name}} is {{minimum}} (huidig: {{current}}).',
-        pickupTooEarly: 'De gekozen afhaaltijd voor {{shop}} is te vroeg: de bestelling heeft {{lead}} voorbereiding nodig.{{earliest}} Kies een nieuwe tijd.',
-        pickupInvalid: 'De gekozen afhaaltijd voor {{shop}} is niet meer beschikbaar. Kies een andere tijd.',
+        productMinUnits:
+          '{{name}} moet minimaal {{minimum}} stuks bevatten (je hebt {{current}} gekozen).',
+        productMinAmount:
+          'De minimale bestelling van {{name}} is {{minimum}} (huidig: {{current}}).',
+        pickupTooEarly:
+          'De gekozen afhaaltijd voor {{shop}} is te vroeg: de bestelling heeft {{lead}} voorbereiding nodig.{{earliest}} Kies een nieuwe tijd.',
+        pickupInvalid:
+          'De gekozen afhaaltijd voor {{shop}} is niet meer beschikbaar. Kies een andere tijd.',
         earliestPickup: ' Eerst mogelijke afhaaltijd: {{time}}.',
         sellerManageShop: 'Winkel beheren',
         sellerNavigation: 'Navigatie voor verkopers',
@@ -861,9 +914,11 @@ void i18n.use(initReactI18next).init({
         sellerCategorySearchPlaceholder: 'Naam, slug, bereik, status',
         sellerCategoryList: 'Categorielijst',
         sellerAllCategories: 'Alle categorieën',
-        sellerCategoryReadOnly: 'Algemene categorieën kunnen niet worden gewijzigd. Winkelcategorieën kun je hier aanpassen of verwijderen.',
+        sellerCategoryReadOnly:
+          'Algemene categorieën kunnen niet worden gewijzigd. Winkelcategorieën kun je hier aanpassen of verwijderen.',
         sellerNoCategories: 'Geen categorieën gevonden',
-        sellerAdjustCategorySearch: 'Pas de zoekopdracht aan of voeg een categorie toe om het assortiment overzichtelijk te houden.',
+        sellerAdjustCategorySearch:
+          'Pas de zoekopdracht aan of voeg een categorie toe om het assortiment overzichtelijk te houden.',
         sellerCategoryCounts: 'Aantal categorieën',
         sellerGlobal: 'Algemeen',
         sellerShop: 'Winkel',
@@ -883,18 +938,23 @@ void i18n.use(initReactI18next).init({
         sellerExampleBakery: 'Bijvoorbeeld: Bakkerij',
         sellerSlugsGenerated: 'Slugs worden automatisch aangemaakt',
         sellerCategoryCount: '{{count}} {{label}}',
-        sellerGlobalCategoryNote: 'Algemene categorieën worden beheerd door GuideWisey. Winkelcategorieën kan de verkoper aanpassen.',
+        sellerGlobalCategoryNote:
+          'Algemene categorieën worden beheerd door GuideWisey. Winkelcategorieën kan de verkoper aanpassen.',
         sellerCategoryTotalCount: '{{count}} totaal',
         sellerCategoryShopCount: '{{count}} winkel',
         sellerCategoryGlobalCount: '{{count}} algemeen',
         sellerCategoryActiveCount: '{{count}} actief',
-        sellerManageCategoriesIntro: 'Maak categorieën voor je winkel aan, pas ze aan of verwijder ze.',
+        sellerManageCategoriesIntro:
+          'Maak categorieën voor je winkel aan, pas ze aan of verwijder ze.',
         sellerCategoriesLoadFailed: 'Categorieën konden niet worden geladen.',
-        sellerLoadShopDetailsFailed: 'Winkelgegevens konden niet worden geladen. Probeer het opnieuw.',
+        sellerLoadShopDetailsFailed:
+          'Winkelgegevens konden niet worden geladen. Probeer het opnieuw.',
         sellerShopDetailsUnavailable: 'Winkelgegevens zijn niet beschikbaar.',
-        sellerSaveShopDetailsFailed: 'Winkelgegevens konden niet worden opgeslagen. Probeer het opnieuw.',
+        sellerSaveShopDetailsFailed:
+          'Winkelgegevens konden niet worden opgeslagen. Probeer het opnieuw.',
         sellerShopDetailsSaved: '✓ Winkelgegevens succesvol opgeslagen',
-        sellerManageShopProfile: 'Beheer de naam, contactgegevens en het openbare profiel van je winkel.',
+        sellerManageShopProfile:
+          'Beheer de naam, contactgegevens en het openbare profiel van je winkel.',
         sellerPaused: 'Gepauzeerd',
         sellerApprovedByAdmin: 'Goedgekeurd door beheerder',
         sellerAwaitingApproval: 'Wacht op goedkeuring van beheerder',
@@ -920,12 +980,15 @@ void i18n.use(initReactI18next).init({
         sellerAddress: 'Adres',
         sellerSocialLinks: 'Socialmedia-links',
         sellerOneUrlPerLine: 'Eén URL per regel',
-        sellerSocialLinksHint: 'Optionele openbare links naar Instagram, Facebook, WhatsApp of je website.',
+        sellerSocialLinksHint:
+          'Optionele openbare links naar Instagram, Facebook, WhatsApp of je website.',
         sellerPublicStatus: 'Openbare status',
         sellerShopActiveVisible: 'Winkel is actief en zichtbaar voor klanten',
-        sellerAdminApprovalSeparate: 'Goedkeuring door de beheerder staat hier los van. Verkopers kunnen hun winkel verbergen, maar niet zelf goedkeuren.',
+        sellerAdminApprovalSeparate:
+          'Goedkeuring door de beheerder staat hier los van. Verkopers kunnen hun winkel verbergen, maar niet zelf goedkeuren.',
         sellerLoadDeliveryFailed: 'Bezorginstellingen konden niet worden geladen.',
-        sellerSaveDeliveryFailed: 'Bezorginstellingen konden niet worden opgeslagen. Probeer het opnieuw.',
+        sellerSaveDeliveryFailed:
+          'Bezorginstellingen konden niet worden opgeslagen. Probeer het opnieuw.',
         sellerDeliverySettingsSaved: '✓ Bezorginstellingen succesvol opgeslagen',
         sellerConfigureFulfilment: 'Stel in hoe klanten hun bestellingen ontvangen.',
         sellerAvailability: 'Beschikbaarheid',
@@ -963,11 +1026,13 @@ void i18n.use(initReactI18next).init({
         sellerManualAcceptance: 'Handmatig accepteren',
         sellerManualAcceptanceHint: 'Je moet elke bestelling handmatig accepteren of afwijzen.',
         sellerAutomaticAcceptance: 'Automatisch accepteren',
-        sellerAutomaticAcceptanceHint: 'Bestellingen worden automatisch geaccepteerd zodra de betaling geldig is.',
+        sellerAutomaticAcceptanceHint:
+          'Bestellingen worden automatisch geaccepteerd zodra de betaling geldig is.',
         sellerOrderThresholds: 'Bestelgrenzen',
         sellerCurrency: 'Valuta',
         sellerPickupScheduling: 'Afhaalmomenten plannen',
-        sellerPickupSchedulingHint: 'Klanten kiezen een afhaalmoment binnen je openingstijden (pagina Openingstijden). Het vroegste moment houdt rekening met de langste voorbereidingstijd van de producten in de bestelling.',
+        sellerPickupSchedulingHint:
+          'Klanten kiezen een afhaalmoment binnen je openingstijden (pagina Openingstijden). Het vroegste moment houdt rekening met de langste voorbereidingstijd van de producten in de bestelling.',
         sellerPickupSlotLength: 'Duur afhaalmoment (minuten)',
         sellerBookableDaysAhead: 'Aantal dagen vooruit te boeken',
         sellerShopTimezone: 'Tijdzone van de winkel',
@@ -978,13 +1043,15 @@ void i18n.use(initReactI18next).init({
         sellerNone: 'Geen',
         sellerMainImage: 'Hoofdafbeelding',
         sellerSellingFormat: 'Verkoopvorm',
-        sellerSellingFormatHint: 'Hoe één eenheid in het winkelmandje van de klant wordt verkocht. De prijs hierboven geldt per eenheid.',
+        sellerSellingFormatHint:
+          'Hoe één eenheid in het winkelmandje van de klant wordt verkocht. De prijs hierboven geldt per eenheid.',
         sellerSoldAs: 'Verkocht als',
         sellerWeightVolume: 'Gewicht / inhoud',
         sellerChooseUnit: 'Kies eenheid',
         sellerPiecesPer: 'Stuks per {{unit}}',
         sellerOrderingRequirements: 'Bestelvereisten',
-        sellerOrderRequirementsHint: 'Laat een veld leeg als het niet van toepassing is. Voorbeeld: verkoop je 2 samosa’s per verpakking en geldt een minimum van 10 samosa’s per bestelling, stel dan “Stuks per verpakking” in op 2 en “Minimumaantal stuks” op 10. Klanten moeten dan minimaal 5 verpakkingen bestellen.',
+        sellerOrderRequirementsHint:
+          'Laat een veld leeg als het niet van toepassing is. Voorbeeld: verkoop je 2 samosa’s per verpakking en geldt een minimum van 10 samosa’s per bestelling, stel dan “Stuks per verpakking” in op 2 en “Minimumaantal stuks” op 10. Klanten moeten dan minimaal 5 verpakkingen bestellen.',
         sellerMinimumCartQuantity: 'Minimaal aantal in winkelwagen',
         sellerMinimumPhysicalPieces: 'Minimumaantal losse stuks',
         sellerMinimumProductAmount: 'Minimumbedrag voor dit product',
@@ -992,7 +1059,8 @@ void i18n.use(initReactI18next).init({
         sellerAdvanceNoticeUnit: 'Eenheid voorbereidingstijd',
         sellerAdvanceNoticeHours: 'Uur',
         sellerAdvanceNoticeDays: 'Dagen',
-        sellerAdvanceNoticeHint: 'De voorbereidingstijd is hoe lang je nodig hebt om dit product klaar te maken. Afhaaltijden worden pas aangeboden na de langste voorbereidingstijd van alle producten in de bestelling.',
+        sellerAdvanceNoticeHint:
+          'De voorbereidingstijd is hoe lang je nodig hebt om dit product klaar te maken. Afhaaltijden worden pas aangeboden na de langste voorbereidingstijd van alle producten in de bestelling.',
         sellerProductDescriptionEnglish: 'Beschrijving (Engels)',
         sellerProductDescriptionDutch: 'Beschrijving (Nederlands)',
         sellerProductIngredientsEnglish: 'Ingrediënten (Engels)',

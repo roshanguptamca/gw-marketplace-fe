@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useCart } from '../cart/CartContext'
 
@@ -7,17 +8,16 @@ import { useCart } from '../cart/CartContext'
  * never dead-ends a shopper with nothing to check out.
  */
 export function CartCallToAction() {
+  const { t } = useTranslation()
   const { itemCount } = useCart()
 
   if (itemCount === 0) return null
 
   return (
     <div className="cart-cta" role="status">
-      <span>
-        {itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart
-      </span>
+      <span>{t('cartCtaItems', { count: itemCount })}</span>
       <Link className="button" to="/cart">
-        Go to cart →
+        {t('goToCart')}
       </Link>
     </div>
   )

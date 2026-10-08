@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 export function InclusiveVat({
   breakdown,
   currency,
@@ -5,24 +7,25 @@ export function InclusiveVat({
   breakdown: { net: string; vat: string } | null
   currency: string
 }) {
+  const { t } = useTranslation()
   const display = (value: string) => (currency === 'EUR' ? `€${value}` : `${currency} ${value}`)
   return (
-    <section className="vat-breakdown" aria-label="Included VAT">
+    <section className="vat-breakdown" aria-label={t('vatIncludedAria')}>
       {breakdown ? (
         <>
           <div>
-            <span>Amount excl. VAT</span>
+            <span>{t('vatAmountExcl')}</span>
             <span>{display(breakdown.net)}</span>
           </div>
           <div>
-            <span>Included VAT</span>
+            <span>{t('vatIncludedLabel')}</span>
             <span>{display(breakdown.vat)}</span>
           </div>
         </>
       ) : (
-        <p>The detailed VAT breakdown is currently unavailable.</p>
+        <p>{t('vatBreakdownUnavailable')}</p>
       )}
-      <p>VAT is already included in the prices, not added to your total.</p>
+      <p>{t('vatAlreadyIncluded')}</p>
     </section>
   )
 }

@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { env } from '../config/env'
 import { LoadingState } from '../components/LoadingState'
 import { useAuth } from './AuthContext'
@@ -15,6 +16,7 @@ export function ProtectedBuyerRoute({
   children: ReactNode
   nextPath: string
 }) {
+  const { t } = useTranslation()
   const { user, loading } = useAuth()
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export function ProtectedBuyerRoute({
   }, [loading, user, nextPath])
 
   if (loading || !user) {
-    return <LoadingState label="Checking your account" />
+    return <LoadingState label={t('checkingAccount')} />
   }
   return children
 }

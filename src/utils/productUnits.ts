@@ -1,3 +1,4 @@
+import i18n from '../i18n'
 import type { MeasureUnit, Product, SellingUnit } from '../types/marketplace'
 
 // Mirrors gw-backend apps/marketplace/ordering.py. The backend stays authoritative;
@@ -8,30 +9,45 @@ type UnitProduct = Pick<
   'name' | 'price' | 'sellingUnit' | 'unitsPerPack' | 'weightValue' | 'weightUnit' | 'orderingRules'
 >
 
-export const SELLING_UNIT_LABELS: Record<SellingUnit, string> = {
-  PIECE: 'Piece',
-  PACK: 'Pack',
-  PLATE: 'Plate',
-  BOX: 'Box',
-  TRAY: 'Tray',
-  BOTTLE: 'Bottle',
-  WEIGHT: 'Weight / volume',
+const SELLING_UNIT_KEYS: Record<SellingUnit, string> = {
+  PIECE: 'sellingUnitPiece',
+  PACK: 'sellingUnitPack',
+  PLATE: 'sellingUnitPlate',
+  BOX: 'sellingUnitBox',
+  TRAY: 'sellingUnitTray',
+  BOTTLE: 'sellingUnitBottle',
+  WEIGHT: 'sellingUnitWeight',
 }
 
-export const MEASURE_UNIT_LABELS: Record<MeasureUnit, string> = {
-  GRAM: 'gram (g)',
-  KILOGRAM: 'kilogram (kg)',
-  MILLILITRE: 'millilitre (ml)',
-  LITRE: 'litre (L)',
+const MEASURE_UNIT_KEYS: Record<MeasureUnit, string> = {
+  GRAM: 'measureUnitGram',
+  KILOGRAM: 'measureUnitKilogram',
+  MILLILITRE: 'measureUnitMillilitre',
+  LITRE: 'measureUnitLitre',
 }
 
-const UNIT_NAMES: Record<Exclude<SellingUnit, 'WEIGHT'>, [string, string]> = {
-  PIECE: ['piece', 'pieces'],
-  PACK: ['pack', 'packs'],
-  PLATE: ['plate', 'plates'],
-  BOX: ['box', 'boxes'],
-  TRAY: ['tray', 'trays'],
-  BOTTLE: ['bottle', 'bottles'],
+/** Localized selling-unit label for the active language, e.g. "Pack" / "Verpakking". */
+export function sellingUnitLabel(unit: SellingUnit): string {
+  return i18n.t(SELLING_UNIT_KEYS[unit])
+}
+
+/** Localized measure-unit label for the active language, e.g. "litre (L)" / "liter (L)". */
+export function measureUnitLabel(unit: MeasureUnit): string {
+  return i18n.t(MEASURE_UNIT_KEYS[unit])
+}
+
+const UNIT_NAME_KEYS: Record<Exclude<SellingUnit, 'WEIGHT'>, string> = {
+  PIECE: 'unitPiece',
+  PACK: 'unitPack',
+  PLATE: 'unitPlate',
+  BOX: 'unitBox',
+  TRAY: 'unitTray',
+  BOTTLE: 'unitBottle',
+}
+
+/** Localized unit noun, e.g. "pack"/"packs" or "verpakking"/"verpakkingen". */
+export function unitName(unit: SellingUnit, count: number): string {
+  return i18n.t(UNIT_NAME_KEYS[unit === 'WEIGHT' ? 'PIECE' : unit], { count })
 }
 
 const MEASURES: Record<MeasureUnit, { base: 'GRAM' | 'MILLILITRE'; factor: number }> = {
@@ -81,8 +97,7 @@ export function totalWeightLabel(product: Partial<UnitProduct>, quantity: number
 }
 
 export function pluralizeUnit(count: number, unit: SellingUnit): string {
-  const [singular, plural] = UNIT_NAMES[unit === 'WEIGHT' ? 'PIECE' : unit]
-  return `${count} ${count === 1 ? singular : plural}`
+  return `${count} ${unitName(unit, count)}`
 }
 
 /** False for plain single pieces, where unit labels would only add noise. */
@@ -96,8 +111,8 @@ export function sellingFormatLabel(product: Partial<UnitProduct>): string {
   if (unit === 'WEIGHT') return formatMeasure(product.weightValue, product.weightUnit)
   const perUnit = piecesPerUnit(product)
   if ((unit === 'PIECE' || unit === 'PACK') && perUnit > 1) return pluralizeUnit(perUnit, 'PIECE')
-  if (perUnit > 1) return `1 ${UNIT_NAMES[unit][0]} (${pluralizeUnit(perUnit, 'PIECE')})`
-  return `1 ${UNIT_NAMES[unit][0]}`
+  if (perUnit > 1) return `1 ${unitName(unit, 1)} (${pluralizeUnit(perUnit, 'PIECE')})`
+  return `1 ${unitName(unit, 1)}`
 }
 
 /** Cart line description, e.g. "5 packs × 2 pieces (10 pieces)" or "2 × 250 g (500 g)". */
@@ -147,7 +162,7 @@ export function leadTimeHours(product: Partial<UnitProduct>): number {
 
 export function formatLeadTime(hours: number): string {
   if (hours <= 0) return ''
-  return `${trim(hours)} ${hours === 1 ? 'hour' : 'hours'}`
+  return i18n.t('leadTimeHours', { count: hours, value: trim(hours) })
 }
 
 export interface RuleViolation {
@@ -169,7 +184,10 @@ export function productRuleViolations(
   if (rules.minimumOrderQuantity && quantity < rules.minimumOrderQuantity) {
     violations.push({
       code: 'PRODUCT_MINIMUM_QUANTITY_NOT_MET',
-      message: `${product.name}: order at least ${rules.minimumOrderQuantity}.`,
+      message: i18n.t('violationMinQuantity', {
+        name: product.name,
+        minimum: rules.minimumOrderQuantity,
+      }),
     })
   }
   if (
@@ -178,9 +196,12 @@ export function productRuleViolations(
   ) {
     violations.push({
       code: 'PRODUCT_MINIMUM_UNITS_NOT_MET',
-      message: `${product.name}: order at least ${pluralizeUnit(rules.minimumPhysicalUnits, 'PIECE')} (${effectiveMinimumQuantity(
-        product,
-      )} × ${sellingFormatLabel(product)}).`,
+      message: i18n.t('violationMinUnits', {
+        name: product.name,
+        units: pluralizeUnit(rules.minimumPhysicalUnits, 'PIECE'),
+        quantity: effectiveMinimumQuantity(product),
+        format: sellingFormatLabel(product),
+      }),
     })
   }
   if (
@@ -189,7 +210,10 @@ export function productRuleViolations(
   ) {
     violations.push({
       code: 'PRODUCT_MINIMUM_AMOUNT_NOT_MET',
-      message: `${product.name}: minimum order amount is ${formatPrice(rules.minimumOrderAmount)}.`,
+      message: i18n.t('violationMinAmount', {
+        name: product.name,
+        amount: formatPrice(rules.minimumOrderAmount),
+      }),
     })
   }
   return violations
@@ -205,17 +229,19 @@ export function orderingRuleLines(
   const lines: string[] = []
   const unit = sellingUnitOf(product)
   if (rules.minimumPhysicalUnits) {
-    lines.push(`Minimum order: ${pluralizeUnit(rules.minimumPhysicalUnits, 'PIECE')}`)
+    lines.push(
+      i18n.t('ruleMinimumOrder', { value: pluralizeUnit(rules.minimumPhysicalUnits, 'PIECE') }),
+    )
   } else if (rules.minimumOrderQuantity && rules.minimumOrderQuantity > 1) {
     const quantity = rules.minimumOrderQuantity
     const physical = physicalTotalLabel(product, quantity)
     const label = pluralizeUnit(quantity, unit === 'WEIGHT' ? 'PACK' : unit)
-    lines.push(`Minimum: ${label}${physical ? ` / ${physical}` : ''}`)
+    lines.push(i18n.t('ruleMinimum', { value: `${label}${physical ? ` / ${physical}` : ''}` }))
   }
   if (rules.minimumOrderAmount)
-    lines.push(`Minimum amount: ${formatPrice(rules.minimumOrderAmount)}`)
+    lines.push(i18n.t('ruleMinimumAmount', { amount: formatPrice(rules.minimumOrderAmount) }))
   if (rules.orderLeadTimeHours > 0) {
-    lines.push(`Order at least ${formatLeadTime(rules.orderLeadTimeHours)} in advance`)
+    lines.push(i18n.t('ruleLeadTime', { lead: formatLeadTime(rules.orderLeadTimeHours) }))
   }
   return lines
 }

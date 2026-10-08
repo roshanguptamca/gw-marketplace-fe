@@ -1,15 +1,17 @@
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 
 export function SellerNotFoundPage() {
+  const { t } = useTranslation()
   return (
     <main className="page-shell section">
       <EmptyState
-        title="We couldn’t find this shop"
-        message="Check the shop address, or browse sellers currently on GuideWisey Marketplace."
+        title={t('shopNotFoundTitle')}
+        message={t('shopNotFoundMessage')}
         action={
           <Link className="button" to="/">
-            Explore marketplace
+            {t('exploreMarketplace')}
           </Link>
         }
       />

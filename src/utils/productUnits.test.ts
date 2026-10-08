@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import i18n from '../i18n'
 import type { Product } from '../types/marketplace'
 import { describeOrderRuleError, formatPickupMoment } from './orderRuleErrors'
 import {
   describeQuantity,
   effectiveMinimumQuantity,
+  formatLeadTime,
   formatMeasure,
   orderingRuleLines,
   physicalQuantity,
@@ -169,5 +171,41 @@ describe('order rule errors', () => {
 
   it('shows shop-local pickup times regardless of browser timezone', () => {
     expect(formatPickupMoment('2026-10-31T12:00:00+01:00')).toBe('Saturday 31 October 12:00')
+  })
+})
+
+describe('Dutch quantity and ordering copy', () => {
+  afterEach(async () => {
+    await i18n.changeLanguage('en')
+  })
+
+  it('localizes lead time, rules, units and violations in Dutch', async () => {
+    const item = product({
+      name: 'Besan Laddoo 500g',
+      price: 5,
+      sellingUnit: 'PACK',
+      unitsPerPack: 2,
+      orderingRules: {
+        minimumOrderQuantity: null,
+        minimumPhysicalUnits: 6,
+        minimumOrderAmount: 20,
+        orderLeadTimeHours: 48,
+      },
+    })
+    expect(orderingRuleLines(item, euro)).toContain('Order at least 48 hours in advance')
+
+    await i18n.changeLanguage('nl')
+    expect(formatLeadTime(48)).toBe('48 uur')
+    expect(formatLeadTime(1)).toBe('1 uur')
+    expect(orderingRuleLines(item, euro)).toEqual([
+      'Minimale bestelling: 6 stuks',
+      'Minimumbedrag: €20.00',
+      'Bestel minimaal 48 uur van tevoren',
+    ])
+    expect(describeQuantity(item, 1)).toBe('1 verpakking × 2 stuks (2 stuks)')
+    expect(productRuleViolations(item, 1, euro).map((violation) => violation.message)).toEqual([
+      'Besan Laddoo 500g: bestel minimaal 6 stuks (4 × 2 stuks).',
+      'Besan Laddoo 500g: het minimale bestelbedrag is €20.00.',
+    ])
   })
 })
