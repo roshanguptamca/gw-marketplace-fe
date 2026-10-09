@@ -1714,6 +1714,15 @@ nav {
   border-color: #22d3ee;
 }
 
+.form-field input[aria-invalid='true'] {
+  border-color: var(--danger, #b42318);
+}
+
+.form-field__error {
+  color: var(--danger, #b42318);
+  font-size: 0.8rem;
+}
+
 .delivery-options {
   margin: 6px 0 24px;
   padding: 0;

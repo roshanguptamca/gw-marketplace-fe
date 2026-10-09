@@ -491,7 +491,7 @@ describe('marketplace pages', () => {
     expect(screen.getByText('€7.00 more required to place an order.')).toBeInTheDocument()
     await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
     await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '123456')
+    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -522,7 +522,7 @@ describe('marketplace pages', () => {
     expect(screen.getAllByRole('radio')).toHaveLength(2)
     await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
     await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '123456')
+    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
     await userEvent.type(screen.getByLabelText('Street and house number'), 'Lane')
     await userEvent.type(screen.getByLabelText('House number'), '1')
     await userEvent.type(screen.getByLabelText(/Postcode|Postal code/), '1234 AB')
@@ -570,7 +570,7 @@ describe('marketplace pages', () => {
     await screen.findByRole('radio', { name: 'Pickup' })
     await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
     await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '123456')
+    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -604,7 +604,7 @@ describe('marketplace pages', () => {
     await screen.findAllByRole('radio', { name: 'Pickup' })
     await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
     await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '123456')
+    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('GW-TEST-101')
@@ -1012,7 +1012,7 @@ describe('marketplace pages', () => {
     const fillContact = async () => {
       await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
       await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-      await userEvent.type(screen.getByLabelText('Phone'), '123456')
+      await userEvent.type(screen.getByLabelText('Phone'), '0612345678')
       await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     }
 
@@ -1116,6 +1116,27 @@ describe('marketplace pages', () => {
       await fillContact()
       await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
       expect(screen.getByRole('alert')).toHaveTextContent('Samosa: order at least 10 pieces')
+      expect(service.createOrderRequest).not.toHaveBeenCalled()
+    })
+
+    it('validates phone numbers inline and prevents invalid checkout submissions', async () => {
+      localStorage.setItem(
+        'guidewisey-marketplace-cart',
+        JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+      )
+      renderPage(<CheckoutPage />)
+      await screen.findByRole('radio', { name: 'Pickup' })
+      await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
+      await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
+      await userEvent.type(screen.getByRole('textbox', { name: /Phone/ }), '123456')
+      await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+
+      expect(screen.getByText('Enter a valid phone number with 7 to 15 digits.')).toBeInTheDocument()
+      expect(screen.getByRole('textbox', { name: /Phone/ })).toHaveAttribute('aria-invalid', 'true')
+      await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Enter a valid phone number with 7 to 15 digits.',
+      )
       expect(service.createOrderRequest).not.toHaveBeenCalled()
     })
 
