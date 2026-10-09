@@ -65,6 +65,12 @@ const initialFields: CheckoutFields = {
 
 const MIN_PASSWORD_LENGTH = 8
 
+function isValidPhoneNumber(value: string): boolean {
+  const normalized = value.replace(/[\s().-]/g, '')
+  const digits = normalized.startsWith('+') ? normalized.slice(1) : normalized
+  return /^\+?[0-9]+$/.test(normalized) && digits.length >= 7 && digits.length <= 15
+}
+
 function computeShopDeliveryFee(
   shop: Shop | undefined,
   orderType: 'pickup' | 'delivery',
@@ -147,6 +153,7 @@ export function CheckoutPage() {
   const update = <Key extends keyof CheckoutFields>(key: Key, value: CheckoutFields[Key]) => {
     setFields((current) => ({ ...current, [key]: value }))
   }
+  const phoneInvalid = Boolean(fields.phone.trim()) && !isValidPhoneNumber(fields.phone.trim())
 
   const findAddress = async () => {
     if (!fields.postalCode || !fields.houseNumber) return
@@ -169,6 +176,10 @@ export function CheckoutPage() {
     event.preventDefault()
     setError('')
     setErrorCode('')
+    if (!isValidPhoneNumber(fields.phone.trim())) {
+      setError(t('invalidPhone'))
+      return
+    }
     if (shopError || shopGroups.some((group) => !shopsBySlug[group.shopSlug])) {
       setError(t('shopSettingsLoading'))
       return
@@ -565,11 +576,19 @@ export function CheckoutPage() {
               {t('phone')}
               <input
                 type="tel"
+                inputMode="tel"
                 autoComplete="tel"
                 value={fields.phone}
                 onChange={(event) => update('phone', event.target.value)}
+                aria-invalid={phoneInvalid}
+                aria-describedby={phoneInvalid ? 'checkout-phone-error' : undefined}
                 required
               />
+              {phoneInvalid && (
+                <span className="form-field__error" id="checkout-phone-error">
+                  {t('invalidPhone')}
+                </span>
+              )}
             </label>
           </div>
 
