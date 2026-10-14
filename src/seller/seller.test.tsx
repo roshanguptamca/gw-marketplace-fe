@@ -576,15 +576,33 @@ describe('seller portal pages', () => {
       '/seller/products/new',
     )
     await screen.findByRole('heading', { name: 'Add product' })
+    expect(screen.getByLabelText('Category')).toBeInTheDocument()
     await userEvent.type(screen.getByLabelText(/^Name/), 'New Product')
     await userEvent.type(screen.getByLabelText(/^Price/), '9.99')
-    await userEvent.selectOptions(screen.getByLabelText('Categories'), '5')
+    await userEvent.selectOptions(screen.getByLabelText('Category'), '5')
     expect(screen.queryByRole('option', { name: 'General marketplace' })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Save product' }))
     await waitFor(() => expect(service.createSellerProductForm).toHaveBeenCalled())
     const payload = service.createSellerProductForm.mock.calls[0][0] as FormData
     expect(payload.get('category')).toBe('5')
     expect(payload.has('vat_rate')).toBe(false)
+  })
+
+  it('directs sellers to create a shop category when none are available', async () => {
+    service.getSellerCategories.mockResolvedValueOnce([])
+    renderPage(
+      <Routes>
+        <Route path="/seller/products/new" element={<SellerProductFormPage />} />
+      </Routes>,
+      '/seller/products/new',
+    )
+
+    expect(await screen.findByLabelText('Category')).toBeInTheDocument()
+    expect(screen.getByText('You have no shop categories yet.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Create a category' })).toHaveAttribute(
+      'href',
+      '/seller/categories',
+    )
   })
 
   it('shows API validation errors beside fields and keeps form values on failed product creation', async () => {
@@ -603,7 +621,7 @@ describe('seller portal pages', () => {
     await screen.findByRole('heading', { name: 'Add product' })
     await userEvent.type(screen.getByLabelText(/^Name/), 'New Product')
     await userEvent.type(screen.getByLabelText(/^Price/), '9.99')
-    await userEvent.type(screen.getByLabelText('SKU'), 'USED-SKU')
+    await userEvent.type(screen.getByLabelText(/^SKU/), 'USED-SKU')
     await userEvent.click(screen.getByRole('button', { name: 'Save product' }))
 
     expect(await screen.findByText('This SKU is already in use.')).toHaveAttribute('role', 'alert')
@@ -735,7 +753,7 @@ describe('seller portal pages', () => {
     expect(await screen.findByDisplayValue('Seller Product')).toBeInTheDocument()
     expect(screen.getByText('Gallery images')).toBeInTheDocument()
 
-    await userEvent.selectOptions(screen.getByLabelText('Categories'), '5')
+    await userEvent.selectOptions(screen.getByLabelText('Category'), '5')
     await userEvent.click(screen.getByRole('button', { name: 'Save product' }))
     await waitFor(() =>
       expect(service.updateSellerProductForm).toHaveBeenCalledWith(1, expect.any(FormData)),

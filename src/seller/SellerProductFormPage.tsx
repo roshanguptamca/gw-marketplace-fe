@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
 import { getApiErrorMessage, getApiFormErrors } from '../services/apiClient'
@@ -337,6 +337,34 @@ export function SellerProductFormPage() {
       <h2>{productId ? t('sellerEditProductTitle') : t('sellerAddProduct')}</h2>
       <form className="seller-form" onSubmit={(event) => void submit(event)}>
         <p className="form-hint">{t('requiredFieldNote')}</p>
+        <div className="seller-category-picker">
+          <label htmlFor="product-category">{t('sellerProductCategory')}</label>
+          <select
+            id="product-category"
+            value={form.category}
+            onChange={(event) => updateField('category', event.target.value)}
+            aria-invalid={Boolean(errors.category)}
+            aria-describedby={errors.category ? 'product-category-error' : undefined}
+          >
+            <option value="">{t('sellerNone')}</option>
+            {categories.map((category) => (
+              <option value={category.id} key={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          {errors.category && (
+            <span id="product-category-error" className="form-field__error" role="alert">
+              {errors.category}
+            </span>
+          )}
+          {categories.length === 0 && (
+            <p className="form-hint">
+              {t('sellerNoProductCategories')}{' '}
+              <Link to="/seller/categories">{t('sellerCreateProductCategory')}</Link>
+            </p>
+          )}
+        </div>
         <div className="seller-form-grid">
           <label>
             {t('sellerName')} <span aria-hidden="true">*</span>
@@ -428,7 +456,7 @@ export function SellerProductFormPage() {
             )}
           </label>
           <label>
-            SKU
+            SKU <span className="form-hint">{t('sellerSkuImageRequirement')}</span>
             {imageFile && (
               <>
                 {' '}
@@ -446,28 +474,6 @@ export function SellerProductFormPage() {
             {errors.sku && (
               <span id="product-sku-error" className="form-field__error" role="alert">
                 {errors.sku}
-              </span>
-            )}
-          </label>
-          <label>
-            {t('sellerCategories')}
-            <select
-              id="product-category"
-              value={form.category}
-              onChange={(event) => updateField('category', event.target.value)}
-              aria-invalid={Boolean(errors.category)}
-              aria-describedby={errors.category ? 'product-category-error' : undefined}
-            >
-              <option value="">{t('sellerNone')}</option>
-              {categories.map((category) => (
-                <option value={category.id} key={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-            {errors.category && (
-              <span id="product-category-error" className="form-field__error" role="alert">
-                {errors.category}
               </span>
             )}
           </label>

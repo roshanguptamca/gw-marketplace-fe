@@ -2682,6 +2682,22 @@ nav {
   gap: 20px;
 }
 
+.seller-category-picker {
+  display: grid;
+  gap: 8px;
+  max-width: 520px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.seller-category-picker > label {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
 .seller-form label {
   display: grid;
   gap: 8px;
