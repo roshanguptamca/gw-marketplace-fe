@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 
 export function SellerDashboardPage() {
   const { t } = useTranslation()
@@ -11,7 +12,10 @@ export function SellerDashboardPage() {
     [],
   )
   if (loading) return <LoadingState label={t('sellerDashboard')} />
-  if (error || !data) return <p className="inline-error">{t('sellerDashboardUnavailable')}</p>
+  if (error || !data)
+    return (
+      <p className="inline-error">{getApiErrorMessage(error, t('sellerDashboardUnavailable'))}</p>
+    )
 
   const metrics = [
     { label: t('sellerProducts'), value: data.total_products, to: '/seller/products' },
@@ -82,7 +86,11 @@ export function SellerDashboardPage() {
                 <tr key={order.id}>
                   <td>{order.order_number}</td>
                   <td>{order.customer_name}</td>
-                  <td>{t(`status_${order.status}`, { defaultValue: order.status.replaceAll('_', ' ') })}</td>
+                  <td>
+                    {t(`status_${order.status}`, {
+                      defaultValue: order.status.replaceAll('_', ' '),
+                    })}
+                  </td>
                   <td>€{order.total}</td>
                 </tr>
               ))}

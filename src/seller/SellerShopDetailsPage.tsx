@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import type { Shop } from '../types/marketplace'
 
 interface ShopDetailsForm {
@@ -50,6 +51,13 @@ function mapShopToForm(shop: Shop): ShopDetailsForm {
 
 export function SellerShopDetailsPage() {
   const { t } = useTranslation()
+  const apiErrorFallbacks = useMemo(
+    () => ({
+      network: t('networkRequestError'),
+      server: t('serverRequestError'),
+    }),
+    [t],
+  )
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -64,15 +72,15 @@ export function SellerShopDetailsPage() {
         const data = await marketplaceService.getSellerShop()
         setShop(data)
         setFormData(mapShopToForm(data))
-      } catch {
-        setError(t('sellerLoadShopDetailsFailed'))
+      } catch (error) {
+        setError(getApiErrorMessage(error, t('sellerLoadShopDetailsFailed'), apiErrorFallbacks))
       } finally {
         setLoading(false)
       }
     }
 
     void loadShopDetails()
-  }, [t])
+  }, [t, apiErrorFallbacks])
 
   const socialLinks = useMemo(
     () =>
@@ -125,8 +133,8 @@ export function SellerShopDetailsPage() {
       })
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch {
-      setError(t('sellerSaveShopDetailsFailed'))
+    } catch (error) {
+      setError(getApiErrorMessage(error, t('sellerSaveShopDetailsFailed'), apiErrorFallbacks))
     } finally {
       setSaving(false)
     }
@@ -160,6 +168,7 @@ export function SellerShopDetailsPage() {
       {success && <div className="alert alert--success">{t('sellerShopDetailsSaved')}</div>}
 
       <form onSubmit={handleSubmit} className="seller-form seller-form--stacked">
+        <p className="form-hint">{t('requiredFieldNote')}</p>
         <div className="form-section">
           <h3>{t('sellerBasicInformation')}</h3>
 
@@ -376,9 +385,7 @@ export function SellerShopDetailsPage() {
             />
             <span>{t('sellerShopActiveVisible')}</span>
           </label>
-          <p className="form-hint">
-            {t('sellerAdminApprovalSeparate')}
-          </p>
+          <p className="form-hint">{t('sellerAdminApprovalSeparate')}</p>
         </div>
 
         <div className="form-actions">

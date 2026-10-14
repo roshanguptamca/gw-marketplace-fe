@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import type { Shop } from '../types/marketplace'
 import {
   getShopBannerUrl,
@@ -24,8 +25,8 @@ export function SellerShopLogoBannerPage() {
         setLoading(true)
         const data = await marketplaceService.getSellerShop()
         setShop(data)
-      } catch {
-        setError('Failed to load shop images.')
+      } catch (error) {
+        setError(getApiErrorMessage(error, 'Failed to load shop images.'))
       } finally {
         setLoading(false)
       }
@@ -55,8 +56,8 @@ export function SellerShopLogoBannerPage() {
       setShop(updated)
       setSuccess(`${type === 'logo' ? 'Logo' : 'Banner'} updated successfully`)
       setTimeout(() => setSuccess(null), 3000)
-    } catch {
-      setError(`Failed to upload ${type}. Please try again.`)
+    } catch (error) {
+      setError(getApiErrorMessage(error, `Failed to upload ${type}. Please try again.`))
     } finally {
       setSaving(null)
     }
@@ -76,8 +77,8 @@ export function SellerShopLogoBannerPage() {
       setShop(updated)
       setSuccess(`${type === 'logo' ? 'Logo' : 'Banner'} removed`)
       setTimeout(() => setSuccess(null), 3000)
-    } catch {
-      setError(`Failed to remove ${type}. Please try again.`)
+    } catch (error) {
+      setError(getApiErrorMessage(error, `Failed to remove ${type}. Please try again.`))
     } finally {
       setSaving(null)
     }
@@ -127,14 +128,14 @@ export function SellerShopLogoBannerPage() {
                 style={{ display: 'none' }}
               />
             </label>
-              <button
-                type="button"
-                className="button button--secondary"
-                onClick={() => void removeImage('logo')}
-                disabled={saving !== null || !shop.logoPublicId}
-              >
-                Remove
-              </button>
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={() => void removeImage('logo')}
+              disabled={saving !== null || !shop.logoPublicId}
+            >
+              Remove
+            </button>
           </div>
         </article>
 
@@ -162,14 +163,14 @@ export function SellerShopLogoBannerPage() {
                 style={{ display: 'none' }}
               />
             </label>
-              <button
-                type="button"
-                className="button button--secondary"
-                onClick={() => void removeImage('banner')}
-                disabled={saving !== null || !shop.bannerPublicId}
-              >
-                Remove
-              </button>
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={() => void removeImage('banner')}
+              disabled={saving !== null || !shop.bannerPublicId}
+            >
+              Remove
+            </button>
           </div>
         </article>
       </div>

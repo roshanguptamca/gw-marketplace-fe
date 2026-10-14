@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import type { ShopSettings } from '../types/marketplace'
 
 const deliveryCountries = [
@@ -45,6 +46,13 @@ function emptySettings(): ShopSettings {
 
 export function SellerShopDeliveryPage() {
   const { t } = useTranslation()
+  const apiErrorFallbacks = useMemo(
+    () => ({
+      network: t('networkRequestError'),
+      server: t('serverRequestError'),
+    }),
+    [t],
+  )
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -57,15 +65,15 @@ export function SellerShopDeliveryPage() {
         setLoading(true)
         const data = await marketplaceService.getSellerSettings()
         if (data) setFormData(data)
-      } catch {
-        setError(t('sellerLoadDeliveryFailed'))
+      } catch (error) {
+        setError(getApiErrorMessage(error, t('sellerLoadDeliveryFailed'), apiErrorFallbacks))
       } finally {
         setLoading(false)
       }
     }
 
     void loadConfig()
-  }, [t])
+  }, [t, apiErrorFallbacks])
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -107,8 +115,8 @@ export function SellerShopDeliveryPage() {
       setFormData(updated)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch {
-      setError(t('sellerSaveDeliveryFailed'))
+    } catch (error) {
+      setError(getApiErrorMessage(error, t('sellerSaveDeliveryFailed'), apiErrorFallbacks))
     } finally {
       setSaving(false)
     }
@@ -127,9 +135,7 @@ export function SellerShopDeliveryPage() {
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
-      {success && (
-        <div className="alert alert--success">{t('sellerDeliverySettingsSaved')}</div>
-      )}
+      {success && <div className="alert alert--success">{t('sellerDeliverySettingsSaved')}</div>}
 
       <form onSubmit={handleSubmit} className="seller-form seller-form--stacked">
         <div className="form-section">
@@ -264,7 +270,9 @@ export function SellerShopDeliveryPage() {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="internationalDeliveryFee">{t('sellerInternationalDeliveryFee')}</label>
+              <label htmlFor="internationalDeliveryFee">
+                {t('sellerInternationalDeliveryFee')}
+              </label>
               <input
                 type="number"
                 id="internationalDeliveryFee"

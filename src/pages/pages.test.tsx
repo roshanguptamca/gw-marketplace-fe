@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { env } from '../config/env'
+import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
 import {
   packProductFixture,
@@ -343,14 +344,14 @@ describe('marketplace pages', () => {
     cart.unmount()
     renderPage(<CheckoutPage />)
     expect(screen.getByRole('heading', { name: 'Checkout' })).toBeInTheDocument()
-    await userEvent.type(screen.getByLabelText('Full name'), 'Test Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Test Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'buyer@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/delivery/i))
-    await userEvent.type(screen.getByLabelText('Street and house number'), 'Main Street')
+    await userEvent.type(screen.getByLabelText(/^Street and house number/), 'Main Street')
     await userEvent.type(screen.getByLabelText('House number'), '1')
     await userEvent.type(screen.getByLabelText('Postcode'), '1000 AA')
-    await userEvent.type(screen.getByLabelText('City'), 'Amsterdam')
+    await userEvent.type(screen.getByLabelText(/^City/), 'Amsterdam')
     await userEvent.type(screen.getByLabelText('Notes to seller'), 'Please call me.')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
@@ -392,9 +393,9 @@ describe('marketplace pages', () => {
       JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
     )
     renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
-    await userEvent.type(screen.getByLabelText('Full name'), 'Guest Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'guest@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Guest Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'guest@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
@@ -422,9 +423,9 @@ describe('marketplace pages', () => {
       loading: false,
       logout: async () => {},
     })
-    await userEvent.type(screen.getByLabelText('Full name'), 'Logged Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Logged Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'buyer@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
@@ -489,9 +490,9 @@ describe('marketplace pages', () => {
     renderPage(<CheckoutPage />)
     await screen.findByText('Minimum order: €15.00')
     expect(screen.getByText('€7.00 more required to place an order.')).toBeInTheDocument()
-    await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'buyer@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -520,13 +521,13 @@ describe('marketplace pages', () => {
     renderPage(<CheckoutPage />)
     await screen.findByRole('radio', { name: 'Delivery' })
     expect(screen.getAllByRole('radio')).toHaveLength(2)
-    await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
-    await userEvent.type(screen.getByLabelText('Street and house number'), 'Lane')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'buyer@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Street and house number/), 'Lane')
     await userEvent.type(screen.getByLabelText('House number'), '1')
     await userEvent.type(screen.getByLabelText(/Postcode|Postal code/), '1234 AB')
-    await userEvent.type(screen.getByLabelText('City'), 'Town')
+    await userEvent.type(screen.getByLabelText(/^City/), 'Town')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
     await waitFor(() => expect(service.createOrderRequest).toHaveBeenCalledTimes(2))
@@ -568,14 +569,55 @@ describe('marketplace pages', () => {
     )
     renderPage(<CheckoutPage />)
     await screen.findByRole('radio', { name: 'Pickup' })
-    await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'buyer@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Minimum order for Test Shop is €20.00. Please add €7.50 more',
     )
+  })
+
+  it('shows shop availability notices and the backend rejection for items already in the cart', async () => {
+    const { ApiError } = await import('../services/apiClient')
+    service.getShopBySlug.mockResolvedValueOnce({
+      ...shopFixture,
+      acceptingOrders: false,
+    })
+    service.createOrderRequest.mockRejectedValueOnce(
+      new ApiError(
+        'This seller is not accepting orders at the moment. Please try again later.',
+        400,
+        'SHOP_NOT_ACCEPTING_ORDERS',
+        {
+          detail: 'This seller is not accepting orders at the moment. Please try again later.',
+          code: 'SHOP_NOT_ACCEPTING_ORDERS',
+          shop_id: 1,
+        },
+      ),
+    )
+    localStorage.setItem(
+      'guidewisey-marketplace-cart',
+      JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
+    )
+    renderPage(<CheckoutPage />)
+    expect(
+      await screen.findByText(
+        'This seller is not accepting orders at the moment. Please try again later.',
+      ),
+    ).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'buyer@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
+    await userEvent.click(screen.getByLabelText(/i have read and agree/i))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This seller is not accepting orders at the moment. Please try again later.',
+    )
+    expect(
+      screen.queryByRole('heading', { name: 'Order request received' }),
+    ).not.toBeInTheDocument()
   })
 
   it('preserves unsubmitted shops when a later shop request fails', async () => {
@@ -590,7 +632,7 @@ describe('marketplace pages', () => {
         total: '12.50',
         status: 'pending',
       })
-      .mockRejectedValueOnce(new Error('Seller temporarily unavailable'))
+      .mockRejectedValueOnce(new ApiError('Seller temporarily unavailable', 400))
     localStorage.setItem(
       'guidewisey-marketplace-cart',
       JSON.stringify({
@@ -602,9 +644,9 @@ describe('marketplace pages', () => {
     )
     renderPage(<CheckoutPage />)
     await screen.findAllByRole('radio', { name: 'Pickup' })
-    await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'buyer@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('GW-TEST-101')
@@ -623,9 +665,9 @@ describe('marketplace pages', () => {
       JSON.stringify({ items: [{ product: productFixture, quantity: 1 }] }),
     )
     renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
-    await userEvent.type(screen.getByLabelText('Full name'), 'Guest Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'existing@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Guest Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'existing@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
@@ -659,9 +701,9 @@ describe('marketplace pages', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Find address' }))
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Street and house number')).toHaveValue('Main Street')
+        expect(screen.getByLabelText(/^Street and house number/)).toHaveValue('Main Street')
       })
-      expect(screen.getByLabelText('City')).toHaveValue('Amsterdam')
+      expect(screen.getByLabelText(/^City/)).toHaveValue('Amsterdam')
 
       service.lookupAddress.mockResolvedValueOnce(null)
       await userEvent.click(screen.getByRole('button', { name: 'Find address' }))
@@ -669,9 +711,9 @@ describe('marketplace pages', () => {
         await screen.findByText(/we could not find the address automatically/i),
       ).toBeInTheDocument()
       // Manual entry must still be possible.
-      await userEvent.clear(screen.getByLabelText('Street and house number'))
-      await userEvent.type(screen.getByLabelText('Street and house number'), 'Manual Street 5')
-      expect(screen.getByLabelText('Street and house number')).toHaveValue('Manual Street 5')
+      await userEvent.clear(screen.getByLabelText(/^Street and house number/))
+      await userEvent.type(screen.getByLabelText(/^Street and house number/), 'Manual Street 5')
+      expect(screen.getByLabelText(/^Street and house number/)).toHaveValue('Manual Street 5')
     } finally {
       env.addressLookupEnabled = original
     }
@@ -706,8 +748,8 @@ describe('marketplace pages', () => {
 
     await userEvent.click(screen.getByLabelText('Create an account to track my order'))
 
-    expect(screen.getByLabelText('Password')).toBeInTheDocument()
-    expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Password/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Confirm password/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Continue as guest' })).not.toBeInTheDocument()
   })
 
@@ -718,13 +760,13 @@ describe('marketplace pages', () => {
     )
     renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
 
-    await userEvent.type(screen.getByLabelText('Full name'), 'Guest Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'guest@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Guest Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'guest@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByLabelText('Create an account to track my order'))
-    await userEvent.type(screen.getByLabelText('Password'), 'StrongPass123!')
-    await userEvent.type(screen.getByLabelText('Confirm password'), 'Different123!')
+    await userEvent.type(screen.getByLabelText(/^Password/), 'StrongPass123!')
+    await userEvent.type(screen.getByLabelText(/^Confirm password/), 'Different123!')
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Passwords do not match.')
@@ -745,13 +787,13 @@ describe('marketplace pages', () => {
     })
     renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
 
-    await userEvent.type(screen.getByLabelText('Full name'), 'Guest Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'guest@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Guest Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'guest@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByLabelText('Create an account to track my order'))
-    await userEvent.type(screen.getByLabelText('Password'), 'StrongPass123!')
-    await userEvent.type(screen.getByLabelText('Confirm password'), 'StrongPass123!')
+    await userEvent.type(screen.getByLabelText(/^Password/), 'StrongPass123!')
+    await userEvent.type(screen.getByLabelText(/^Confirm password/), 'StrongPass123!')
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
     await screen.findByRole('heading', { name: 'Your order request has been sent to the seller.' })
@@ -773,9 +815,9 @@ describe('marketplace pages', () => {
     )
     renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
 
-    await userEvent.type(screen.getByLabelText('Full name'), 'Guest Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'guest@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Guest Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'guest@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
@@ -929,9 +971,9 @@ describe('marketplace pages', () => {
       }),
     )
     renderPage(<CheckoutPage />, '/', { user: null, loading: false, logout: async () => {} })
-    await userEvent.type(screen.getByLabelText('Full name'), 'Multi Shop Buyer')
-    await userEvent.type(screen.getByLabelText('Email'), 'multishop@example.com')
-    await userEvent.type(screen.getByLabelText('Phone'), '+31612345678')
+    await userEvent.type(screen.getByLabelText(/^Full name/), 'Multi Shop Buyer')
+    await userEvent.type(screen.getByLabelText(/^Email/), 'multishop@example.com')
+    await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
@@ -1010,9 +1052,9 @@ describe('marketplace pages', () => {
     }
 
     const fillContact = async () => {
-      await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
-      await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
-      await userEvent.type(screen.getByLabelText('Phone'), '0612345678')
+      await userEvent.type(screen.getByLabelText(/^Full name/), 'Buyer')
+      await userEvent.type(screen.getByLabelText(/^Email/), 'buyer@example.com')
+      await userEvent.type(screen.getByLabelText(/^Phone/), '0612345678')
       await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     }
 
@@ -1081,14 +1123,14 @@ describe('marketplace pages', () => {
       expect(service.getPickupSchedule).toHaveBeenCalledWith('test-shop', ['product-pack'])
       expect(screen.getByText(/5 packs × 2 pieces \(10 pieces\)/)).toBeInTheDocument()
       await fillContact()
-      expect(screen.getByLabelText('Pickup date')).toBeRequired()
-      expect(screen.getByLabelText('Pickup time')).toBeRequired()
+      expect(screen.getByLabelText(/^Pickup date/)).toBeRequired()
+      expect(screen.getByLabelText(/^Pickup time/)).toBeRequired()
       await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
       expect(service.createOrderRequest).not.toHaveBeenCalled()
 
-      await userEvent.selectOptions(screen.getByLabelText('Pickup date'), '2026-10-03')
+      await userEvent.selectOptions(screen.getByLabelText(/^Pickup date/), '2026-10-03')
       await userEvent.selectOptions(
-        screen.getByLabelText('Pickup time'),
+        screen.getByLabelText(/^Pickup time/),
         '2026-10-03T14:30:00+02:00',
       )
       expect(screen.getByTestId('checkout-pickup-summary')).toHaveTextContent(
@@ -1126,12 +1168,14 @@ describe('marketplace pages', () => {
       )
       renderPage(<CheckoutPage />)
       await screen.findByRole('radio', { name: 'Pickup' })
-      await userEvent.type(screen.getByLabelText('Full name'), 'Buyer')
-      await userEvent.type(screen.getByLabelText('Email'), 'buyer@example.com')
+      await userEvent.type(screen.getByLabelText(/^Full name/), 'Buyer')
+      await userEvent.type(screen.getByLabelText(/^Email/), 'buyer@example.com')
       await userEvent.type(screen.getByRole('textbox', { name: /Phone/ }), '123456')
       await userEvent.click(screen.getByLabelText(/i have read and agree/i))
 
-      expect(screen.getByText('Enter a valid phone number with 7 to 15 digits.')).toBeInTheDocument()
+      expect(
+        screen.getByText('Enter a valid phone number with 7 to 15 digits.'),
+      ).toBeInTheDocument()
       expect(screen.getByRole('textbox', { name: /Phone/ })).toHaveAttribute('aria-invalid', 'true')
       await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
       expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -1157,11 +1201,11 @@ describe('marketplace pages', () => {
         JSON.stringify({ items: [{ product: packProductFixture, quantity: 5 }] }),
       )
       renderPage(<CheckoutPage />)
-      await screen.findByLabelText('Pickup date')
+      await screen.findByLabelText(/^Pickup date/)
       await fillContact()
-      await userEvent.selectOptions(screen.getByLabelText('Pickup date'), '2026-10-03')
+      await userEvent.selectOptions(screen.getByLabelText(/^Pickup date/), '2026-10-03')
       await userEvent.selectOptions(
-        screen.getByLabelText('Pickup time'),
+        screen.getByLabelText(/^Pickup time/),
         '2026-10-03T14:00:00+02:00',
       )
       const callsBefore = service.getPickupSchedule.mock.calls.length
@@ -1172,7 +1216,7 @@ describe('marketplace pages', () => {
       await waitFor(() =>
         expect(service.getPickupSchedule.mock.calls.length).toBeGreaterThan(callsBefore),
       )
-      expect(screen.getByLabelText('Pickup time')).toHaveValue('')
+      expect(screen.getByLabelText(/^Pickup time/)).toHaveValue('')
     })
   })
 })

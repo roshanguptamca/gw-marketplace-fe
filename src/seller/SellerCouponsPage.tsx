@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import type { Coupon, CouponInput } from '../types/marketplace'
 
 const EMPTY_FORM: CouponInput = {
@@ -73,8 +74,8 @@ export function SellerCouponsPage() {
       setCreateOpen(false)
       refresh()
       setFeedback({ kind: 'success', message: 'Coupon created' })
-    } catch {
-      setFeedback({ kind: 'error', message: 'Could not create coupon' })
+    } catch (error) {
+      setFeedback({ kind: 'error', message: getApiErrorMessage(error, 'Could not create coupon') })
     }
   }
 
@@ -107,8 +108,8 @@ export function SellerCouponsPage() {
       refresh()
       cancelEdit()
       setFeedback({ kind: 'success', message: 'Coupon updated' })
-    } catch {
-      setFeedback({ kind: 'error', message: 'Could not update coupon' })
+    } catch (error) {
+      setFeedback({ kind: 'error', message: getApiErrorMessage(error, 'Could not update coupon') })
     } finally {
       setSavingId(null)
     }
@@ -123,8 +124,8 @@ export function SellerCouponsPage() {
       if (editingCoupon?.id === coupon.id) cancelEdit()
       refresh()
       setFeedback({ kind: 'success', message: 'Coupon deleted' })
-    } catch {
-      setFeedback({ kind: 'error', message: 'Could not delete coupon' })
+    } catch (error) {
+      setFeedback({ kind: 'error', message: getApiErrorMessage(error, 'Could not delete coupon') })
     } finally {
       setSavingId(null)
     }
@@ -147,9 +148,15 @@ export function SellerCouponsPage() {
         </div>
       </div>
 
-      {error && <div className="alert alert--error">Coupons could not be loaded.</div>}
+      {error && (
+        <div className="alert alert--error">
+          {getApiErrorMessage(error, 'Coupons could not be loaded.')}
+        </div>
+      )}
       {feedback && (
-        <div className={feedback.kind === 'success' ? 'alert alert--success' : 'alert alert--error'}>
+        <div
+          className={feedback.kind === 'success' ? 'alert alert--success' : 'alert alert--error'}
+        >
           {feedback.message}
         </div>
       )}
@@ -186,9 +193,13 @@ export function SellerCouponsPage() {
               <h3>New coupon</h3>
             </div>
           </div>
-          <form className="seller-form seller-category-form" onSubmit={(event) => void submitCreate(event)}>
+          <form
+            className="seller-form seller-category-form"
+            onSubmit={(event) => void submitCreate(event)}
+          >
+            <p className="form-hint">* Required field</p>
             <label>
-              Code
+              Code <span aria-hidden="true">*</span>
               <input
                 value={form.code}
                 onChange={(event) => setForm({ ...form, code: event.target.value })}
@@ -211,7 +222,7 @@ export function SellerCouponsPage() {
               </select>
             </label>
             <label>
-              Value
+              Value <span aria-hidden="true">*</span>
               <input
                 type="number"
                 step="0.01"
@@ -268,9 +279,13 @@ export function SellerCouponsPage() {
               <h3>{editingCoupon.code}</h3>
             </div>
           </div>
-          <form className="seller-form seller-category-form" onSubmit={(event) => void submitEdit(event)}>
+          <form
+            className="seller-form seller-category-form"
+            onSubmit={(event) => void submitEdit(event)}
+          >
+            <p className="form-hint">* Required field</p>
             <label>
-              Code
+              Code <span aria-hidden="true">*</span>
               <input
                 value={editForm.code}
                 onChange={(event) => setEditForm({ ...editForm, code: event.target.value })}
@@ -293,12 +308,14 @@ export function SellerCouponsPage() {
               </select>
             </label>
             <label>
-              Value
+              Value <span aria-hidden="true">*</span>
               <input
                 type="number"
                 step="0.01"
                 value={editForm.discount_value}
-                onChange={(event) => setEditForm({ ...editForm, discount_value: event.target.value })}
+                onChange={(event) =>
+                  setEditForm({ ...editForm, discount_value: event.target.value })
+                }
                 required
               />
             </label>

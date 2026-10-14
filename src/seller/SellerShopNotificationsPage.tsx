@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import type { ShopSettings } from '../types/marketplace'
 
 function defaultSettings(): ShopSettings {
@@ -35,8 +36,8 @@ export function SellerShopNotificationsPage() {
       try {
         const settings = await marketplaceService.getSellerSettings()
         if (settings) setFormData(settings)
-      } catch {
-        setError('Failed to load notification settings.')
+      } catch (error) {
+        setError(getApiErrorMessage(error, 'Failed to load notification settings.'))
       } finally {
         setLoading(false)
       }
@@ -48,7 +49,7 @@ export function SellerShopNotificationsPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target
     const finalValue = type === 'checkbox' ? e.target.checked : value
-    setFormData((prev) => ({ ...prev, [name]: finalValue } as ShopSettings))
+    setFormData((prev) => ({ ...prev, [name]: finalValue }) as ShopSettings)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,8 +63,8 @@ export function SellerShopNotificationsPage() {
       setFormData(updated)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch {
-      setError('Failed to save notification settings.')
+    } catch (error) {
+      setError(getApiErrorMessage(error, 'Failed to save notification settings.'))
     } finally {
       setSaving(false)
     }

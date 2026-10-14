@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import type { Campaign, CampaignInput } from '../types/marketplace'
 
 const EMPTY_FORM: CampaignInput = {
@@ -64,8 +65,11 @@ export function SellerCampaignsPage() {
       setCreateOpen(false)
       refresh()
       setFeedback({ kind: 'success', message: 'Campaign created' })
-    } catch {
-      setFeedback({ kind: 'error', message: 'Could not create campaign' })
+    } catch (error) {
+      setFeedback({
+        kind: 'error',
+        message: getApiErrorMessage(error, 'Could not create campaign'),
+      })
     }
   }
 
@@ -97,8 +101,11 @@ export function SellerCampaignsPage() {
       refresh()
       cancelEdit()
       setFeedback({ kind: 'success', message: 'Campaign updated' })
-    } catch {
-      setFeedback({ kind: 'error', message: 'Could not update campaign' })
+    } catch (error) {
+      setFeedback({
+        kind: 'error',
+        message: getApiErrorMessage(error, 'Could not update campaign'),
+      })
     } finally {
       setSavingId(null)
     }
@@ -113,8 +120,11 @@ export function SellerCampaignsPage() {
       if (editingCampaign?.id === campaign.id) cancelEdit()
       refresh()
       setFeedback({ kind: 'success', message: 'Campaign deleted' })
-    } catch {
-      setFeedback({ kind: 'error', message: 'Could not delete campaign' })
+    } catch (error) {
+      setFeedback({
+        kind: 'error',
+        message: getApiErrorMessage(error, 'Could not delete campaign'),
+      })
     } finally {
       setSavingId(null)
     }
@@ -137,9 +147,15 @@ export function SellerCampaignsPage() {
         </div>
       </div>
 
-      {error && <div className="alert alert--error">Campaigns could not be loaded.</div>}
+      {error && (
+        <div className="alert alert--error">
+          {getApiErrorMessage(error, 'Campaigns could not be loaded.')}
+        </div>
+      )}
       {feedback && (
-        <div className={feedback.kind === 'success' ? 'alert alert--success' : 'alert alert--error'}>
+        <div
+          className={feedback.kind === 'success' ? 'alert alert--success' : 'alert alert--error'}
+        >
           {feedback.message}
         </div>
       )}
@@ -176,9 +192,13 @@ export function SellerCampaignsPage() {
               <h3>New campaign</h3>
             </div>
           </div>
-          <form className="seller-form seller-category-form" onSubmit={(event) => void submitCreate(event)}>
+          <form
+            className="seller-form seller-category-form"
+            onSubmit={(event) => void submitCreate(event)}
+          >
+            <p className="form-hint">* Required field</p>
             <label>
-              Title
+              Title <span aria-hidden="true">*</span>
               <input
                 value={form.title}
                 onChange={(event) => setForm({ ...form, title: event.target.value })}
@@ -194,7 +214,7 @@ export function SellerCampaignsPage() {
               />
             </label>
             <label>
-              Starts
+              Starts <span aria-hidden="true">*</span>
               <input
                 type="datetime-local"
                 value={form.starts_at}
@@ -203,7 +223,7 @@ export function SellerCampaignsPage() {
               />
             </label>
             <label>
-              Ends
+              Ends <span aria-hidden="true">*</span>
               <input
                 type="datetime-local"
                 value={form.ends_at}
@@ -236,9 +256,13 @@ export function SellerCampaignsPage() {
               <h3>{editingCampaign.title}</h3>
             </div>
           </div>
-          <form className="seller-form seller-category-form" onSubmit={(event) => void submitEdit(event)}>
+          <form
+            className="seller-form seller-category-form"
+            onSubmit={(event) => void submitEdit(event)}
+          >
+            <p className="form-hint">* Required field</p>
             <label>
-              Title
+              Title <span aria-hidden="true">*</span>
               <input
                 value={editForm.title}
                 onChange={(event) => setEditForm({ ...editForm, title: event.target.value })}
@@ -254,7 +278,7 @@ export function SellerCampaignsPage() {
               />
             </label>
             <label>
-              Starts
+              Starts <span aria-hidden="true">*</span>
               <input
                 type="datetime-local"
                 value={editForm.starts_at}
@@ -263,7 +287,7 @@ export function SellerCampaignsPage() {
               />
             </label>
             <label>
-              Ends
+              Ends <span aria-hidden="true">*</span>
               <input
                 type="datetime-local"
                 value={editForm.ends_at}

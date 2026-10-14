@@ -88,6 +88,7 @@ interface ApiShop {
     cancellation_request_email_enabled?: boolean
     low_stock_notification_enabled?: boolean
     supported_delivery_countries?: string[]
+    accepting_orders?: boolean
   }
 }
 
@@ -115,6 +116,7 @@ interface ApiShopSettings {
   pickup_country?: string
   pickup_instructions?: string
   order_acceptance_mode: 'manual' | 'auto'
+  accepting_orders?: boolean
   whatsapp_number: string
   bank_transfer_instructions: string
   notification_email: string
@@ -267,6 +269,7 @@ function normalizeShopSettings(settings: ApiShopSettings | undefined): ShopSetti
     pickupCountry: settings.pickup_country ?? '',
     pickupInstructions: settings.pickup_instructions ?? '',
     orderAcceptanceMode: settings.order_acceptance_mode ?? 'manual',
+    acceptingOrders: settings.accepting_orders ?? true,
     whatsappNumber: settings.whatsapp_number ?? '',
     bankTransferInstructions: settings.bank_transfer_instructions ?? '',
     notificationEmail: settings.notification_email ?? '',
@@ -400,6 +403,7 @@ function normalizeShop(shop: ApiShop): Shop {
     openingHours: normalizeOpeningHours(shop.opening_hours),
     active: shop.is_active,
     approved: shop.is_approved,
+    acceptingOrders: shop.settings?.accepting_orders ?? true,
   }
 }
 
@@ -412,6 +416,7 @@ export function normalizeProduct(product: ApiProduct, fallbackShopSlug = ''): Pr
     shopId: shop ? String(shop.id) : undefined,
     shopSlug: shop?.slug ?? fallbackShopSlug,
     shopName: shop?.name,
+    sellerAcceptingOrders: shop?.settings?.accepting_orders ?? true,
     name: product.name,
     description: product.description,
     ingredients: product.ingredients ?? '',
@@ -727,6 +732,7 @@ export const marketplaceService = {
         pickup_instructions: data.pickupInstructions,
         translations: data.translations,
         order_acceptance_mode: data.orderAcceptanceMode,
+        accepting_orders: data.acceptingOrders,
         whatsapp_number: data.whatsappNumber,
         bank_transfer_instructions: data.bankTransferInstructions,
         notification_email: data.notificationEmail,

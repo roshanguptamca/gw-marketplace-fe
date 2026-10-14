@@ -72,6 +72,7 @@ export interface Shop {
   openingHours?: OpeningHour[]
   active?: boolean
   approved?: boolean
+  acceptingOrders?: boolean
 }
 
 export interface OpeningHour {
@@ -98,6 +99,7 @@ export interface ShopSettings {
   pickupCountry?: string
   pickupInstructions?: string
   orderAcceptanceMode: 'manual' | 'auto'
+  acceptingOrders?: boolean
   whatsappNumber: string
   bankTransferInstructions: string
   notificationEmail: string
@@ -290,6 +292,7 @@ export interface Product {
   shopId?: string
   shopSlug: string
   shopName?: string
+  sellerAcceptingOrders?: boolean
   name: string
   description: string
   ingredients?: string

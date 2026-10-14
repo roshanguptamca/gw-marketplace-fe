@@ -16,6 +16,121 @@ export class ApiError extends Error {
   }
 }
 
+export interface ApiFormErrors {
+  message: string
+  fields: Record<string, string>
+}
+
+export interface ApiErrorFallbacks {
+  network: string
+  server: string
+}
+
+function errorText(value: unknown): string[] {
+  if (typeof value === 'string') return [value]
+  if (Array.isArray(value)) return value.flatMap(errorText)
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value)
+    const preferred = entries.filter(([key]) =>
+      ['message', 'detail', 'errors', 'non_field_errors'].includes(key),
+    )
+    return (preferred.length ? preferred : entries.filter(([key]) => key !== 'code')).flatMap(
+      ([, nested]) => errorText(nested),
+    )
+  }
+  return []
+}
+
+export function getApiErrorMessage(
+  error: unknown,
+  fallback: string,
+  fallbacks: ApiErrorFallbacks = {
+    network: 'A network error occurred. Check your connection and try again.',
+    server: 'The service is temporarily unavailable. Please try again later.',
+  },
+): string {
+  if (!(error instanceof ApiError)) return fallback
+  if (error.status === 0) return fallbacks.network
+  if (error.status >= 500) return fallbacks.server
+  return error.message || fallback
+}
+
+export function getApiFormErrors(
+  error: unknown,
+  fallback: string,
+  fieldAliases: Record<string, string> = {},
+  fallbacks?: ApiErrorFallbacks,
+): ApiFormErrors {
+  const message = getApiErrorMessage(error, fallback, fallbacks)
+  if (!(error instanceof ApiError) || !error.details || error.status === 0 || error.status >= 500) {
+    return { message, fields: {} }
+  }
+
+  const fields: Record<string, string> = {}
+  let generalMessage = ''
+  const visit = (value: unknown, key = '') => {
+    const fieldName = fieldAliases[key]
+    if (fieldName && value && typeof value === 'object') {
+      const fieldMessage = errorText(value).join(' ')
+      if (fieldMessage) fields[fieldName] = fieldMessage
+      return
+    }
+    if (Array.isArray(value)) {
+      value.forEach((nested) => visit(nested, key))
+      return
+    }
+    if (value && typeof value === 'object') {
+      const record = value as Record<string, unknown>
+      const explicitField =
+        typeof record.field === 'string'
+          ? record.field
+          : typeof record.attr === 'string'
+            ? record.attr
+            : ''
+      if (explicitField && fieldAliases[explicitField]) {
+        const fieldMessage = errorText(record.message ?? record.detail ?? record.errors).join(' ')
+        if (fieldMessage) fields[fieldAliases[explicitField]] = fieldMessage
+        return
+      }
+      for (const [nestedKey, nestedValue] of Object.entries(record)) {
+        if (nestedKey === 'code' || nestedKey === 'field' || nestedKey === 'attr') continue
+        const fieldName = fieldAliases[nestedKey]
+        if (fieldName) {
+          const fieldMessage = errorText(nestedValue).join(' ')
+          if (fieldMessage) fields[fieldName] = fieldMessage
+        } else if (nestedKey === 'errors' && Array.isArray(nestedValue)) {
+          visit(nestedValue, nestedKey)
+        } else if (['detail', 'message', 'non_field_errors'].includes(nestedKey)) {
+          if (!generalMessage) generalMessage = errorText(nestedValue).join(' ')
+        } else {
+          visit(nestedValue, nestedKey)
+        }
+      }
+      return
+    }
+    if (typeof value !== 'string') return
+    if (fieldName) fields[fieldName] = value
+    else if (value && !generalMessage) generalMessage = value
+  }
+  for (const [key, value] of Object.entries(error.details)) {
+    if (key !== 'code') visit(value, key)
+  }
+  if (!generalMessage) {
+    for (const [key, value] of Object.entries(error.details)) {
+      if (key === 'code') continue
+      const candidate = errorText(value)[0]
+      if (candidate && !fieldAliases[key]) {
+        generalMessage = candidate
+        break
+      }
+    }
+  }
+  return {
+    message: generalMessage || (Object.keys(fields).length ? fallback : message),
+    fields,
+  }
+}
+
 export interface RequestOptions extends RequestInit {
   timeoutMs?: number
   csrf?: boolean
@@ -74,17 +189,7 @@ export async function apiRequest<T>(
       try {
         const body = (await response.json()) as Record<string, unknown>
         details = body
-        if (typeof body.message === 'string') {
-          message = body.message
-        } else {
-          // DRF validation errors look like { "field_name": "text" | ["text"], "code": "..." }.
-          // Surface the first field error as a human-readable message.
-          const firstFieldError = Object.entries(body).find(([key]) => key !== 'code')?.[1]
-          if (typeof firstFieldError === 'string') message = firstFieldError
-          else if (Array.isArray(firstFieldError) && typeof firstFieldError[0] === 'string') {
-            message = firstFieldError[0]
-          }
-        }
+        message = errorText(body)[0] || message
         if (typeof body.code === 'string') code = body.code
         else if (Array.isArray(body.code) && typeof body.code[0] === 'string') code = body.code[0]
       } catch {

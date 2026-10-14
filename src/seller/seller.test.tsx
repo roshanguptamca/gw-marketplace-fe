@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { marketplaceService, type ApiProduct } from '../services/marketplaceService'
+import { ApiError } from '../services/apiClient'
 import { renderPage } from '../test/renderPage'
 import type { Campaign, Coupon, SellerCategory, SellerProduct } from '../types/marketplace'
 import { SellerCampaignsPage } from './SellerCampaignsPage'
@@ -22,6 +23,7 @@ import { SellerShopHoursPage } from './SellerShopHoursPage'
 import { SellerShopLogoBannerPage } from './SellerShopLogoBannerPage'
 import { SellerShopNotificationsPage } from './SellerShopNotificationsPage'
 import { SellerShopPreviewPage } from './SellerShopPreviewPage'
+import { SellerShopOrderSettingsPage } from './SellerShopOrderSettingsPage'
 
 vi.mock('../services/marketplaceService', () => ({
   marketplaceService: {
@@ -173,6 +175,7 @@ describe('seller portal pages', () => {
       ],
     })
     service.getSellerProducts.mockResolvedValue([product])
+    service.updateSellerProduct.mockResolvedValue(product)
     service.getSellerOrders.mockResolvedValue([
       {
         id: 1,
@@ -387,7 +390,7 @@ describe('seller portal pages', () => {
   it('renders products, add product link and product errors', async () => {
     const first = renderPage(<SellerProductsPage />)
     expect(await screen.findByText('Seller Product')).toBeInTheDocument()
-    expect(screen.getByText('Live')).toBeInTheDocument()
+    expect(screen.getByText('Active for purchase')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Add product' })).toHaveAttribute(
       'href',
       '/seller/products/new',
@@ -410,6 +413,15 @@ describe('seller portal pages', () => {
     await waitFor(() => expect(service.deleteSellerProduct).toHaveBeenCalledWith(1))
   })
 
+  it('toggles a seller product active status from the list', async () => {
+    renderPage(<SellerProductsPage />)
+    await screen.findByText('Seller Product')
+    await userEvent.click(screen.getByRole('button', { name: 'Deactivate Seller Product' }))
+    await waitFor(() =>
+      expect(service.updateSellerProduct).toHaveBeenCalledWith(1, { is_active: false }),
+    )
+  })
+
   it('renders orders, allows status update, and errors', async () => {
     const first = renderPage(<SellerOrdersPage />)
     expect(await screen.findByRole('cell', { name: 'out for delivery' })).toBeInTheDocument()
@@ -426,7 +438,7 @@ describe('seller portal pages', () => {
 
   it('updates settings and handles save failures', async () => {
     const first = renderPage(<SellerSettingsPage />)
-    const name = await screen.findByLabelText('Shop name')
+    const name = await screen.findByLabelText(/^Shop name/)
     await waitFor(() => expect(name).toHaveValue('Seller Shop'))
     await userEvent.clear(name)
     await userEvent.type(name, 'Updated')
@@ -452,8 +464,8 @@ describe('seller portal pages', () => {
   it('renders and saves the shop details form', async () => {
     renderPage(<SellerShopDetailsPage />)
     await screen.findByRole('heading', { name: 'Shop Details' })
-    await userEvent.clear(screen.getByLabelText('Shop Name *'))
-    await userEvent.type(screen.getByLabelText('Shop Name *'), 'Updated Seller Shop')
+    await userEvent.clear(screen.getByLabelText(/^Shop Name/i))
+    await userEvent.type(screen.getByLabelText(/^Shop Name/i), 'Updated Seller Shop')
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     await waitFor(() => expect(service.updateSellerShop).toHaveBeenCalled())
   })
@@ -486,10 +498,7 @@ describe('seller portal pages', () => {
     )
     await userEvent.type(screen.getByLabelText('Address line 1'), 'Market Lane 7')
     await userEvent.type(screen.getByLabelText('City'), 'Test City')
-    await userEvent.type(
-      screen.getByLabelText('Pickup instructions (English)'),
-      'Call first',
-    )
+    await userEvent.type(screen.getByLabelText('Pickup instructions (English)'), 'Call first')
     await userEvent.clear(screen.getByLabelText('Minimum order amount (€)'))
     await userEvent.type(screen.getByLabelText('Minimum order amount (€)'), '20')
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
@@ -513,7 +522,7 @@ describe('seller portal pages', () => {
     expect(screen.getByText('General marketplace')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Add category' }))
-    await userEvent.type(screen.getByLabelText('Name'), 'Desserts')
+    await userEvent.type(screen.getByLabelText(/^Name/), 'Desserts')
     await userEvent.click(screen.getByRole('button', { name: 'Create category' }))
     await waitFor(() =>
       expect(service.createSellerCategory).toHaveBeenCalledWith({
@@ -567,10 +576,73 @@ describe('seller portal pages', () => {
       '/seller/products/new',
     )
     await screen.findByRole('heading', { name: 'Add product' })
-    await userEvent.type(screen.getByLabelText('Name'), 'New Product')
-    await userEvent.type(screen.getByLabelText('Price'), '9.99')
+    expect(screen.getByLabelText('Category')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText(/^Name/), 'New Product')
+    await userEvent.type(screen.getByLabelText(/^Price/), '9.99')
+    await userEvent.selectOptions(screen.getByLabelText('Category'), '5')
+    expect(screen.queryByRole('option', { name: 'General marketplace' })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Save product' }))
     await waitFor(() => expect(service.createSellerProductForm).toHaveBeenCalled())
+    const payload = service.createSellerProductForm.mock.calls[0][0] as FormData
+    expect(payload.get('category')).toBe('5')
+    expect(payload.has('vat_rate')).toBe(false)
+  })
+
+  it('directs sellers to create a shop category when none are available', async () => {
+    service.getSellerCategories.mockResolvedValueOnce([])
+    renderPage(
+      <Routes>
+        <Route path="/seller/products/new" element={<SellerProductFormPage />} />
+      </Routes>,
+      '/seller/products/new',
+    )
+
+    expect(await screen.findByLabelText('Category')).toBeInTheDocument()
+    expect(screen.getByText('You have no shop categories yet.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Create a category' })).toHaveAttribute(
+      'href',
+      '/seller/categories',
+    )
+  })
+
+  it('shows API validation errors beside fields and keeps form values on failed product creation', async () => {
+    service.createSellerProductForm.mockRejectedValueOnce(
+      new ApiError('Request failed with status 400', 400, 'INVALID', {
+        sku: ['This SKU is already in use.'],
+        code: 'INVALID',
+      }),
+    )
+    renderPage(
+      <Routes>
+        <Route path="/seller/products/new" element={<SellerProductFormPage />} />
+      </Routes>,
+      '/seller/products/new',
+    )
+    await screen.findByRole('heading', { name: 'Add product' })
+    await userEvent.type(screen.getByLabelText(/^Name/), 'New Product')
+    await userEvent.type(screen.getByLabelText(/^Price/), '9.99')
+    await userEvent.type(screen.getByLabelText(/^SKU/), 'USED-SKU')
+    await userEvent.click(screen.getByRole('button', { name: 'Save product' }))
+
+    expect(await screen.findByText('This SKU is already in use.')).toHaveAttribute('role', 'alert')
+    expect(screen.getByLabelText(/^Name/)).toHaveValue('New Product')
+    expect(screen.getByLabelText(/^SKU/)).toHaveValue('USED-SKU')
+    expect(screen.getByRole('button', { name: 'Save product' })).toBeEnabled()
+    expect(screen.queryByText('Product saved')).not.toBeInTheDocument()
+  })
+
+  it('lets sellers change the accepting-orders setting', async () => {
+    renderPage(<SellerShopOrderSettingsPage />)
+    const acceptingOrders = await screen.findByRole('checkbox', { name: 'Accepting orders' })
+    expect(acceptingOrders).toBeChecked()
+    await userEvent.click(acceptingOrders)
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    await waitFor(() =>
+      expect(service.updateSellerSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ acceptingOrders: false }),
+      ),
+    )
   })
 
   it('sends the selling format and ordering requirements of a pack product', async () => {
@@ -581,10 +653,10 @@ describe('seller portal pages', () => {
       '/seller/products/new',
     )
     await screen.findByRole('heading', { name: 'Add product' })
-    await userEvent.type(screen.getByLabelText('Name'), 'Samosa')
-    await userEvent.type(screen.getByLabelText('Price'), '5')
+    await userEvent.type(screen.getByLabelText(/^Name/), 'Samosa')
+    await userEvent.type(screen.getByLabelText(/^Price/), '5')
     await userEvent.selectOptions(screen.getByLabelText('Sold as'), 'PACK')
-    await userEvent.type(screen.getByLabelText('Pieces per pack'), '2')
+    await userEvent.type(screen.getByLabelText(/^Pieces per pack/), '2')
     await userEvent.type(screen.getByLabelText('Minimum physical pieces'), '10')
     await userEvent.type(screen.getByLabelText('Minimum order amount for this product'), '20')
     await userEvent.type(screen.getByLabelText('Advance notice'), '2')
@@ -620,8 +692,8 @@ describe('seller portal pages', () => {
     )
     await screen.findByDisplayValue('Seller Product')
     expect(screen.getByLabelText('Sold as')).toHaveValue('WEIGHT')
-    expect(screen.getByLabelText('Weight / volume')).toHaveValue(250)
-    expect(screen.getByLabelText('Unit')).toHaveValue('GRAM')
+    expect(screen.getByLabelText(/^Weight \/ volume/)).toHaveValue(250)
+    expect(screen.getByLabelText(/^Unit/)).toHaveValue('GRAM')
     expect(screen.getByLabelText('Minimum cart quantity')).toHaveValue(2)
     expect(screen.queryByLabelText('Minimum physical pieces')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Advance notice')).toHaveValue(12)
@@ -681,10 +753,12 @@ describe('seller portal pages', () => {
     expect(await screen.findByDisplayValue('Seller Product')).toBeInTheDocument()
     expect(screen.getByText('Gallery images')).toBeInTheDocument()
 
+    await userEvent.selectOptions(screen.getByLabelText('Category'), '5')
     await userEvent.click(screen.getByRole('button', { name: 'Save product' }))
     await waitFor(() =>
       expect(service.updateSellerProductForm).toHaveBeenCalledWith(1, expect.any(FormData)),
     )
+    expect((service.updateSellerProductForm.mock.calls[0][1] as FormData).get('category')).toBe('5')
 
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }))
     await waitFor(() => expect(service.deleteSellerProductImage).toHaveBeenCalledWith(10))
@@ -698,8 +772,8 @@ describe('seller portal pages', () => {
     renderPage(<SellerCouponsPage />)
     expect(await screen.findByText('SAVE10')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Add coupon' }))
-    await userEvent.type(screen.getByLabelText('Code'), 'NEW10')
-    await userEvent.type(screen.getByLabelText('Value'), '15')
+    await userEvent.type(screen.getByLabelText(/^Code/), 'NEW10')
+    await userEvent.type(screen.getByLabelText(/^Value/), '15')
     await userEvent.click(screen.getByRole('button', { name: 'Create coupon' }))
     await waitFor(() =>
       expect(service.createSellerCoupon).toHaveBeenCalledWith({
@@ -717,7 +791,7 @@ describe('seller portal pages', () => {
     if (!couponRow) return
 
     await userEvent.click(within(couponRow).getByRole('button', { name: 'Edit' }))
-    const couponCodeInput = screen.getByLabelText('Code')
+    const couponCodeInput = screen.getByLabelText(/^Code/)
     await userEvent.clear(couponCodeInput)
     await userEvent.type(couponCodeInput, 'SAVE20')
     await userEvent.click(screen.getByRole('button', { name: 'Save coupon' }))
@@ -741,10 +815,10 @@ describe('seller portal pages', () => {
     renderPage(<SellerCampaignsPage />)
     expect(await screen.findByText('Summer Sale')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Add campaign' }))
-    await userEvent.type(screen.getByLabelText('Title'), 'Winter Sale')
+    await userEvent.type(screen.getByLabelText(/^Title/), 'Winter Sale')
     await userEvent.type(screen.getByLabelText('Description'), 'Winter discounts')
-    await userEvent.type(screen.getByLabelText('Starts'), '2026-02-01T00:00')
-    await userEvent.type(screen.getByLabelText('Ends'), '2026-02-15T00:00')
+    await userEvent.type(screen.getByLabelText(/^Starts/), '2026-02-01T00:00')
+    await userEvent.type(screen.getByLabelText(/^Ends/), '2026-02-15T00:00')
     await userEvent.click(screen.getByRole('button', { name: 'Create campaign' }))
     await waitFor(() =>
       expect(service.createSellerCampaign).toHaveBeenCalledWith({
@@ -761,8 +835,8 @@ describe('seller portal pages', () => {
     if (!campaignRow) return
 
     await userEvent.click(within(campaignRow).getByRole('button', { name: 'Edit' }))
-    await userEvent.clear(screen.getByLabelText('Title'))
-    await userEvent.type(screen.getByLabelText('Title'), 'Spring Sale')
+    await userEvent.clear(screen.getByLabelText(/^Title/))
+    await userEvent.type(screen.getByLabelText(/^Title/), 'Spring Sale')
     await userEvent.click(screen.getByRole('button', { name: 'Save campaign' }))
     await waitFor(() =>
       expect(service.updateSellerCampaign).toHaveBeenCalledWith(1, {

@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import { ORDER_STATUS_TRANSITIONS } from '../types/marketplace'
 
 const ORDER_STATUS_FILTERS = [
@@ -20,6 +21,10 @@ const ORDER_STATUS_FILTERS = [
 
 export function SellerOrdersPage() {
   const { t } = useTranslation()
+  const apiErrorFallbacks = {
+    network: t('networkRequestError'),
+    server: t('serverRequestError'),
+  }
   const [refreshKey, setRefreshKey] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedStatus = searchParams.get('status') ?? ''
@@ -37,8 +42,8 @@ export function SellerOrdersPage() {
     try {
       await marketplaceService.updateSellerOrderStatus(id, nextStatus)
       setRefreshKey((key) => key + 1)
-    } catch {
-      setStatus(t('sellerUpdateOrderStatusFailed'))
+    } catch (error) {
+      setStatus(getApiErrorMessage(error, t('sellerUpdateOrderStatusFailed'), apiErrorFallbacks))
     }
   }
 
@@ -80,15 +85,15 @@ export function SellerOrdersPage() {
             ))}
           </select>
         </div>
-        <button
-          type="button"
-          className="button button--ghost"
-          onClick={() => setSearchParams({})}
-        >
+        <button type="button" className="button button--ghost" onClick={() => setSearchParams({})}>
           {t('sellerClear')}
         </button>
       </div>
-      {error && <p className="inline-error">{t('sellerOrdersLoadFailed')}</p>}
+      {error && (
+        <p className="inline-error">
+          {getApiErrorMessage(error, t('sellerOrdersLoadFailed'), apiErrorFallbacks)}
+        </p>
+      )}
       {status && <p className="inline-error">{status}</p>}
       <div className="seller-table-wrap">
         <table className="seller-table">
@@ -111,7 +116,9 @@ export function SellerOrdersPage() {
                   </td>
                   <td>{order.customer_name}</td>
                   <td>
-                    {t(`status_${order.status}`, { defaultValue: order.status.replaceAll('_', ' ') })}
+                    {t(`status_${order.status}`, {
+                      defaultValue: order.status.replaceAll('_', ' '),
+                    })}
                   </td>
                   <td>€{order.total}</td>
                   <td>

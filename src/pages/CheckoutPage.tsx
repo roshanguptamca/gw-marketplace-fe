@@ -12,16 +12,13 @@ import { EmptyState } from '../components/EmptyState'
 import { InclusiveVat } from '../components/InclusiveVat'
 import { vatPreview } from '../utils/vatPreview'
 import { ShopFulfilment } from '../components/ShopFulfilment'
-import { ApiError } from '../services/apiClient'
+import { ApiError, getApiErrorMessage } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
 import type { OrderConfirmation, OrderRequest, Shop } from '../types/marketplace'
 import { continueShoppingPath, formatPrice } from '../utils/shopLinks'
 import { languageCode } from '../utils/localizedText'
 import { getFirstProductImageUrl, handleProductImageError } from '../utils/productImages'
-import {
-  describeOrderRuleError,
-  describeProductRuleViolation,
-} from '../utils/orderRuleErrors'
+import { describeOrderRuleError, describeProductRuleViolation } from '../utils/orderRuleErrors'
 import {
   describeQuantity,
   formatLeadTime,
@@ -220,14 +217,14 @@ export function CheckoutPage() {
       if (firstViolation?.violation) {
         setError(
           i18n.language === 'nl'
-            ? describeProductRuleViolation(
+            ? (describeProductRuleViolation(
                 firstViolation.product,
                 firstViolation.quantity,
                 firstViolation.violation.code,
                 currency,
                 (key, values) => t(key, values),
                 i18n.language,
-              ) ?? firstViolation.violation.message
+              ) ?? firstViolation.violation.message)
             : firstViolation.violation.message,
         )
         shopRefs.current[group.shopSlug]?.focus()
@@ -345,10 +342,16 @@ export function CheckoutPage() {
         : ''
       if (caught instanceof ApiError && caught.code === 'ACCOUNT_ALREADY_EXISTS') {
         setErrorCode('ACCOUNT_ALREADY_EXISTS')
-        setError(
-          partialMessage +
-            t('existingAccountMessage'),
+        setError(partialMessage + t('existingAccountMessage'))
+      } else if (caught instanceof ApiError && caught.code === 'SHOP_NOT_ACCEPTING_ORDERS') {
+        setError(partialMessage + t('sellerNotAcceptingOrders'))
+        const group = shopGroups.find(
+          (item) => shopsBySlug[item.shopSlug]?.id === String(caught.details?.shop_id),
         )
+        if (group) {
+          shopRefs.current[group.shopSlug]?.scrollIntoView?.({ block: 'center' })
+          shopRefs.current[group.shopSlug]?.focus()
+        }
       } else if (caught instanceof ApiError && caught.code === 'SHOP_MINIMUM_ORDER_NOT_MET') {
         const detail = caught.details
         const minimum = Number(detail?.minimum_order_amount)
@@ -408,9 +411,10 @@ export function CheckoutPage() {
       } else {
         setError(
           partialMessage +
-            (i18n.language !== 'nl' && caught instanceof Error
-              ? caught.message
-              : t('orderRequestFailed')),
+            getApiErrorMessage(caught, t('orderRequestFailed'), {
+              network: t('networkRequestError'),
+              server: t('serverRequestError'),
+            }),
         )
       }
     } finally {
@@ -441,8 +445,7 @@ export function CheckoutPage() {
           </Link>
         ) : accountCreated ? (
           <p className="confirmation-verify-note">
-            {t('verifyAccountBefore')} <strong>{fields.email}</strong>{' '}
-            {t('verifyAccountAfter')}
+            {t('verifyAccountBefore')} <strong>{fields.email}</strong> {t('verifyAccountAfter')}
           </p>
         ) : (
           <a
@@ -490,9 +493,7 @@ export function CheckoutPage() {
             <div className="checkout-account-prompt" role="note">
               <div>
                 <h2>{t('saveTrackOrders')}</h2>
-                <p>
-                  {t('accountBenefit')}
-                </p>
+                <p>{t('accountBenefit')}</p>
               </div>
               <label className="checkout-account-prompt__checkbox">
                 <input
@@ -517,7 +518,7 @@ export function CheckoutPage() {
               {fields.createAccount ? (
                 <div className="form-grid">
                   <label className="form-field">
-                    {t('password')}
+                    {t('password')} <span aria-hidden="true">*</span>
                     <input
                       type="password"
                       autoComplete="new-password"
@@ -527,7 +528,7 @@ export function CheckoutPage() {
                     />
                   </label>
                   <label className="form-field">
-                    {t('confirmPassword')}
+                    {t('confirmPassword')} <span aria-hidden="true">*</span>
                     <input
                       type="password"
                       autoComplete="new-password"
@@ -552,9 +553,10 @@ export function CheckoutPage() {
           )}
 
           <h2>{t('contactDetails')}</h2>
+          <p className="form-hint">{t('requiredFieldNote')}</p>
           <div className="form-grid">
             <label className="form-field form-field--wide">
-              {t('fullName')}
+              {t('fullName')} <span aria-hidden="true">*</span>
               <input
                 autoComplete="name"
                 value={fields.fullName}
@@ -563,7 +565,7 @@ export function CheckoutPage() {
               />
             </label>
             <label className="form-field">
-              {t('email')}
+              {t('email')} <span aria-hidden="true">*</span>
               <input
                 type="email"
                 autoComplete="email"
@@ -573,7 +575,7 @@ export function CheckoutPage() {
               />
             </label>
             <label className="form-field">
-              {t('phone')}
+              {t('phone')} <span aria-hidden="true">*</span>
               <input
                 type="tel"
                 inputMode="tel"
@@ -603,7 +605,9 @@ export function CheckoutPage() {
                   shopRefs.current[group.shopSlug] = node
                 }}
               >
-                <legend>{shop?.name ?? group.shopSlug} — {t('deliveryMethod')}</legend>
+                <legend>
+                  {shop?.name ?? group.shopSlug} — {t('deliveryMethod')}
+                </legend>
                 {!shop && <p>{t('loadingFulfilment')}</p>}
                 {shop?.pickupAvailable !== false && shop && (
                   <label>
@@ -650,6 +654,11 @@ export function CheckoutPage() {
                   </label>
                 )}
                 {shop && <ShopFulfilment shop={shop} method={methodFor(group.shopSlug)} />}
+                {shop?.acceptingOrders === false && (
+                  <p className="alert alert--error" role="status">
+                    {t('sellerNotAcceptingOrders')}
+                  </p>
+                )}
                 {shop && methodFor(group.shopSlug) === 'pickup' && (
                   <PickupSlotPicker
                     shopName={shop.name}
@@ -716,15 +725,13 @@ export function CheckoutPage() {
                     </button>
                   </div>
                   {lookupState === 'not-found' && (
-                    <p className="inline-note form-field--wide">
-                      {t('addressLookupFailed')}
-                    </p>
+                    <p className="inline-note form-field--wide">{t('addressLookupFailed')}</p>
                   )}
                 </div>
               )}
               <div className="form-grid">
                 <label className="form-field form-field--wide">
-                  {t('streetAndHouseNumber')}
+                  {t('streetAndHouseNumber')} <span aria-hidden="true">*</span>
                   <input
                     autoComplete="street-address"
                     value={fields.street}
@@ -735,7 +742,7 @@ export function CheckoutPage() {
                 {!env.addressLookupEnabled && (
                   <>
                     <label className="form-field">
-                      {t('houseNumber')}
+                      {t('houseNumber')} <span aria-hidden="true">*</span>
                       <input
                         value={fields.houseNumber}
                         onChange={(event) => update('houseNumber', event.target.value)}
@@ -743,7 +750,7 @@ export function CheckoutPage() {
                       />
                     </label>
                     <label className="form-field">
-                      {t('postcode')}
+                      {t('postcode')} <span aria-hidden="true">*</span>
                       <input
                         autoComplete="postal-code"
                         value={fields.postalCode}
@@ -754,7 +761,7 @@ export function CheckoutPage() {
                   </>
                 )}
                 <label className="form-field">
-                  {t('city')}
+                  {t('city')} <span aria-hidden="true">*</span>
                   <input
                     autoComplete="address-level2"
                     value={fields.city}
@@ -763,7 +770,7 @@ export function CheckoutPage() {
                   />
                 </label>
                 <label className="form-field">
-                  {t('country')}
+                  {t('country')} <span aria-hidden="true">*</span>
                   <input
                     autoComplete="country-name"
                     value={fields.country}
@@ -965,15 +972,12 @@ function PickupSlotPicker({
   if (!state) return null
   if (state.error) return <p className="inline-note">{t('orderRequestFailed')}</p>
   const schedule = state.schedule
-  if (!schedule) return state.loading ? <p className="inline-note">{t('loadingPickupTimes')}</p> : null
+  if (!schedule)
+    return state.loading ? <p className="inline-note">{t('loadingPickupTimes')}</p> : null
   if (!schedule.schedulingEnabled) return null
   const lead = formatLeadTime(schedule.requiredLeadTimeHours)
   if (schedule.days.length === 0) {
-    return (
-      <p role="alert">
-        {t('noPickupTimes', { shop: shopName })}
-      </p>
-    )
+    return <p role="alert">{t('noPickupTimes', { shop: shopName })}</p>
   }
   const day = schedule.days.find((candidate) => candidate.date === selection?.date)
   return (
@@ -985,7 +989,7 @@ function PickupSlotPicker({
       )}
       <div className="form-grid">
         <label className="form-field">
-          {t('pickupDate')}
+          {t('pickupDate')} <span aria-hidden="true">*</span>
           <select
             value={selection?.date ?? ''}
             onChange={(event) => onChange({ date: event.target.value, start: '' })}
@@ -1005,7 +1009,7 @@ function PickupSlotPicker({
           </select>
         </label>
         <label className="form-field">
-          {t('pickupTime')}
+          {t('pickupTime')} <span aria-hidden="true">*</span>
           <select
             value={selection?.start ?? ''}
             onChange={(event) =>
