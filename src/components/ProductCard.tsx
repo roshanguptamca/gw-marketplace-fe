@@ -18,6 +18,7 @@ export function ProductCard({ product }: { product: Product }) {
   const [added, setAdded] = useState(false)
   const location = useLocation()
   const href = shopPath(product.shopSlug, `/products/${product.id}`)
+  const acceptingOrders = product.sellerAcceptingOrders !== false
   const returnTo = `${location.pathname}${location.search}${location.hash}`
   const formatLabel = hasSellingFormatDetails(product) ? sellingFormatLabel(product) : ''
   const minimumQuantity = effectiveMinimumQuantity(product)
@@ -62,13 +63,16 @@ export function ProductCard({ product }: { product: Product }) {
           <strong>{formatPrice(product.price, product.currency)}</strong>
           <button
             className="icon-button"
-            disabled={product.stock === 0}
+            disabled={product.stock === 0 || !acceptingOrders}
             onClick={handleAdd}
             aria-label={
-              product.stock === 0
-                ? `${product.name} is out of stock`
-                : `${t('addToCart')}: ${product.name}`
+              !acceptingOrders
+                ? t('sellerNotAcceptingOrders')
+                : product.stock === 0
+                  ? `${product.name} is out of stock`
+                  : `${t('addToCart')}: ${product.name}`
             }
+            title={!acceptingOrders ? t('sellerNotAcceptingOrders') : undefined}
           >
             {product.stock === 0 ? '—' : added ? '✓' : '+'}
           </button>
@@ -79,6 +83,7 @@ export function ProductCard({ product }: { product: Product }) {
         <p className={product.stock > 0 ? 'stock stock--available' : 'stock stock--unavailable'}>
           {product.stock > 0 ? t('inStock', { count: product.stock }) : t('outOfStock')}
         </p>
+        {!acceptingOrders && <p className="inline-note">{t('sellerNotAcceptingOrders')}</p>}
       </div>
     </article>
   )

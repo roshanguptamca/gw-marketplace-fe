@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import type { ShopSettings } from '../types/marketplace'
 
 type BillingField = Pick<
@@ -61,8 +62,7 @@ export function SellerShopBillingPage() {
         }
       })
       .catch((caught: unknown) => {
-        if (active)
-          setError(caught instanceof Error ? caught.message : 'Could not load billing settings.')
+        if (active) setError(getApiErrorMessage(caught, 'Could not load billing settings.'))
       })
     return () => {
       active = false
@@ -79,7 +79,7 @@ export function SellerShopBillingPage() {
       await marketplaceService.updateSellerSettings(form)
       setSaved(true)
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not save billing settings.')
+      setError(getApiErrorMessage(caught, 'Could not save billing settings.'))
     } finally {
       setSaving(false)
     }

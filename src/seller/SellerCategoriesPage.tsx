@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import type { SellerCategory, SellerCategoryInput } from '../types/marketplace'
 
 const EMPTY_FORM: SellerCategoryInput = {
@@ -21,6 +22,10 @@ function useCategoriesData() {
 
 export function SellerCategoriesPage() {
   const { t } = useTranslation()
+  const apiErrorFallbacks = {
+    network: t('networkRequestError'),
+    server: t('serverRequestError'),
+  }
   const { data, loading, error, refresh } = useCategoriesData()
   const [query, setQuery] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
@@ -54,8 +59,12 @@ export function SellerCategoriesPage() {
       return (
         category.name.toLowerCase().includes(normalizedQuery) ||
         category.slug.toLowerCase().includes(normalizedQuery) ||
-        t(category.is_global ? 'sellerGlobal' : 'sellerShop').toLowerCase().includes(normalizedQuery) ||
-        t(category.is_active ? 'sellerActive' : 'sellerHidden').toLowerCase().includes(normalizedQuery)
+        t(category.is_global ? 'sellerGlobal' : 'sellerShop')
+          .toLowerCase()
+          .includes(normalizedQuery) ||
+        t(category.is_active ? 'sellerActive' : 'sellerHidden')
+          .toLowerCase()
+          .includes(normalizedQuery)
       )
     })
   }, [data, query, t])
@@ -79,8 +88,11 @@ export function SellerCategoriesPage() {
       setCreateOpen(false)
       setFeedback({ kind: 'success', message: t('sellerCategoryCreated') })
       refresh()
-    } catch {
-      setFeedback({ kind: 'error', message: t('sellerCategoryCreateFailed') })
+    } catch (error) {
+      setFeedback({
+        kind: 'error',
+        message: getApiErrorMessage(error, t('sellerCategoryCreateFailed'), apiErrorFallbacks),
+      })
     }
   }
 
@@ -111,8 +123,11 @@ export function SellerCategoriesPage() {
       setFeedback({ kind: 'success', message: t('sellerCategoryUpdated') })
       cancelEdit()
       refresh()
-    } catch {
-      setFeedback({ kind: 'error', message: t('sellerCategoryUpdateFailed') })
+    } catch (error) {
+      setFeedback({
+        kind: 'error',
+        message: getApiErrorMessage(error, t('sellerCategoryUpdateFailed'), apiErrorFallbacks),
+      })
     } finally {
       setSavingId(null)
     }
@@ -128,8 +143,11 @@ export function SellerCategoriesPage() {
       setFeedback({ kind: 'success', message: t('sellerCategoryDeleted') })
       if (editingId === category.id) cancelEdit()
       refresh()
-    } catch {
-      setFeedback({ kind: 'error', message: t('sellerCategoryDeleteFailed') })
+    } catch (error) {
+      setFeedback({
+        kind: 'error',
+        message: getApiErrorMessage(error, t('sellerCategoryDeleteFailed'), apiErrorFallbacks),
+      })
     } finally {
       setSavingId(null)
     }
@@ -146,16 +164,30 @@ export function SellerCategoriesPage() {
           <p className="muted">{t('sellerManageCategoriesIntro')}</p>
         </div>
         <div className="seller-page-status" aria-label={t('sellerCategoryCounts')}>
-          <span className="status-pill">{t('sellerCategoryTotalCount', { count: stats.total })}</span>
-          <span className="status-pill status-pill--muted">{t('sellerCategoryShopCount', { count: stats.shop })}</span>
-          <span className="status-pill status-pill--muted">{t('sellerCategoryGlobalCount', { count: stats.global })}</span>
-          <span className="status-pill status-pill--success">{t('sellerCategoryActiveCount', { count: stats.active })}</span>
+          <span className="status-pill">
+            {t('sellerCategoryTotalCount', { count: stats.total })}
+          </span>
+          <span className="status-pill status-pill--muted">
+            {t('sellerCategoryShopCount', { count: stats.shop })}
+          </span>
+          <span className="status-pill status-pill--muted">
+            {t('sellerCategoryGlobalCount', { count: stats.global })}
+          </span>
+          <span className="status-pill status-pill--success">
+            {t('sellerCategoryActiveCount', { count: stats.active })}
+          </span>
         </div>
       </div>
 
-      {error && <div className="alert alert--error">{t('sellerCategoriesLoadFailed')}</div>}
+      {error && (
+        <div className="alert alert--error">
+          {getApiErrorMessage(error, t('sellerCategoriesLoadFailed'), apiErrorFallbacks)}
+        </div>
+      )}
       {feedback && (
-        <div className={feedback.kind === 'success' ? 'alert alert--success' : 'alert alert--error'}>
+        <div
+          className={feedback.kind === 'success' ? 'alert alert--success' : 'alert alert--error'}
+        >
           {feedback.message}
         </div>
       )}
@@ -193,9 +225,13 @@ export function SellerCategoriesPage() {
             </div>
             <span className="status-pill status-pill--muted">{t('sellerSlugsGenerated')}</span>
           </div>
-          <form className="seller-form seller-category-form" onSubmit={(event) => void handleCreate(event)}>
+          <form
+            className="seller-form seller-category-form"
+            onSubmit={(event) => void handleCreate(event)}
+          >
+            <p className="form-hint">* Required field</p>
             <label>
-              {t('sellerCategoryName')}
+              {t('sellerCategoryName')} <span aria-hidden="true">*</span>
               <input
                 value={form.name}
                 onChange={(event) => setForm({ ...form, name: event.target.value })}

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import type { ShopSettings } from '../types/marketplace'
 
 function defaultSettings(): ShopSettings {
@@ -14,6 +15,7 @@ function defaultSettings(): ShopSettings {
     freeDeliveryAbove: null,
     deliveryNotes: '',
     orderAcceptanceMode: 'manual',
+    acceptingOrders: true,
     whatsappNumber: '',
     bankTransferInstructions: '',
     notificationEmail: '',
@@ -26,6 +28,13 @@ function defaultSettings(): ShopSettings {
 
 export function SellerShopOrderSettingsPage() {
   const { t } = useTranslation()
+  const apiErrorFallbacks = useMemo(
+    () => ({
+      network: t('networkRequestError'),
+      server: t('serverRequestError'),
+    }),
+    [t],
+  )
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -37,19 +46,20 @@ export function SellerShopOrderSettingsPage() {
       try {
         const settings = await marketplaceService.getSellerSettings()
         if (settings) setFormData(settings)
-      } catch {
-        setError(t('sellerLoadOrderSettingsFailed'))
+      } catch (error) {
+        setError(getApiErrorMessage(error, t('sellerLoadOrderSettingsFailed'), apiErrorFallbacks))
       } finally {
         setLoading(false)
       }
     }
 
     void load()
-  }, [t])
+  }, [t, apiErrorFallbacks])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value } as ShopSettings))
+    const { name, value, type } = e.target
+    const nextValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    setFormData((prev) => ({ ...prev, [name]: nextValue }) as ShopSettings)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,8 +73,8 @@ export function SellerShopOrderSettingsPage() {
       setFormData(updated)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch {
-      setError(t('sellerSaveOrderSettingsFailed'))
+    } catch (error) {
+      setError(getApiErrorMessage(error, t('sellerSaveOrderSettingsFailed'), apiErrorFallbacks))
     } finally {
       setSaving(false)
     }
@@ -86,6 +96,19 @@ export function SellerShopOrderSettingsPage() {
       {success && <div className="alert alert--success">{t('sellerOrderSettingsSaved')}</div>}
 
       <form onSubmit={handleSubmit} className="seller-form seller-form--stacked">
+        <div className="form-section">
+          <h3>{t('sellerOrderAvailability')}</h3>
+          <label className="seller-toggle">
+            <input
+              type="checkbox"
+              name="acceptingOrders"
+              checked={formData.acceptingOrders !== false}
+              onChange={handleChange}
+            />
+            <span>{t('sellerAcceptingOrders')}</span>
+          </label>
+          <p className="form-hint">{t('sellerAcceptingOrdersHint')}</p>
+        </div>
         <div className="form-section">
           <h3>{t('sellerAcceptanceMode')}</h3>
           <div className="radio-group">

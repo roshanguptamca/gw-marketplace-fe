@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage, getApiFormErrors } from '../services/apiClient'
 import {
   MEASURE_UNITS,
   SELLING_UNITS,
@@ -92,16 +93,23 @@ const EMPTY_FORM: ProductFormState = {
 
 export function SellerProductFormPage() {
   const { t } = useTranslation()
+  const apiErrorFallbacks = {
+    network: t('networkRequestError'),
+    server: t('serverRequestError'),
+  }
   const { id } = useParams()
   const productId = id ? Number(id) : null
   const navigate = useNavigate()
 
   const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const [categories, setCategories] = useState<SellerCategory[]>([])
   const [form, setForm] = useState<ProductFormState>(EMPTY_FORM)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [status, setStatus] = useState('')
+  const [statusIsError, setStatusIsError] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
   const [images, setImages] = useState<SellerProductImage[]>([])
   const [galleryFile, setGalleryFile] = useState<File | null>(null)
   const [gallerySortOrder, setGallerySortOrder] = useState('')
@@ -111,14 +119,14 @@ export function SellerProductFormPage() {
   useEffect(() => {
     let active = true
     setLoading(true)
-    setLoadError(false)
+    setLoadError('')
     Promise.all([
       marketplaceService.getSellerCategories(),
       productId ? marketplaceService.getSellerProduct(productId) : Promise.resolve(null),
     ])
       .then(([categoryList, product]) => {
         if (!active) return
-        setCategories(categoryList)
+        setCategories(categoryList.filter((category) => category.shop !== null))
         if (product) {
           setForm({
             name: product.name,
@@ -153,19 +161,31 @@ export function SellerProductFormPage() {
         }
         setLoading(false)
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (active) {
-          setLoadError(true)
+          setLoadError(
+            getApiErrorMessage(error, t('sellerLoadProductFailed'), {
+              network: t('networkRequestError'),
+              server: t('serverRequestError'),
+            }),
+          )
           setLoading(false)
         }
       })
     return () => {
       active = false
     }
-  }, [productId])
+  }, [productId, t])
 
   const updateField = <K extends keyof ProductFormState>(key: K, value: ProductFormState[K]) => {
     setForm((current) => ({ ...current, [key]: value }))
+    setErrors((current) => {
+      const next = { ...current }
+      delete next[key]
+      return next
+    })
+    setStatus('')
+    setStatusIsError(false)
   }
 
   const refreshGallery = async (id: number) => {
@@ -179,15 +199,18 @@ export function SellerProductFormPage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
+    setSaving(true)
+    setErrors({})
+    setStatusIsError(false)
     setStatus(t('sellerSavingChanges'))
     const formData = new FormData()
     formData.set('name', form.name)
     formData.set('price', form.price)
-    formData.set('vat_rate', form.vat_rate)
+    if (form.vat_rate) formData.set('vat_rate', form.vat_rate)
     if (form.compare_at_price) formData.set('compare_at_price', form.compare_at_price)
     formData.set('stock_quantity', form.stock_quantity || '0')
     if (form.sku) formData.set('sku', form.sku)
-    if (form.category) formData.set('category', form.category)
+    formData.set('category', form.category)
     formData.set('description', form.description)
     formData.set('ingredients', form.ingredients)
     formData.set('allergens', form.allergens)
@@ -225,8 +248,38 @@ export function SellerProductFormPage() {
         const created = await marketplaceService.createSellerProductForm(formData)
         navigate(`/seller/products/${created.id}/edit`)
       }
-    } catch {
-      setStatus(t('sellerSaveProductFailed'))
+    } catch (error) {
+      const result = getApiFormErrors(
+        error,
+        t('sellerSaveProductFailed'),
+        {
+          name: 'name',
+          price: 'price',
+          vat_rate: 'vat_rate',
+          compare_at_price: 'compare_at_price',
+          stock_quantity: 'stock_quantity',
+          sku: 'sku',
+          category: 'category',
+          image: 'image',
+          description: 'description',
+          ingredients: 'ingredients',
+          allergens: 'allergens',
+          selling_unit: 'selling_unit',
+          weight_value: 'weight_value',
+          weight_unit: 'weight_unit',
+          units_per_pack: 'units_per_pack',
+          minimum_order_quantity: 'minimum_order_quantity',
+          minimum_physical_units: 'minimum_physical_units',
+          minimum_order_amount: 'minimum_order_amount',
+          preparation_time_minutes: 'lead_time_value',
+        },
+        apiErrorFallbacks,
+      )
+      setErrors(result.fields)
+      setStatusIsError(true)
+      setStatus(result.message)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -236,8 +289,9 @@ export function SellerProductFormPage() {
     try {
       await marketplaceService.deleteSellerProduct(productId)
       navigate('/seller/products')
-    } catch {
-      setStatus(t('sellerDeleteProductFailedForm'))
+    } catch (error) {
+      setStatusIsError(true)
+      setStatus(getApiErrorMessage(error, t('sellerDeleteProductFailedForm'), apiErrorFallbacks))
     }
   }
 
@@ -259,8 +313,8 @@ export function SellerProductFormPage() {
       setGalleryAltText('')
       setGalleryStatus('')
       void refreshGallery(productId)
-    } catch {
-      setGalleryStatus(t('sellerUploadImageFailed'))
+    } catch (error) {
+      setGalleryStatus(getApiErrorMessage(error, t('sellerUploadImageFailed'), apiErrorFallbacks))
     }
   }
 
@@ -269,76 +323,140 @@ export function SellerProductFormPage() {
     try {
       await marketplaceService.deleteSellerProductImage(imageId)
       void refreshGallery(productId)
-    } catch {
-      setGalleryStatus(t('sellerRemoveImageFailed'))
+    } catch (error) {
+      setGalleryStatus(getApiErrorMessage(error, t('sellerRemoveImageFailed'), apiErrorFallbacks))
     }
   }
 
   if (loading) return <LoadingState label={t('loadingProduct')} />
-  if (loadError) return <p className="inline-error">{t('sellerLoadProductFailed')}</p>
+  if (loadError) return <p className="inline-error">{loadError}</p>
 
   return (
     <section>
       <p className="eyebrow">{t('sellerInventory')}</p>
       <h2>{productId ? t('sellerEditProductTitle') : t('sellerAddProduct')}</h2>
       <form className="seller-form" onSubmit={(event) => void submit(event)}>
+        <p className="form-hint">{t('requiredFieldNote')}</p>
         <div className="seller-form-grid">
           <label>
-            {t('sellerName')}
+            {t('sellerName')} <span aria-hidden="true">*</span>
             <input
+              id="product-name"
               value={form.name}
               onChange={(event) => updateField('name', event.target.value)}
               required
+              aria-invalid={Boolean(errors.name)}
+              aria-describedby={errors.name ? 'product-name-error' : undefined}
             />
+            {errors.name && (
+              <span id="product-name-error" className="form-field__error" role="alert">
+                {errors.name}
+              </span>
+            )}
           </label>
           <label>
-            {t('sellerPrice')}
+            {t('sellerPrice')} <span aria-hidden="true">*</span>
             <input
+              id="product-price"
               type="number"
               step="0.01"
               value={form.price}
               onChange={(event) => updateField('price', event.target.value)}
               required
+              aria-invalid={Boolean(errors.price)}
+              aria-describedby={errors.price ? 'product-price-error' : undefined}
             />
+            {errors.price && (
+              <span id="product-price-error" className="form-field__error" role="alert">
+                {errors.price}
+              </span>
+            )}
           </label>
           <label>
             {t('sellerCompareAtPrice')}
             <input
+              id="product-compare-at-price"
               type="number"
               step="0.01"
               value={form.compare_at_price}
               onChange={(event) => updateField('compare_at_price', event.target.value)}
+              aria-invalid={Boolean(errors.compare_at_price)}
+              aria-describedby={
+                errors.compare_at_price ? 'product-compare-at-price-error' : undefined
+              }
             />
+            {errors.compare_at_price && (
+              <span id="product-compare-at-price-error" className="form-field__error" role="alert">
+                {errors.compare_at_price}
+              </span>
+            )}
           </label>
           <label>
             {t('sellerVatDefaultHint')}
             <input
+              id="product-vat-rate"
               type="number"
               min="0"
               max="100"
               step="0.01"
               value={form.vat_rate}
               onChange={(event) => updateField('vat_rate', event.target.value)}
+              aria-invalid={Boolean(errors.vat_rate)}
+              aria-describedby={errors.vat_rate ? 'product-vat-rate-error' : undefined}
             />
+            {errors.vat_rate && (
+              <span id="product-vat-rate-error" className="form-field__error" role="alert">
+                {errors.vat_rate}
+              </span>
+            )}
           </label>
           <label>
             {t('sellerStock')}
             <input
+              id="product-stock-quantity"
               type="number"
               step="1"
               value={form.stock_quantity}
               onChange={(event) => updateField('stock_quantity', event.target.value)}
+              aria-invalid={Boolean(errors.stock_quantity)}
+              aria-describedby={errors.stock_quantity ? 'product-stock-quantity-error' : undefined}
             />
+            {errors.stock_quantity && (
+              <span id="product-stock-quantity-error" className="form-field__error" role="alert">
+                {errors.stock_quantity}
+              </span>
+            )}
           </label>
           <label>
             SKU
-            <input value={form.sku} onChange={(event) => updateField('sku', event.target.value)} />
+            {imageFile && (
+              <>
+                {' '}
+                <span aria-hidden="true">*</span>
+              </>
+            )}
+            <input
+              id="product-sku"
+              value={form.sku}
+              onChange={(event) => updateField('sku', event.target.value)}
+              required={Boolean(imageFile)}
+              aria-invalid={Boolean(errors.sku)}
+              aria-describedby={errors.sku ? 'product-sku-error' : undefined}
+            />
+            {errors.sku && (
+              <span id="product-sku-error" className="form-field__error" role="alert">
+                {errors.sku}
+              </span>
+            )}
           </label>
           <label>
             {t('sellerCategories')}
             <select
+              id="product-category"
               value={form.category}
               onChange={(event) => updateField('category', event.target.value)}
+              aria-invalid={Boolean(errors.category)}
+              aria-describedby={errors.category ? 'product-category-error' : undefined}
             >
               <option value="">{t('sellerNone')}</option>
               {categories.map((category) => (
@@ -347,16 +465,29 @@ export function SellerProductFormPage() {
                 </option>
               ))}
             </select>
+            {errors.category && (
+              <span id="product-category-error" className="form-field__error" role="alert">
+                {errors.category}
+              </span>
+            )}
           </label>
           <label>
             {t('sellerMainImage')}
             <input
+              id="product-image"
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 setImageFile(event.target.files?.[0] ?? null)
               }
+              aria-invalid={Boolean(errors.image)}
+              aria-describedby={errors.image ? 'product-image-error' : undefined}
             />
+            {errors.image && (
+              <span id="product-image-error" className="form-field__error" role="alert">
+                {errors.image}
+              </span>
+            )}
           </label>
         </div>
         <fieldset className="seller-form-section">
@@ -366,8 +497,11 @@ export function SellerProductFormPage() {
             <label>
               {t('sellerSoldAs')}
               <select
+                id="product-selling-unit"
                 value={form.selling_unit}
                 onChange={(event) => updateField('selling_unit', event.target.value as SellingUnit)}
+                aria-invalid={Boolean(errors.selling_unit)}
+                aria-describedby={errors.selling_unit ? 'product-selling-unit-error' : undefined}
               >
                 {SELLING_UNITS.map((unit) => (
                   <option key={unit} value={unit}>
@@ -375,28 +509,50 @@ export function SellerProductFormPage() {
                   </option>
                 ))}
               </select>
+              {errors.selling_unit && (
+                <span id="product-selling-unit-error" className="form-field__error" role="alert">
+                  {errors.selling_unit}
+                </span>
+              )}
             </label>
             {form.selling_unit === 'WEIGHT' ? (
               <>
                 <label>
-                  {t('sellerWeightVolume')}
+                  {t('sellerWeightVolume')} <span aria-hidden="true">*</span>
                   <input
+                    id="product-weight-value"
                     type="number"
                     step="0.001"
                     min="0.001"
                     value={form.weight_value}
                     onChange={(event) => updateField('weight_value', event.target.value)}
                     required
+                    aria-invalid={Boolean(errors.weight_value)}
+                    aria-describedby={
+                      errors.weight_value ? 'product-weight-value-error' : undefined
+                    }
                   />
+                  {errors.weight_value && (
+                    <span
+                      id="product-weight-value-error"
+                      className="form-field__error"
+                      role="alert"
+                    >
+                      {errors.weight_value}
+                    </span>
+                  )}
                 </label>
                 <label>
-                  Unit
+                  Unit <span aria-hidden="true">*</span>
                   <select
+                    id="product-weight-unit"
                     value={form.weight_unit}
                     onChange={(event) =>
                       updateField('weight_unit', event.target.value as MeasureUnit | '')
                     }
                     required
+                    aria-invalid={Boolean(errors.weight_unit)}
+                    aria-describedby={errors.weight_unit ? 'product-weight-unit-error' : undefined}
                   >
                     <option value="">{t('sellerChooseUnit')}</option>
                     {MEASURE_UNITS.map((unit) => (
@@ -405,6 +561,11 @@ export function SellerProductFormPage() {
                       </option>
                     ))}
                   </select>
+                  {errors.weight_unit && (
+                    <span id="product-weight-unit-error" className="form-field__error" role="alert">
+                      {errors.weight_unit}
+                    </span>
+                  )}
                 </label>
               </>
             ) : (
@@ -413,14 +574,34 @@ export function SellerProductFormPage() {
                   {t('sellerPiecesPer', {
                     unit: SELLING_UNIT_LABELS[form.selling_unit].toLowerCase(),
                   })}
+                  {form.selling_unit === 'PACK' && (
+                    <>
+                      {' '}
+                      <span aria-hidden="true">*</span>
+                    </>
+                  )}
                   <input
+                    id="product-units-per-pack"
                     type="number"
                     step="1"
                     min="1"
                     value={form.units_per_pack}
                     onChange={(event) => updateField('units_per_pack', event.target.value)}
                     required={form.selling_unit === 'PACK'}
+                    aria-invalid={Boolean(errors.units_per_pack)}
+                    aria-describedby={
+                      errors.units_per_pack ? 'product-units-per-pack-error' : undefined
+                    }
                   />
+                  {errors.units_per_pack && (
+                    <span
+                      id="product-units-per-pack-error"
+                      className="form-field__error"
+                      role="alert"
+                    >
+                      {errors.units_per_pack}
+                    </span>
+                  )}
                 </label>
               )
             )}
@@ -433,44 +614,98 @@ export function SellerProductFormPage() {
             <label>
               {t('sellerMinimumCartQuantity')}
               <input
+                id="product-minimum-order-quantity"
                 type="number"
                 step="1"
                 min="1"
                 value={form.minimum_order_quantity}
                 onChange={(event) => updateField('minimum_order_quantity', event.target.value)}
+                aria-invalid={Boolean(errors.minimum_order_quantity)}
+                aria-describedby={
+                  errors.minimum_order_quantity ? 'product-minimum-order-quantity-error' : undefined
+                }
               />
+              {errors.minimum_order_quantity && (
+                <span
+                  id="product-minimum-order-quantity-error"
+                  className="form-field__error"
+                  role="alert"
+                >
+                  {errors.minimum_order_quantity}
+                </span>
+              )}
             </label>
             {form.selling_unit !== 'WEIGHT' && (
               <label>
                 {t('sellerMinimumPhysicalPieces')}
                 <input
+                  id="product-minimum-physical-units"
                   type="number"
                   step="1"
                   min="1"
                   value={form.minimum_physical_units}
                   onChange={(event) => updateField('minimum_physical_units', event.target.value)}
+                  aria-invalid={Boolean(errors.minimum_physical_units)}
+                  aria-describedby={
+                    errors.minimum_physical_units
+                      ? 'product-minimum-physical-units-error'
+                      : undefined
+                  }
                 />
+                {errors.minimum_physical_units && (
+                  <span
+                    id="product-minimum-physical-units-error"
+                    className="form-field__error"
+                    role="alert"
+                  >
+                    {errors.minimum_physical_units}
+                  </span>
+                )}
               </label>
             )}
             <label>
               {t('sellerMinimumProductAmount')}
               <input
+                id="product-minimum-order-amount"
                 type="number"
                 step="0.01"
                 min="0"
                 value={form.minimum_order_amount}
                 onChange={(event) => updateField('minimum_order_amount', event.target.value)}
+                aria-invalid={Boolean(errors.minimum_order_amount)}
+                aria-describedby={
+                  errors.minimum_order_amount ? 'product-minimum-order-amount-error' : undefined
+                }
               />
+              {errors.minimum_order_amount && (
+                <span
+                  id="product-minimum-order-amount-error"
+                  className="form-field__error"
+                  role="alert"
+                >
+                  {errors.minimum_order_amount}
+                </span>
+              )}
             </label>
             <label>
               {t('sellerAdvanceNotice')}
               <input
+                id="product-lead-time-value"
                 type="number"
                 step="0.5"
                 min="0"
                 value={form.lead_time_value}
                 onChange={(event) => updateField('lead_time_value', event.target.value)}
+                aria-invalid={Boolean(errors.lead_time_value)}
+                aria-describedby={
+                  errors.lead_time_value ? 'product-lead-time-value-error' : undefined
+                }
               />
+              {errors.lead_time_value && (
+                <span id="product-lead-time-value-error" className="form-field__error" role="alert">
+                  {errors.lead_time_value}
+                </span>
+              )}
             </label>
             <label>
               {t('sellerAdvanceNoticeUnit')}
@@ -490,14 +725,23 @@ export function SellerProductFormPage() {
         <label>
           {t('sellerProductDescriptionEnglish')}
           <textarea
+            id="product-description"
             rows={4}
             value={form.description}
             onChange={(event) => updateField('description', event.target.value)}
+            aria-invalid={Boolean(errors.description)}
+            aria-describedby={errors.description ? 'product-description-error' : undefined}
           />
+          {errors.description && (
+            <span id="product-description-error" className="form-field__error" role="alert">
+              {errors.description}
+            </span>
+          )}
         </label>
         <label>
           {t('sellerProductDescriptionDutch')}
           <textarea
+            id="product-description-nl"
             rows={4}
             value={form.descriptionNl}
             onChange={(event) => updateField('descriptionNl', event.target.value)}
@@ -506,14 +750,23 @@ export function SellerProductFormPage() {
         <label>
           {t('sellerProductIngredientsEnglish')}
           <textarea
+            id="product-ingredients"
             rows={3}
             value={form.ingredients}
             onChange={(event) => updateField('ingredients', event.target.value)}
+            aria-invalid={Boolean(errors.ingredients)}
+            aria-describedby={errors.ingredients ? 'product-ingredients-error' : undefined}
           />
+          {errors.ingredients && (
+            <span id="product-ingredients-error" className="form-field__error" role="alert">
+              {errors.ingredients}
+            </span>
+          )}
         </label>
         <label>
           {t('sellerProductIngredientsDutch')}
           <textarea
+            id="product-ingredients-nl"
             rows={3}
             value={form.ingredientsNl}
             onChange={(event) => updateField('ingredientsNl', event.target.value)}
@@ -522,14 +775,23 @@ export function SellerProductFormPage() {
         <label>
           {t('sellerProductAllergensEnglish')}
           <textarea
+            id="product-allergens"
             rows={3}
             value={form.allergens}
             onChange={(event) => updateField('allergens', event.target.value)}
+            aria-invalid={Boolean(errors.allergens)}
+            aria-describedby={errors.allergens ? 'product-allergens-error' : undefined}
           />
+          {errors.allergens && (
+            <span id="product-allergens-error" className="form-field__error" role="alert">
+              {errors.allergens}
+            </span>
+          )}
         </label>
         <label>
           {t('sellerProductAllergensDutch')}
           <textarea
+            id="product-allergens-nl"
             rows={3}
             value={form.allergensNl}
             onChange={(event) => updateField('allergensNl', event.target.value)}
@@ -541,7 +803,7 @@ export function SellerProductFormPage() {
             checked={form.is_active}
             onChange={(event) => updateField('is_active', event.target.checked)}
           />
-          {t('sellerActive')}
+          {form.is_active ? t('sellerProductActive') : t('sellerProductInactive')}
         </label>
         <label className="seller-checkbox-row">
           <input
@@ -552,8 +814,8 @@ export function SellerProductFormPage() {
           {t('sellerProductFeatured')}
         </label>
         <div className="seller-actions">
-          <button className="button" type="submit">
-            {t('sellerSaveProduct')}
+          <button className="button" type="submit" disabled={saving}>
+            {saving ? t('sellerSavingChanges') : t('sellerSaveProduct')}
           </button>
           {productId && (
             <button
@@ -565,7 +827,14 @@ export function SellerProductFormPage() {
             </button>
           )}
         </div>
-        <span role="status">{status}</span>
+        {status && (
+          <p
+            className={statusIsError ? 'inline-error' : 'inline-note'}
+            role={statusIsError ? 'alert' : 'status'}
+          >
+            {status}
+          </p>
+        )}
       </form>
 
       {productId && (

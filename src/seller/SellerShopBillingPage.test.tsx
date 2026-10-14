@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../services/apiClient'
 import { marketplaceService } from '../services/marketplaceService'
 import type { ShopSettings } from '../types/marketplace'
 import { SellerShopBillingPage } from './SellerShopBillingPage'
@@ -70,7 +71,7 @@ describe('seller billing settings', () => {
   })
 
   it('shows save errors without losing edits', async () => {
-    service.updateSellerSettings.mockRejectedValueOnce(new Error('Invalid rate'))
+    service.updateSellerSettings.mockRejectedValueOnce(new ApiError('Invalid rate', 400))
     render(<SellerShopBillingPage />)
     await userEvent.click(await screen.findByRole('button', { name: 'Save billing details' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Invalid rate')
@@ -81,7 +82,7 @@ describe('seller billing settings', () => {
   })
 
   it('allows retry after a load failure', async () => {
-    service.getSellerSettings.mockRejectedValueOnce(new Error('Unavailable'))
+    service.getSellerSettings.mockRejectedValueOnce(new ApiError('Unavailable', 400))
     render(<SellerShopBillingPage />)
     expect(await screen.findByRole('alert')).toHaveTextContent('Unavailable')
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import type { Shop } from '../types/marketplace'
 
 export function SellerShopPreviewPage() {
@@ -13,8 +14,8 @@ export function SellerShopPreviewPage() {
       try {
         const data = await marketplaceService.getSellerShop()
         setShop(data)
-      } catch {
-        setError('Failed to load shop information.')
+      } catch (error) {
+        setError(getApiErrorMessage(error, 'Failed to load shop information.'))
       } finally {
         setLoading(false)
       }
@@ -66,7 +67,9 @@ export function SellerShopPreviewPage() {
           <button
             className="button button--secondary"
             type="button"
-            onClick={() => navigator.clipboard.writeText(`${window.location.origin}${publicShopUrl}`)}
+            onClick={() =>
+              navigator.clipboard.writeText(`${window.location.origin}${publicShopUrl}`)
+            }
           >
             Copy URL
           </button>

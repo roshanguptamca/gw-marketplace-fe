@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 
 interface ContactInfo {
   email: string
@@ -37,8 +38,8 @@ export function SellerShopContactPage() {
           address: data.address || '',
           city: data.location || '',
         })
-      } catch {
-        setError('Failed to load contact information.')
+      } catch (error) {
+        setError(getApiErrorMessage(error, 'Failed to load contact information.'))
       } finally {
         setLoading(false)
       }
@@ -71,8 +72,8 @@ export function SellerShopContactPage() {
       })
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch {
-      setError('Failed to save contact information.')
+    } catch (error) {
+      setError(getApiErrorMessage(error, 'Failed to save contact information.'))
     } finally {
       setSaving(false)
     }

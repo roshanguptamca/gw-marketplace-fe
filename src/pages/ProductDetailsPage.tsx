@@ -64,9 +64,24 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
   const physicalTotal = physicalTotalLabel(product, quantity)
   const ruleLines = orderingRuleLines(product, (value) => formatPrice(value, product.currency))
   const unitWord = sellingUnitOf(product) === 'PACK' ? 'pack' : ''
-  const description = localizedText(product.description, product.translations, 'description', i18n.language)
-  const ingredients = localizedText(product.ingredients, product.translations, 'ingredients', i18n.language)
-  const allergens = localizedText(product.allergens, product.translations, 'allergens', i18n.language)
+  const description = localizedText(
+    product.description,
+    product.translations,
+    'description',
+    i18n.language,
+  )
+  const ingredients = localizedText(
+    product.ingredients,
+    product.translations,
+    'ingredients',
+    i18n.language,
+  )
+  const allergens = localizedText(
+    product.allergens,
+    product.translations,
+    'allergens',
+    i18n.language,
+  )
 
   const handleAdd = () => {
     addItem(product, quantity)
@@ -84,9 +99,7 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
     ingredients
       ? { label: t('ingredients'), value: ingredients, testId: 'product-ingredients' }
       : null,
-    allergens
-      ? { label: t('allergens'), value: allergens, testId: 'product-allergens' }
-      : null,
+    allergens ? { label: t('allergens'), value: allergens, testId: 'product-allergens' } : null,
   ].filter(
     (section): section is { label: string; value: string; testId: string } => section !== null,
   )
@@ -139,6 +152,11 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
             {formatPrice(product.price, product.currency)}
             {unitWord ? ` per ${unitWord}` : ''}
           </p>
+          {product.sellerAcceptingOrders === false && (
+            <p className="alert alert--error" role="status">
+              {t('sellerNotAcceptingOrders')}
+            </p>
+          )}
           {ruleLines.length > 0 && (
             <ul className="product-rules" data-testid="product-ordering-rules">
               {ruleLines.map((line) => (
@@ -171,7 +189,7 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
           ) : (
             <>
               {product.stock > 0 && (
-                <div className="quantity-stepper"                 aria-label={t('quantity')}>
+                <div className="quantity-stepper" aria-label={t('quantity')}>
                   <button
                     type="button"
                     className="icon-button"
@@ -210,10 +228,18 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
               )}
               <button
                 className="button button--wide"
-                disabled={product.stock === 0 || product.stock < minimumQuantity}
+                disabled={
+                  product.sellerAcceptingOrders === false ||
+                  product.stock === 0 ||
+                  product.stock < minimumQuantity
+                }
                 onClick={handleAdd}
               >
-                {product.stock === 0 ? t('outOfStock') : t('addToCartLabel')}
+                {product.sellerAcceptingOrders === false
+                  ? t('sellerNotAcceptingOrders')
+                  : product.stock === 0
+                    ? t('outOfStock')
+                    : t('addToCartLabel')}
               </button>
             </>
           )}

@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { LoadingState } from '../components/LoadingState'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 
 function PencilIcon() {
   return (
@@ -37,6 +38,10 @@ const PRODUCT_STATUS_FILTERS = [
 
 export function SellerProductsPage() {
   const { t } = useTranslation()
+  const apiErrorFallbacks = {
+    network: t('networkRequestError'),
+    server: t('serverRequestError'),
+  }
   const [refreshKey, setRefreshKey] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q') ?? ''
@@ -46,6 +51,7 @@ export function SellerProductsPage() {
     [refreshKey, query, selectedStatus],
   )
   const [status, setStatus] = useState('')
+  const [updatingProductId, setUpdatingProductId] = useState<number | null>(null)
   const filteredProducts = useMemo(() => data ?? [], [data])
 
   const updateFilter = (nextQuery: string, nextStatus: string) => {
@@ -60,8 +66,21 @@ export function SellerProductsPage() {
     try {
       await marketplaceService.deleteSellerProduct(id)
       setRefreshKey((key) => key + 1)
-    } catch {
-      setStatus(t('sellerDeleteProductFailed'))
+    } catch (error) {
+      setStatus(getApiErrorMessage(error, t('sellerDeleteProductFailed'), apiErrorFallbacks))
+    }
+  }
+
+  const toggleActive = async (id: number, isActive: boolean) => {
+    setUpdatingProductId(id)
+    setStatus('')
+    try {
+      await marketplaceService.updateSellerProduct(id, { is_active: !isActive })
+      setRefreshKey((key) => key + 1)
+    } catch (error) {
+      setStatus(getApiErrorMessage(error, t('sellerUpdateProductStatusFailed'), apiErrorFallbacks))
+    } finally {
+      setUpdatingProductId(null)
     }
   }
 
@@ -107,7 +126,11 @@ export function SellerProductsPage() {
           {t('sellerClear')}
         </button>
       </div>
-      {error && <p className="inline-error">{t('sellerProductsLoadFailed')}</p>}
+      {error && (
+        <p className="inline-error">
+          {getApiErrorMessage(error, t('sellerProductsLoadFailed'), apiErrorFallbacks)}
+        </p>
+      )}
       {status && <p className="inline-error">{status}</p>}
       <div className="seller-table-wrap">
         <table className="seller-table">
@@ -129,7 +152,18 @@ export function SellerProductsPage() {
                 <td>€{product.price}</td>
                 <td>{product.stock_quantity}</td>
                 <td>
-                  {product.is_approved && product.is_active ? t('sellerProductLive') : t('sellerDraft')}
+                  <span
+                    className={
+                      product.is_active ? 'status-pill status-pill--success' : 'status-pill'
+                    }
+                  >
+                    {product.is_active ? t('sellerProductActive') : t('sellerProductInactive')}
+                  </span>
+                  {!product.is_approved && (
+                    <span className="status-pill status-pill--muted">
+                      {t('sellerAwaitingApproval')}
+                    </span>
+                  )}
                 </td>
                 <td className="seller-actions seller-actions--icons">
                   <Link
@@ -140,6 +174,26 @@ export function SellerProductsPage() {
                   >
                     <PencilIcon />
                   </Link>
+                  <button
+                    className="icon-button"
+                    type="button"
+                    disabled={updatingProductId === product.id}
+                    aria-label={t(
+                      product.is_active ? 'sellerDeactivateProduct' : 'sellerActivateProduct',
+                      {
+                        name: product.name,
+                      },
+                    )}
+                    title={t(
+                      product.is_active ? 'sellerDeactivateProduct' : 'sellerActivateProduct',
+                      {
+                        name: product.name,
+                      },
+                    )}
+                    onClick={() => void toggleActive(product.id, product.is_active)}
+                  >
+                    {product.is_active ? '−' : '+'}
+                  </button>
                   <button
                     className="icon-button icon-button--danger"
                     type="button"

@@ -91,6 +91,11 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
           {productsLoading ? t('loadingItems') : t('itemsCount', { count: products?.length ?? 0 })}
         </p>
       </div>
+      {shop.acceptingOrders === false && (
+        <p className="alert alert--error" role="status">
+          {t('sellerNotAcceptingOrders')}
+        </p>
+      )}
       <CartCallToAction />
       <div className="shop-product-filters">
         <form
@@ -163,7 +168,7 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
       )}
       {error && (
         <p className="inline-error" role="alert">
-        {t('productsCouldNotLoad')}
+          {t('productsCouldNotLoad')}
         </p>
       )}
       {products && products.length > 0 && <ProductGrid products={products} />}

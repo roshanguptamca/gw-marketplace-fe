@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LoadingState } from '../components/LoadingState'
 import { marketplaceService } from '../services/marketplaceService'
+import { getApiErrorMessage } from '../services/apiClient'
 import type { OpeningHour } from '../types/marketplace'
 
 const dayLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -25,9 +26,13 @@ export function SellerShopHoursPage() {
     const load = async () => {
       try {
         const shop = await marketplaceService.getSellerShop()
-        setHours(shop.openingHours && shop.openingHours.length > 0 ? shop.openingHours : buildDefaultHours())
-      } catch {
-        setError('Failed to load opening hours.')
+        setHours(
+          shop.openingHours && shop.openingHours.length > 0
+            ? shop.openingHours
+            : buildDefaultHours(),
+        )
+      } catch (error) {
+        setError(getApiErrorMessage(error, 'Failed to load opening hours.'))
       } finally {
         setLoading(false)
       }
@@ -59,8 +64,8 @@ export function SellerShopHoursPage() {
       })
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch {
-      setError('Failed to save opening hours.')
+    } catch (error) {
+      setError(getApiErrorMessage(error, 'Failed to save opening hours.'))
     } finally {
       setSaving(false)
     }

@@ -4,7 +4,13 @@ vi.mock('../config/env', () => ({
   env: { apiBaseUrl: 'https://api.example.test', useMockApi: false },
 }))
 
-import { ApiError, apiRequest, SESSION_EXPIRED_EVENT } from './apiClient'
+import {
+  ApiError,
+  apiRequest,
+  getApiErrorMessage,
+  getApiFormErrors,
+  SESSION_EXPIRED_EVENT,
+} from './apiClient'
 
 describe('apiRequest', () => {
   beforeEach(() => vi.useRealTimers())
@@ -125,6 +131,32 @@ describe('apiRequest', () => {
       message: 'Passwords must match.',
       status: 400,
     })
+  })
+
+  it('extracts nested validation messages and maps field errors to form fields', () => {
+    const error = new ApiError('Request failed with status 400', 400, undefined, {
+      category: { message: ['Choose a category from your shop.'] },
+      errors: [{ code: 'ORDER_RULES_NOT_MET', message: 'The order rule was not met.' }],
+      code: 'INVALID',
+    })
+    expect(
+      getApiFormErrors(error, 'Could not save product', {
+        category: 'category',
+      }),
+    ).toEqual({
+      message: 'The order rule was not met.',
+      fields: { category: 'Choose a category from your shop.' },
+    })
+  })
+
+  it('uses explicit network and server fallback messages', () => {
+    expect(getApiErrorMessage(new ApiError('offline', 0), 'Save failed')).toMatch(/network/i)
+    expect(getApiErrorMessage(new ApiError('bad gateway', 502), 'Save failed')).toMatch(
+      /temporarily unavailable/i,
+    )
+    expect(getApiErrorMessage(new ApiError('Invalid category', 400), 'Save failed')).toBe(
+      'Invalid category',
+    )
   })
 
   it('normalizes network and unknown errors', async () => {
