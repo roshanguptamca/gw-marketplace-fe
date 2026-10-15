@@ -52,7 +52,7 @@ export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) 
         />
       </div>
       <ShopHero shop={shop} onMoreDetails={() => setDetailsOpen(true)} />
-      {slug === 'rishi-kitchen' && <RishiKitchenVoiceAssistant />}
+      {slug === 'rishi-kitchen' && <RishiKitchenVoiceAssistant logoUrl={shop.logoUrl} />}
       <ShopDetailsModal shop={shop} open={detailsOpen} onClose={() => setDetailsOpen(false)} />
       <section className="page-shell section">
         <div className="section-heading">
