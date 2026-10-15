@@ -23,12 +23,8 @@ describe('apiRequest', () => {
       }),
     )
     const blob = await apiRequest<Blob>('/invoice/pdf/', { responseType: 'blob' }, fetcher)
-    const text = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(String(reader.result))
-      reader.onerror = () => reject(reader.error)
-      reader.readAsText(blob)
-    })
+    // Response.blob() uses Node's Blob in Vitest; jsdom FileReader only accepts jsdom Blobs.
+    const text = await blob.text()
     expect(text).toBe('%PDF-1.7')
     expect(fetcher).toHaveBeenCalledWith(
       'https://api.example.test/invoice/pdf/',
