@@ -8,6 +8,24 @@ afterEach(() => {
 })
 
 describe('Rishi Kitchen ElevenLabs widget', () => {
+  it('opens from the header after interaction and preserves the widget on close and reopen', () => {
+    const view = render(
+      <>
+        <div id="rishi-header-chat" />
+        <RishiKitchenVoiceAssistant />
+      </>,
+    )
+    const headerButton = screen.getByRole('button', { name: 'Open Rishi Kitchen AI assistant' })
+    expect(document.getElementById('rishi-elevenlabs-widget-script')).toBeNull()
+    fireEvent.click(headerButton)
+    const widget = view.container.querySelector('elevenlabs-convai')
+    expect(widget).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Close Rishi Kitchen AI chat' }))
+    expect(screen.getByTestId('rishi-agent-widget')).not.toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Open Rishi Kitchen AI assistant' }))
+    expect(view.container.querySelector('elevenlabs-convai')).toBe(widget)
+    expect(screen.getByTestId('rishi-agent-widget')).toBeVisible()
+  })
   it('welcomes first-time visitors without loading the microphone widget and remembers dismissal', () => {
     const view = render(<RishiKitchenVoiceAssistant />)
     expect(
