@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { getShopLogoUrl, handleShopLogoError } from '../utils/shopImages'
 
 const RISHI_AGENT_ID = 'agent_1901m50br0w0eg8a1m3karz91wdr'
@@ -9,6 +10,11 @@ const WIDGET_SCRIPT_URL = 'https://unpkg.com/@elevenlabs/convai-widget-embed'
 export function RishiKitchenVoiceAssistant({ logoUrl }: { logoUrl?: string }) {
   const avatarUrl = getShopLogoUrl(logoUrl)
   const [enabled, setEnabled] = useState(false)
+  const [widgetOpen, setWidgetOpen] = useState(false)
+  const [headerHost, setHeaderHost] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    setHeaderHost(document.getElementById('rishi-header-chat'))
+  }, [])
   const [welcomeOpen, setWelcomeOpen] = useState(() => {
     try {
       return localStorage.getItem('rishi-chat-welcomed') !== 'true'
@@ -25,6 +31,13 @@ export function RishiKitchenVoiceAssistant({ logoUrl }: { logoUrl?: string }) {
     }
   }
   const widgetContainer = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setWidgetOpen(false)
+    }
+    document.addEventListener('keydown', close)
+    return () => document.removeEventListener('keydown', close)
+  }, [])
 
   useEffect(() => {
     if (!enabled) return
@@ -33,6 +46,8 @@ export function RishiKitchenVoiceAssistant({ logoUrl }: { logoUrl?: string }) {
       const widget = document.createElement('elevenlabs-convai')
       widget.setAttribute('agent-id', RISHI_AGENT_ID)
       widget.setAttribute('variant', 'compact')
+      widget.setAttribute('default-expanded', 'true')
+      widget.setAttribute('always-expanded', 'true')
       widget.setAttribute('avatar-image-url', avatarUrl)
       widget.setAttribute('action-text', 'Chat with us')
       widget.setAttribute('expand-text', 'Open chat')
@@ -50,6 +65,28 @@ export function RishiKitchenVoiceAssistant({ logoUrl }: { logoUrl?: string }) {
 
   return (
     <aside aria-label="Rishi Kitchen AI assistant">
+      {headerHost &&
+        createPortal(
+          <button
+            className="rishi-header-chat"
+            type="button"
+            aria-label={
+              widgetOpen ? 'Close Rishi Kitchen AI chat' : 'Open Rishi Kitchen AI assistant'
+            }
+            aria-expanded={widgetOpen}
+            aria-controls="rishi-chat-window"
+            title="Rishi Kitchen AI assistant"
+            onClick={() => {
+              dismissWelcome()
+              setEnabled(true)
+              setWidgetOpen((open) => !open)
+            }}
+          >
+            <img src={avatarUrl} alt="" onError={handleShopLogoError} />
+            <span>{widgetOpen ? 'Close chat' : 'AI chat'}</span>
+          </button>,
+          headerHost,
+        )}
       {!enabled && welcomeOpen && (
         <div
           className="rishi-chat-welcome"
@@ -78,6 +115,7 @@ export function RishiKitchenVoiceAssistant({ logoUrl }: { logoUrl?: string }) {
           onClick={() => {
             dismissWelcome()
             setEnabled(true)
+            setWidgetOpen(true)
           }}
         >
           <img src={avatarUrl} alt="" onError={handleShopLogoError} />
@@ -96,7 +134,14 @@ export function RishiKitchenVoiceAssistant({ logoUrl }: { logoUrl?: string }) {
           </svg>
         </button>
       )}
-      {enabled && <div ref={widgetContainer} data-testid="rishi-agent-widget" />}
+      {enabled && (
+        <div
+          id="rishi-chat-window"
+          hidden={!widgetOpen}
+          ref={widgetContainer}
+          data-testid="rishi-agent-widget"
+        />
+      )}
     </aside>
   )
 }

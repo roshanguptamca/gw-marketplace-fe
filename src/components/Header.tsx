@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useMatch } from 'react-router-dom'
+import { getShopSlugFromHostname } from '../utils/shopResolver'
 import { useAuth } from '../auth/AuthContext'
 import { useCart } from '../cart/CartContext'
 import { env } from '../config/env'
@@ -9,6 +10,10 @@ import i18n from '../i18n'
 
 export function Header() {
   const { t } = useTranslation()
+  const shopMatch = useMatch('/shop/:shopSlug/*')
+  const rishiShop =
+    (getShopSlugFromHostname(window.location.hostname) || shopMatch?.params.shopSlug) ===
+    'rishi-kitchen'
   const { itemCount } = useCart()
   const { user, loading, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -31,9 +36,32 @@ export function Header() {
           <span>{t('brand')}</span>
         </Link>
         <nav aria-label="Main navigation">
-          <Link to="/">{t('browse')}</Link>
-          <Link to="/cart" className="cart-link">
-            {t('cart')}
+          {rishiShop && <div id="rishi-header-chat" />}
+          <Link to="/" className="header-browse">
+            {t('browse')}
+          </Link>
+          <Link
+            to="/cart"
+            className="cart-link"
+            aria-label={itemCount > 0 ? `${t('cart')} (${itemCount})` : t('cart')}
+            title={t('cart')}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="23"
+              height="23"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M2 3h3l3 12h11l3-9H6" />
+              <circle cx="9" cy="20" r="1" />
+              <circle cx="18" cy="20" r="1" />
+            </svg>
+            <span className="header-cart-label">{t('cart')}</span>
             {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
           </Link>
           <div className="language-switch" role="group" aria-label={t('language')}>
