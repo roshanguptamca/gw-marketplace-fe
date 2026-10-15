@@ -29,7 +29,11 @@ export function RishiKitchenVoiceAssistant() {
   return (
     <section className="page-shell section" aria-label="Rishi Kitchen AI assistant">
       <h2>Ask Rishi Kitchen AI</h2>
-      <p>Ask about our menu, ingredients, prices and pickup. Final orders are placed through checkout.</p>
+      <p>
+        Ask about our menu, ingredients, prices and pickup in English, Hindi or Dutch. Review and
+        explicitly confirm any order before it is placed. You can also order through our shop
+        checkout.
+      </p>
       {!enabled && (
         <>
           <p>

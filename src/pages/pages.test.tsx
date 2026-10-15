@@ -351,7 +351,7 @@ describe('marketplace pages', () => {
     await userEvent.click(screen.getByLabelText(/delivery/i))
     await userEvent.type(screen.getByLabelText(/^Street and house number/), 'Main Street')
     await userEvent.type(screen.getByLabelText(/^House number/), '1')
-    await userEvent.type(screen.getByLabelText('Postcode'), '1000 AA')
+    await userEvent.type(screen.getByRole('textbox', { name: 'Postcode' }), '1000 AA')
     await userEvent.type(screen.getByLabelText(/^City/), 'Amsterdam')
     await userEvent.type(screen.getByLabelText('Notes to seller'), 'Please call me.')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
