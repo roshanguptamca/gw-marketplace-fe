@@ -97,7 +97,7 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
           {t('sellerNotAcceptingOrders')}
         </p>
       )}
-      {slug === 'rishi-kitchen' && <RishiKitchenVoiceAssistant />}
+      {slug === 'rishi-kitchen' && <RishiKitchenVoiceAssistant logoUrl={shop.logoUrl} />}
       <CartCallToAction />
       <div className="shop-product-filters">
         <form
