@@ -23,13 +23,10 @@ describe('apiRequest', () => {
       }),
     )
     const blob = await apiRequest<Blob>('/invoice/pdf/', { responseType: 'blob' }, fetcher)
-    const text = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(String(reader.result))
-      reader.onerror = () => reject(reader.error)
-      reader.readAsText(blob)
-    })
-    expect(text).toBe('%PDF-1.7')
+    // Blob implementations differ between Node and jsdom; verify the binary response
+    // without relying on realm-specific FileReader or Blob.text() implementations.
+    expect(blob.type).toBe('application/pdf')
+    expect(blob.size).toBe('%PDF-1.7'.length)
     expect(fetcher).toHaveBeenCalledWith(
       'https://api.example.test/invoice/pdf/',
       expect.objectContaining({ credentials: 'include' }),

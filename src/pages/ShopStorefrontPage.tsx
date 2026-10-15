@@ -7,6 +7,7 @@ import { ProductGrid } from '../components/ProductGrid'
 import { MarketplaceBackNavigation } from '../components/MarketplaceBackNavigation'
 import { ShopDetailsModal } from '../components/ShopDetailsModal'
 import { ShopHero } from '../components/ShopHero'
+import { RishiKitchenVoiceAssistant } from '../components/RishiKitchenVoiceAssistant'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
 import { shopPath } from '../utils/shopLinks'
@@ -51,6 +52,7 @@ export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) 
         />
       </div>
       <ShopHero shop={shop} onMoreDetails={() => setDetailsOpen(true)} />
+      {slug === 'rishi-kitchen' && <RishiKitchenVoiceAssistant />}
       <ShopDetailsModal shop={shop} open={detailsOpen} onClose={() => setDetailsOpen(false)} />
       <section className="page-shell section">
         <div className="section-heading">

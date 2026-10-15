@@ -44,6 +44,7 @@ const service = vi.mocked(marketplaceService)
 
 describe('marketplace pages', () => {
   beforeEach(() => {
+    env.addressLookupEnabled = false
     service.getShops.mockResolvedValue([shopFixture])
     service.getShopBySlug.mockResolvedValue(shopFixture)
     service.getShopCategories.mockResolvedValue([{ slug: 'home', name: 'Home', productCount: 1 }])
@@ -349,8 +350,8 @@ describe('marketplace pages', () => {
     await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.click(screen.getByLabelText(/delivery/i))
     await userEvent.type(screen.getByLabelText(/^Street and house number/), 'Main Street')
-    await userEvent.type(screen.getByLabelText('House number'), '1')
-    await userEvent.type(screen.getByLabelText('Postcode'), '1000 AA')
+    await userEvent.type(screen.getByLabelText(/^House number/), '1')
+    await userEvent.type(screen.getByRole('textbox', { name: 'Postcode' }), '1000 AA')
     await userEvent.type(screen.getByLabelText(/^City/), 'Amsterdam')
     await userEvent.type(screen.getByLabelText('Notes to seller'), 'Please call me.')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
@@ -525,7 +526,7 @@ describe('marketplace pages', () => {
     await userEvent.type(screen.getByLabelText(/^Email/), 'buyer@example.com')
     await userEvent.type(screen.getByLabelText(/^Phone/), '+31612345678')
     await userEvent.type(screen.getByLabelText(/^Street and house number/), 'Lane')
-    await userEvent.type(screen.getByLabelText('House number'), '1')
+    await userEvent.type(screen.getByLabelText(/^House number/), '1')
     await userEvent.type(screen.getByLabelText(/Postcode|Postal code/), '1234 AB')
     await userEvent.type(screen.getByLabelText(/^City/), 'Town')
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
@@ -697,7 +698,7 @@ describe('marketplace pages', () => {
         country: 'Netherlands',
       })
       await userEvent.type(screen.getByLabelText('Postcode'), '1000AA')
-      await userEvent.type(screen.getByLabelText('House number'), '1')
+      await userEvent.type(screen.getByLabelText(/^House number/), '1')
       await userEvent.click(screen.getByRole('button', { name: 'Find address' }))
 
       await waitFor(() => {
