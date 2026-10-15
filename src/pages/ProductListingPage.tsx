@@ -5,6 +5,7 @@ import { CartCallToAction } from '../components/CartCallToAction'
 import { EmptyState } from '../components/EmptyState'
 import { LoadingState } from '../components/LoadingState'
 import { ProductGrid } from '../components/ProductGrid'
+import { RishiKitchenVoiceAssistant } from '../components/RishiKitchenVoiceAssistant'
 import { MarketplaceBackNavigation } from '../components/MarketplaceBackNavigation'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
@@ -96,6 +97,7 @@ export function ProductListingPage({ resolvedSlug }: { resolvedSlug?: string }) 
           {t('sellerNotAcceptingOrders')}
         </p>
       )}
+      {slug === 'rishi-kitchen' && <RishiKitchenVoiceAssistant />}
       <CartCallToAction />
       <div className="shop-product-filters">
         <form
