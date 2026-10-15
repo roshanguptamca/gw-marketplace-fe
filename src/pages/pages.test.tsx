@@ -44,6 +44,7 @@ const service = vi.mocked(marketplaceService)
 
 describe('marketplace pages', () => {
   beforeEach(() => {
+    env.addressLookupEnabled = false
     service.getShops.mockResolvedValue([shopFixture])
     service.getShopBySlug.mockResolvedValue(shopFixture)
     service.getShopCategories.mockResolvedValue([{ slug: 'home', name: 'Home', productCount: 1 }])
