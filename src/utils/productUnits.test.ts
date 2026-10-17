@@ -5,6 +5,7 @@ import {
   describeQuantity,
   effectiveMinimumQuantity,
   formatMeasure,
+  formatLeadTime,
   orderingRuleLines,
   physicalQuantity,
   physicalTotalLabel,
@@ -55,6 +56,19 @@ const namakPare = product({
 })
 
 describe('product units', () => {
+  it.each([
+    [0, ''],
+    [1, '1 hour'],
+    [12, '12 hours'],
+    [24, '1 day'],
+    [48, '2 days'],
+    [168, '7 days'],
+    [25, '1 day 1 hour'],
+    [49.5, '2 days 1.5 hours'],
+  ])('formats %s hours as %s', (hours, label) => {
+    expect(formatLeadTime(hours)).toBe(label)
+  })
+
   it('labels every selling unit', () => {
     expect(sellingFormatLabel(product())).toBe('1 piece')
     expect(sellingFormatLabel(samosa)).toBe('2 pieces')
@@ -124,7 +138,7 @@ describe('product units', () => {
     expect(orderingRuleLines(samosa, euro)).toEqual([
       'Minimum order: 10 pieces',
       'Minimum amount: €20.00',
-      'Order at least 24 hours in advance',
+      'Order at least 1 day in advance',
     ])
     expect(orderingRuleLines(namakPare, euro)).toEqual([
       'Minimum: 2 packs / 500 g',
@@ -162,7 +176,7 @@ describe('order rule errors', () => {
         'EUR',
       ),
     ).toBe(
-      'The selected pickup time for Kitchen is too early: the order needs 48 hours of preparation. Earliest available pickup: Saturday 3 October 14:00. Please choose a new time.',
+      'The selected pickup time for Kitchen is too early: the order needs 2 days of preparation. Earliest available pickup: Saturday 3 October 14:00. Please choose a new time.',
     )
     expect(describeOrderRuleError('SOMETHING_ELSE', {}, 'EUR')).toBeNull()
   })
