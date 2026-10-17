@@ -1069,7 +1069,7 @@ describe('marketplace pages', () => {
       const rules = screen.getByTestId('product-ordering-rules')
       expect(rules).toHaveTextContent('Minimum order: 10 pieces')
       expect(rules).toHaveTextContent('Minimum amount: €20.00')
-      expect(rules).toHaveTextContent('Order at least 48 hours in advance')
+      expect(rules).toHaveTextContent('Order at least 2 days in advance')
       expect(screen.getByTestId('product-quantity')).toHaveTextContent('5')
       expect(screen.getByTestId('product-physical-total')).toHaveTextContent('10 pieces')
       expect(screen.getByTestId('product-line-total')).toHaveTextContent('€25.00')
@@ -1119,7 +1119,7 @@ describe('marketplace pages', () => {
       )
       renderPage(<CheckoutPage />)
       expect(await screen.findByTestId('required-preparation')).toHaveTextContent(
-        'Required preparation: 48 hours',
+        'Required preparation: 2 days',
       )
       expect(service.getPickupSchedule).toHaveBeenCalledWith('test-shop', ['product-pack'])
       expect(screen.getByText(/5 packs × 2 pieces \(10 pieces\)/)).toBeInTheDocument()
@@ -1212,7 +1212,7 @@ describe('marketplace pages', () => {
       const callsBefore = service.getPickupSchedule.mock.calls.length
       await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
       expect(await screen.findByRole('alert')).toHaveTextContent(
-        'The selected pickup time for Test Shop is too early: the order needs 48 hours of preparation. Earliest available pickup: Saturday 3 October 14:30.',
+        'The selected pickup time for Test Shop is too early: the order needs 2 days of preparation. Earliest available pickup: Saturday 3 October 14:30.',
       )
       await waitFor(() =>
         expect(service.getPickupSchedule.mock.calls.length).toBeGreaterThan(callsBefore),

@@ -147,6 +147,12 @@ export function leadTimeHours(product: Partial<UnitProduct>): number {
 
 export function formatLeadTime(hours: number): string {
   if (hours <= 0) return ''
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24)
+    const remainingHours = hours % 24
+    const dayLabel = `${days} ${days === 1 ? 'day' : 'days'}`
+    return remainingHours > 0 ? `${dayLabel} ${formatLeadTime(remainingHours)}` : dayLabel
+  }
   return `${trim(hours)} ${hours === 1 ? 'hour' : 'hours'}`
 }
 
