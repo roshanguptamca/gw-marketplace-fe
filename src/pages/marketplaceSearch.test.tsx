@@ -219,6 +219,6 @@ describe('marketplace search and filters', () => {
 
     await user.click(screen.getByRole('button', { name: /clear/i }))
     expect(screen.queryByText(/search results/i)).not.toBeInTheDocument()
-    expect(await screen.findByText('Featured sellers')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Featured products' })).toBeInTheDocument()
   })
 })

@@ -78,20 +78,24 @@ describe('marketplace pages', () => {
     })
   })
 
-  it('renders marketplace shops', async () => {
+  it('keeps seller shortcuts while removing the full seller section from products', async () => {
     renderPage(<MarketplaceHomePage />)
     expect(screen.getByRole('heading', { name: 'GuideWisey Marketplace' })).toBeInTheDocument()
-    expect(await screen.findByRole('heading', { name: 'Test Shop' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Test Shop' })).toHaveAttribute(
+      'href',
+      '/shop/test-shop',
+    )
+    expect(screen.queryByRole('heading', { name: 'Featured sellers' })).not.toBeInTheDocument()
   })
 
-  it('renders empty and failed marketplace states', async () => {
+  it('continues displaying products when shops are empty or unavailable', async () => {
     service.getShops.mockResolvedValueOnce([])
     const first = renderPage(<MarketplaceHomePage />)
-    expect(await screen.findByText('No shops yet')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Test Product' })).toBeInTheDocument()
     first.unmount()
     service.getShops.mockRejectedValueOnce(new Error('offline'))
     renderPage(<MarketplaceHomePage />)
-    expect(await screen.findByText('Shops are unavailable')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Test Product' })).toBeInTheDocument()
   })
 
   it('renders a shop storefront and product', async () => {
