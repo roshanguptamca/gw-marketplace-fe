@@ -3743,3 +3743,10 @@ nav {
     display: inline;
   }
 }
+
+.site-header nav > a.header-seller-portal {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  white-space: nowrap;
+}

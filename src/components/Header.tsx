@@ -40,6 +40,11 @@ export function Header() {
           <Link to="/" className="header-browse">
             {t('browse')}
           </Link>
+          {!loading && user?.is_seller && (
+            <Link to="/seller" className="header-action header-seller-portal">
+              {t('sellerPortal')}
+            </Link>
+          )}
           <Link
             to="/cart"
             className="cart-link"
