@@ -19,6 +19,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
   const menuRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const closeMenu = (event: MouseEvent) => {
@@ -28,8 +29,28 @@ export function Header() {
     return () => document.removeEventListener('mousedown', closeMenu)
   }, [])
 
+  useEffect(() => {
+    const header = headerRef.current
+    if (!header) return
+    const updateHeight = () => {
+      document.documentElement.style.setProperty(
+        '--marketplace-header-height',
+        `${header.getBoundingClientRect().height}px`,
+      )
+    }
+    updateHeight()
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateHeight)
+    observer?.observe(header)
+    window.addEventListener('resize', updateHeight)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', updateHeight)
+      document.documentElement.style.removeProperty('--marketplace-header-height')
+    }
+  }, [])
+
   return (
-    <header className="site-header">
+    <header className="site-header" ref={headerRef}>
       <div className="site-header__inner">
         <Link to="/" className="brand" aria-label="GuideWisey Marketplace home">
           <img
