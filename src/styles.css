@@ -3852,6 +3852,12 @@ nav {
   .catalog-filters {
     grid-column: 1;
     grid-row: 1;
+    position: sticky;
+    top: calc(var(--marketplace-header-height, 90px) + 16px);
+    max-height: calc(100vh - var(--marketplace-header-height, 90px) - 32px);
+    max-height: calc(100dvh - var(--marketplace-header-height, 90px) - 32px);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
   }
   .catalog-filters__toggle {
     display: none;
