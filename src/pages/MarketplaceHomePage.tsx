@@ -9,13 +9,7 @@ import { EmptyState } from '../components/EmptyState'
 import { MarketplaceSearch } from '../components/MarketplaceSearch'
 import { ProductGrid } from '../components/ProductGrid'
 import type { MarketplaceSearchFilters, MarketplaceSearchResult } from '../types/marketplace'
-import {
-  getShopBannerUrl,
-  getShopLogoUrl,
-  handleShopBannerError,
-  handleShopLogoError,
-} from '../utils/shopImages'
-import { localizedText } from '../utils/localizedText'
+import { getShopLogoUrl, handleShopLogoError } from '../utils/shopImages'
 
 export function MarketplaceHomePage() {
   const { t, i18n } = useTranslation()
@@ -24,11 +18,7 @@ export function MarketplaceHomePage() {
     document.title = 'GuideWisey Marketplace | GuideWisey'
   }, [])
 
-  const {
-    data: shops,
-    loading: shopsLoading,
-    error: shopsError,
-  } = useMarketplaceData(() => marketplaceService.getShops(), [])
+  const { data: shops } = useMarketplaceData(() => marketplaceService.getShops(), [])
   const { data: products, loading: productsLoading } = useMarketplaceData(
     () => marketplaceService.getProducts(),
     [],
@@ -98,7 +88,6 @@ export function MarketplaceHomePage() {
   }
 
   const isSearchActive = searchResult !== null || searchError
-  const shopReturnState = { returnTo: '/#shops' }
 
   const visibleProducts = isSearchActive ? (searchResult?.products ?? []) : (products ?? [])
   const sortedProducts = [...visibleProducts].sort((a, b) => {
@@ -107,7 +96,6 @@ export function MarketplaceHomePage() {
     if (sortOrder === 'name') return a.name.localeCompare(b.name, i18n.language)
     return Number(Boolean(b.featured)) - Number(Boolean(a.featured))
   })
-  const visibleShops = isSearchActive ? (searchResult?.shops ?? []) : (shops ?? [])
 
   return (
     <main className="market-catalog">
@@ -205,70 +193,6 @@ export function MarketplaceHomePage() {
               ) : (
                 <EmptyState title={t('catalogNoProducts')} message={t('tryDifferentFilters')} />
               ))}
-          </section>
-
-          <section className="catalog-shops" aria-labelledby="catalog-shops-heading">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">{t('shopSmall')}</p>
-                <h2 id="catalog-shops-heading">
-                  {isSearchActive ? t('matchingShops') : t('featuredSellers')}
-                </h2>
-              </div>
-              <p>
-                {isSearchActive && searchResult
-                  ? t('shopsCount', {
-                      shops: searchResult.totalShops,
-                      products: searchResult.totalProducts,
-                    })
-                  : t('supportsBusiness')}
-              </p>
-            </div>
-            {!isSearchActive && shopsLoading && <LoadingState label={t('findingShops')} />}
-            {!isSearchActive && shopsError && (
-              <EmptyState title={t('shopsUnavailable')} message={t('tryAgain')} />
-            )}
-            {!shopsLoading && !shopsError && visibleShops.length === 0 && (
-              <EmptyState
-                title={isSearchActive ? t('noShops') : t('noShopsYet')}
-                message={isSearchActive ? t('tryDifferentFilters') : t('newSellersSoon')}
-              />
-            )}
-            <div className="shop-grid">
-              {visibleShops.map((shop) => (
-                <Link
-                  className="shop-tile"
-                  to={`/shop/${shop.slug}`}
-                  state={shopReturnState}
-                  key={shop.id}
-                >
-                  <img
-                    src={getShopBannerUrl(shop.bannerUrl)}
-                    alt=""
-                    onError={handleShopBannerError}
-                  />
-                  <div className="shop-tile__body">
-                    <img
-                      src={getShopLogoUrl(shop.logoUrl)}
-                      alt={`${shop.name} logo`}
-                      onError={handleShopLogoError}
-                    />
-                    <div>
-                      <h3>{shop.name}</h3>
-                      <p>
-                        {localizedText(
-                          shop.description,
-                          shop.translations,
-                          'description',
-                          i18n.language,
-                        )}
-                      </p>
-                      <span>{shop.categories.join(' · ')}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
           </section>
         </div>
       </div>
