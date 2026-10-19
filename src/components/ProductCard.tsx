@@ -58,6 +58,16 @@ export function ProductCard({ product }: { product: Product }) {
             {product.name}
           </Link>
         </h3>
+        {product.shopName && (
+          <Link
+            className="product-card__seller"
+            to={shopPath(product.shopSlug)}
+            state={{ returnTo }}
+            aria-label={t('visitSellerShop', { shop: product.shopName })}
+          >
+            {t('soldBy', { shop: product.shopName })}
+          </Link>
+        )}
         {formatLabel && <p className="product-card__format">{formatLabel}</p>}
         <div className="product-card__footer">
           <strong>{formatPrice(product.price, product.currency)}</strong>

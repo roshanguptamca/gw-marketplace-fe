@@ -35,6 +35,8 @@ export function MarketplaceHomePage() {
   )
   const { data: categories } = useMarketplaceData(() => marketplaceService.getCategories(), [])
 
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [sortOrder, setSortOrder] = useState('featured')
   const [searchResult, setSearchResult] = useState<MarketplaceSearchResult | null>(null)
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchError, setSearchError] = useState(false)
@@ -98,152 +100,153 @@ export function MarketplaceHomePage() {
   const isSearchActive = searchResult !== null || searchError
   const shopReturnState = { returnTo: '/#shops' }
 
+  const visibleProducts = isSearchActive ? (searchResult?.products ?? []) : (products ?? [])
+  const sortedProducts = [...visibleProducts].sort((a, b) => {
+    if (sortOrder === 'price-asc') return a.price - b.price
+    if (sortOrder === 'price-desc') return b.price - a.price
+    if (sortOrder === 'name') return a.name.localeCompare(b.name, i18n.language)
+    return Number(Boolean(b.featured)) - Number(Boolean(a.featured))
+  })
+  const visibleShops = isSearchActive ? (searchResult?.shops ?? []) : (shops ?? [])
+
   return (
-    <main>
-      <section className="market-hero">
-        <div className="market-hero__content">
-          <p className="eyebrow">GuideWisey Marketplace</p>
-          <h1 className="market-hero__title">GuideWisey Marketplace</h1>
-          <p>{t('homeIntro')}</p>
-          <a className="button button--light" href="#shops">
-            {t('exploreShops')}
-          </a>
-        </div>
-        <div className="market-hero__art" aria-hidden="true">
-          <span>{t('made')}</span>
-          <span>{t('with')}</span>
-          <strong>{t('care')}</strong>
-        </div>
+    <main className="market-catalog">
+      <section className="page-shell catalog-intro">
+        <p className="eyebrow">{t('shopSmall')}</p>
+        <h1>GuideWisey Marketplace</h1>
+        <p>{t('homeIntro')}</p>
       </section>
 
-      <section className="page-shell section" id="shops">
-        <MarketplaceSearch
-          categories={categories ?? []}
-          shops={shops ?? []}
-          initialFilters={filters}
-          onSearch={(filters) => void handleSearch(filters)}
-          onClear={handleClear}
-          loading={searchLoading}
-        />
+      <div className="page-shell catalog-layout" id="shops">
+        <aside className="catalog-filters" aria-label={t('catalogFilters')}>
+          <button
+            type="button"
+            className="button catalog-filters__toggle"
+            aria-expanded={filtersOpen}
+            aria-controls="catalog-filter-fields"
+            onClick={() => setFiltersOpen((open) => !open)}
+          >
+            {t('catalogFilters')} <span aria-hidden="true">{filtersOpen ? '−' : '+'}</span>
+          </button>
+          <div
+            id="catalog-filter-fields"
+            className={`catalog-filters__body${filtersOpen ? ' is-open' : ''}`}
+          >
+            <h2 className="catalog-filters__heading">{t('catalogFilters')}</h2>
+            <MarketplaceSearch
+              categories={categories ?? []}
+              shops={shops ?? []}
+              initialFilters={filters}
+              onSearch={(filters) => void handleSearch(filters)}
+              onClear={handleClear}
+              loading={searchLoading}
+            />
+          </div>
+        </aside>
 
-        {isSearchActive ? (
-          <>
-            {searchError && (
-              <EmptyState title={t('searchFailed')} message={t('tryAgain')} />
+        <div className="catalog-results" aria-busy={searchLoading}>
+          <section aria-labelledby="catalog-products-heading">
+            <div className="section-heading catalog-results__heading">
+              <div>
+                <p className="eyebrow">{isSearchActive ? t('searchResults') : t('freshFinds')}</p>
+                <h2 id="catalog-products-heading">
+                  {isSearchActive ? t('matchingProducts') : t('featuredProducts')}
+                </h2>
+              </div>
+              <div className="catalog-toolbar">
+                <span className="catalog-count" aria-live="polite">
+                  {t('catalogProductCount', { count: visibleProducts.length })}
+                </span>
+                <label className="catalog-sort">
+                  <span>{t('catalogSort')}</span>
+                  <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
+                    <option value="featured">{t('catalogSortFeatured')}</option>
+                    <option value="price-asc">{t('catalogSortPriceAsc')}</option>
+                    <option value="price-desc">{t('catalogSortPriceDesc')}</option>
+                    <option value="name">{t('catalogSortName')}</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            {searchError && <EmptyState title={t('searchFailed')} message={t('tryAgain')} />}
+            {(searchLoading || (!isSearchActive && productsLoading)) && (
+              <LoadingState label={t('findingProducts')} />
             )}
-            {searchResult && (
-              <>
-                <div className="section-heading">
-                  <div>
-                    <p className="eyebrow">{t('searchResults')}</p>
-                    <h2>{t('matchingShops')}</h2>
-                  </div>
-                  <p>
-                    {t('shopsCount', {
-                      shops: searchResult.totalShops,
-                      products: searchResult.totalProducts,
-                    })}
-                  </p>
-                </div>
-                {searchResult.shops.length === 0 ? (
-                  <EmptyState title={t('noShops')} message={t('tryDifferentFilters')} />
-                ) : (
-                  <div className="shop-grid">
-                    {searchResult.shops.map((shop) => (
-                      <Link
-                        className="shop-tile"
-                        to={`/shop/${shop.slug}`}
-                        state={shopReturnState}
-                        key={shop.id}
-                      >
-                        <img
-                          src={getShopBannerUrl(shop.bannerUrl)}
-                          alt=""
-                          onError={handleShopBannerError}
-                        />
-                        <div className="shop-tile__body">
-                          <img
-                            src={getShopLogoUrl(shop.logoUrl)}
-                            alt={`${shop.name} logo`}
-                            onError={handleShopLogoError}
-                          />
-                          <div>
-                            <h3>{shop.name}</h3>
-                            <p>{localizedText(shop.description, shop.translations, 'description', i18n.language)}</p>
-                            <span>{shop.categories.join(' · ')}</span>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                <div className="section-heading">
-                  <div>
-                    <h2>{t('matchingProducts')}</h2>
-                  </div>
-                </div>
-                <ProductGrid products={searchResult.products} />
-              </>
-            )}
-          </>
-        ) : (
-          <>
+            {!searchLoading &&
+              !productsLoading &&
+              !searchError &&
+              (visibleProducts.length > 0 ? (
+                <ProductGrid products={sortedProducts} />
+              ) : (
+                <EmptyState title={t('catalogNoProducts')} message={t('tryDifferentFilters')} />
+              ))}
+          </section>
+
+          <section className="catalog-shops" aria-labelledby="catalog-shops-heading">
             <div className="section-heading">
               <div>
                 <p className="eyebrow">{t('shopSmall')}</p>
-                <h2>{t('featuredSellers')}</h2>
+                <h2 id="catalog-shops-heading">
+                  {isSearchActive ? t('matchingShops') : t('featuredSellers')}
+                </h2>
               </div>
-              <p>{t('supportsBusiness')}</p>
+              <p>
+                {isSearchActive && searchResult
+                  ? t('shopsCount', {
+                      shops: searchResult.totalShops,
+                      products: searchResult.totalProducts,
+                    })
+                  : t('supportsBusiness')}
+              </p>
             </div>
-            {shopsLoading && <LoadingState label={t('findingShops')} />}
-            {shopsError && (
+            {!isSearchActive && shopsLoading && <LoadingState label={t('findingShops')} />}
+            {!isSearchActive && shopsError && (
               <EmptyState title={t('shopsUnavailable')} message={t('tryAgain')} />
             )}
-            {shops && shops.length === 0 && (
-              <EmptyState title={t('noShopsYet')} message={t('newSellersSoon')} />
+            {!shopsLoading && !shopsError && visibleShops.length === 0 && (
+              <EmptyState
+                title={isSearchActive ? t('noShops') : t('noShopsYet')}
+                message={isSearchActive ? t('tryDifferentFilters') : t('newSellersSoon')}
+              />
             )}
-            {shops && shops.length > 0 && (
-              <div className="shop-grid">
-                {shops.map((shop) => (
-                  <Link
-                    className="shop-tile"
-                    to={`/shop/${shop.slug}`}
-                    state={shopReturnState}
-                    key={shop.id}
-                  >
+            <div className="shop-grid">
+              {visibleShops.map((shop) => (
+                <Link
+                  className="shop-tile"
+                  to={`/shop/${shop.slug}`}
+                  state={shopReturnState}
+                  key={shop.id}
+                >
+                  <img
+                    src={getShopBannerUrl(shop.bannerUrl)}
+                    alt=""
+                    onError={handleShopBannerError}
+                  />
+                  <div className="shop-tile__body">
                     <img
-                      src={getShopBannerUrl(shop.bannerUrl)}
-                      alt=""
-                      onError={handleShopBannerError}
+                      src={getShopLogoUrl(shop.logoUrl)}
+                      alt={`${shop.name} logo`}
+                      onError={handleShopLogoError}
                     />
-                    <div className="shop-tile__body">
-                      <img
-                        src={getShopLogoUrl(shop.logoUrl)}
-                        alt={`${shop.name} logo`}
-                        onError={handleShopLogoError}
-                      />
-                      <div>
-                        <h3>{shop.name}</h3>
-                        <p>{localizedText(shop.description, shop.translations, 'description', i18n.language)}</p>
-                        <span>{shop.categories.join(' · ')}</span>
-                      </div>
+                    <div>
+                      <h3>{shop.name}</h3>
+                      <p>
+                        {localizedText(
+                          shop.description,
+                          shop.translations,
+                          'description',
+                          i18n.language,
+                        )}
+                      </p>
+                      <span>{shop.categories.join(' · ')}</span>
                     </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">{t('freshFinds')}</p>
-                <h2>{t('featuredProducts')}</h2>
-              </div>
+                  </div>
+                </Link>
+              ))}
             </div>
-            {productsLoading && <LoadingState label={t('findingProducts')} />}
-            {products && <ProductGrid products={products.slice(0, 8)} />}
-          </>
-        )}
-      </section>
+          </section>
+        </div>
+      </div>
     </main>
   )
 }

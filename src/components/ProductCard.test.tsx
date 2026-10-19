@@ -33,6 +33,21 @@ describe('ProductCard', () => {
     expect(screen.getByText('Added to cart')).toBeInTheDocument()
   })
 
+  it('shows the seller name with a link to their shop', () => {
+    render(
+      <MemoryRouter>
+        <CartProvider>
+          <ProductCard product={{ ...productFixture, shopName: 'Rishi Kitchen' }} />
+        </CartProvider>
+      </MemoryRouter>,
+    )
+    expect(screen.getByRole('link', { name: 'Visit Rishi Kitchen shop' })).toHaveAttribute(
+      'href',
+      `/shop/${productFixture.shopSlug}/`,
+    )
+    expect(screen.getByText('Sold by Rishi Kitchen')).toBeInTheDocument()
+  })
+
   it('disables adding unavailable products', () => {
     renderCard(0)
     expect(screen.getByRole('button', { name: /out of stock/i })).toBeDisabled()
