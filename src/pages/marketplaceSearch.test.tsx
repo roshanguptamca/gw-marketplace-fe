@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { marketplaceService } from '../services/marketplaceService'
@@ -28,6 +28,31 @@ describe('marketplace search and filters', () => {
       totalShops: 1,
       totalProducts: 1,
     })
+  })
+
+  it('lets mobile shoppers expand and collapse the filter controls', async () => {
+    renderPage(<MarketplaceHomePage />)
+    const toggle = screen.getByRole('button', { name: 'Filters' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('sorts products by price without changing the selected search filters', async () => {
+    service.getProducts.mockResolvedValue([
+      { ...productFixture, id: 'expensive', name: 'Expensive product', price: 25 },
+      { ...productFixture, id: 'affordable', name: 'Affordable product', price: 5 },
+    ])
+    renderPage(<MarketplaceHomePage />)
+    await screen.findByRole('heading', { name: 'Expensive product' })
+    await userEvent.selectOptions(screen.getByLabelText('Sort by'), 'price-asc')
+    const grid = document.querySelector('.catalog-results .product-grid') as HTMLElement
+    expect(within(grid).getAllByRole('heading')[0]).toHaveTextContent('Affordable product')
+    await userEvent.selectOptions(screen.getByLabelText('Sort by'), 'price-desc')
+    expect(within(grid).getAllByRole('heading')[0]).toHaveTextContent('Expensive product')
+    expect(service.search).not.toHaveBeenCalled()
   })
 
   it('sets the page title to GuideWisey Marketplace', async () => {

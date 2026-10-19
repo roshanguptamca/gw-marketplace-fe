@@ -32,7 +32,13 @@ export function Header() {
     <header className="site-header">
       <div className="site-header__inner">
         <Link to="/" className="brand" aria-label="GuideWisey Marketplace home">
-          <span className="brand__mark">G</span>
+          <img
+            className="brand__logo"
+            src="/GuideWisey_circular_favicon-32x32.png"
+            alt=""
+            width="36"
+            height="36"
+          />
           <span>{t('brand')}</span>
         </Link>
         <nav aria-label="Main navigation">
