@@ -1,6 +1,7 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import i18n from '../i18n'
 import { marketplaceService } from '../services/marketplaceService'
 import { productFixture, secondShopFixture, shopFixture } from '../test/fixtures'
 import { renderPage } from '../test/renderPage'
@@ -53,6 +54,31 @@ describe('marketplace search and filters', () => {
     await userEvent.selectOptions(screen.getByLabelText('Sort by'), 'price-desc')
     expect(within(grid).getAllByRole('heading')[0]).toHaveTextContent('Expensive product')
     expect(service.search).not.toHaveBeenCalled()
+  })
+
+  it('switches filter copy to Dutch while preserving database options and selections', async () => {
+    renderPage(<MarketplaceHomePage />)
+    await screen.findByRole('option', { name: 'Home (1)' })
+    await userEvent.selectOptions(screen.getByLabelText('Filter by category'), 'home')
+    try {
+      await act(async () => {
+        await i18n.changeLanguage('nl')
+      })
+      expect(screen.getByPlaceholderText('Producten of winkels…')).toBeInTheDocument()
+      expect(screen.getByLabelText('Filter op categorie')).toHaveValue('home')
+      expect(screen.getByRole('option', { name: 'Home (1)' })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'Alle categorieën' })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'Alle landen' })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'Alle plaatsen' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Zoeken' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Wissen' })).toBeInTheDocument()
+      expect(screen.getByLabelText('Alleen op voorraad')).toBeInTheDocument()
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+    }
+    expect(screen.getByLabelText('Filter by category')).toHaveValue('home')
   })
 
   it('sets the page title to GuideWisey Marketplace', async () => {
