@@ -112,13 +112,38 @@ export function MarketplaceHomePage() {
   return (
     <main className="market-catalog">
       <section className="page-shell catalog-intro">
+        <nav className="catalog-view-nav" aria-label={t('marketplaceViews')}>
+          <Link to="/" aria-current="page">
+            {t('browseProducts')}
+          </Link>
+          <Link to="/shops">{t('allShops')}</Link>
+        </nav>
         <p className="eyebrow">{t('shopSmall')}</p>
         <h1>GuideWisey Marketplace</h1>
         <p>{t('homeIntro')}</p>
+        {shops && shops.length > 0 && (
+          <div className="home-shop-discovery">
+            <div>
+              <strong>{t('discoverSellers')}</strong>
+              <Link to="/shops">{t('viewAllShops')}</Link>
+            </div>
+            <div className="home-shop-discovery__shops">
+              {shops.slice(0, 4).map((shop) => (
+                <Link key={shop.id} to={`/shop/${shop.slug}`} state={{ returnTo: '/' }}>
+                  <img src={getShopLogoUrl(shop.logoUrl)} alt="" onError={handleShopLogoError} />
+                  <span>{shop.name}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       <div className="page-shell catalog-layout" id="shops">
         <aside className="catalog-filters" aria-label={t('catalogFilters')}>
+          <Link className="catalog-shop-directory-link" to="/shops">
+            {t('browseAllSellers')}
+          </Link>
           <button
             type="button"
             className="button catalog-filters__toggle"

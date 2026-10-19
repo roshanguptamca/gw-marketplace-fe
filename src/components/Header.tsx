@@ -64,7 +64,7 @@ export function Header() {
         </Link>
         <nav aria-label="Main navigation">
           {rishiShop && <div id="rishi-header-chat" />}
-          <Link to="/" className="header-browse">
+          <Link to="/shops" className="header-browse">
             {t('browse')}
           </Link>
           {!loading && user?.is_seller && (

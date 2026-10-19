@@ -3914,3 +3914,123 @@ nav {
   background: var(--paper);
   color: var(--ink);
 }
+
+.catalog-view-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.catalog-view-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.catalog-view-nav a[aria-current='page'] {
+  color: var(--cream);
+  background: var(--ink);
+}
+.home-shop-discovery {
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.home-shop-discovery > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.home-shop-discovery > div:first-child a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: underline;
+}
+.home-shop-discovery__shops {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+.home-shop-discovery__shops a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.home-shop-discovery__shops img {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 50%;
+}
+.catalog-shop-directory-link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: 12px;
+  text-decoration: underline;
+}
+.shops-directory__filters {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.shops-directory__filters label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.shops-directory__filters input,
+.shops-directory__filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--cream);
+  color: var(--ink);
+  padding: 10px;
+  font: inherit;
+}
+.shops-directory__count {
+  margin-block: 24px 16px;
+  color: var(--muted);
+}
+.shops-directory .shop-tile h2 {
+  font-size: 1.2rem;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 560px) {
+  .home-shop-discovery__shops {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .shops-directory__filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+  }
+}
+@media (min-width: 1000px) {
+  .home-shop-discovery__shops {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .shops-directory__filters {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+}
