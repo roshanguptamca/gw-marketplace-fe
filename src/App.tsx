@@ -6,6 +6,7 @@ import { Layout } from './components/Layout'
 import { CartPage } from './pages/CartPage'
 import { CheckoutPage } from './pages/CheckoutPage'
 import { ErrorPage } from './pages/ErrorPage'
+import { ShopsPage } from './pages/ShopsPage'
 import { MarketplaceHomePage } from './pages/MarketplaceHomePage'
 import { ProductDetailsPage } from './pages/ProductDetailsPage'
 import { ProductListingPage } from './pages/ProductListingPage'
@@ -63,6 +64,7 @@ export function App() {
                 ) : (
                   <>
                     <Route index element={<MarketplaceHomePage />} />
+                    <Route path="shops" element={<ShopsPage />} />
                     <Route path="shop/:shopSlug" element={<ShopStorefrontPage />} />
                     <Route path="shop/:shopSlug/products" element={<ProductListingPage />} />
                     <Route
