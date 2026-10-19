@@ -1955,7 +1955,7 @@ nav {
   gap: 10px;
 }
 
-.confirmation-references div {
+.confirmation-references > div {
   padding: 14px 18px;
   display: flex;
   justify-content: space-between;
@@ -1963,6 +1963,20 @@ nav {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(15, 23, 42, 0.7);
+}
+
+.confirmation-review {
+  flex-basis: 100%;
+  text-align: left;
+}
+
+.confirmation-references > div {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.confirmation-review .button {
+  white-space: normal;
 }
 
 .confirmation-verify-note {
@@ -3415,7 +3429,7 @@ nav {
 :root[data-theme='light'] .checkout-form,
 :root[data-theme='light'] .checkout-order,
 :root[data-theme='light'] .checkout-contacts,
-:root[data-theme='light'] .confirmation-references div {
+:root[data-theme='light'] .confirmation-references > div {
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 14px 40px rgba(15, 23, 42, 0.06);
 }
