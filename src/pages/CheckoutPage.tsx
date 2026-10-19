@@ -429,13 +429,27 @@ export function CheckoutPage() {
           ✓
         </span>
         <p className="eyebrow">{t('orderRequestReceived')}</p>
-        <h1>{t('orderSent')}</h1>
+        <h1>{t('thankYouOrder')}</h1>
+        <p>{t('orderSent')}</p>
         <p>{t('noPayment')}</p>
         <div className="confirmation-references">
           {confirmations.map((confirmation) => (
             <div key={confirmation.order_number}>
               <span>{t('sellerReference', { shop: confirmation.shop_name || 'Seller' })}</span>
               <strong>{confirmation.order_number}</strong>
+              {confirmation.google_review_url?.startsWith('https://') && (
+                <section className="confirmation-review">
+                  <p>{t('reviewExperience')}</p>
+                  <a
+                    className="button button--primary"
+                    href={confirmation.google_review_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t('leaveGoogleReview')} · {confirmation.shop_name}
+                  </a>
+                </section>
+              )}
             </div>
           ))}
         </div>

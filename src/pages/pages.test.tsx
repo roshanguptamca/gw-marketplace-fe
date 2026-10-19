@@ -62,6 +62,7 @@ describe('marketplace pages', () => {
       id: 101,
       order_number: 'GW-TEST-101',
       shop_name: 'Test Shop',
+      google_review_url: 'https://g.page/r/test/review',
       total: '12.50',
       status: 'pending',
     })
@@ -359,10 +360,14 @@ describe('marketplace pages', () => {
 
     expect(
       await screen.findByRole('heading', {
-        name: 'Your order request has been sent to the seller.',
+        name: 'Thank you for your order!',
       }),
     ).toBeInTheDocument()
     expect(screen.getByText('GW-TEST-101')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Leave a Google review · Test Shop' })).toHaveAttribute(
+      'href',
+      'https://g.page/r/test/review',
+    )
     expect(service.createOrderRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         customer_name: 'Test Buyer',
@@ -797,7 +802,7 @@ describe('marketplace pages', () => {
     await userEvent.type(screen.getByLabelText(/^Confirm password/), 'StrongPass123!')
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
-    await screen.findByRole('heading', { name: 'Your order request has been sent to the seller.' })
+    await screen.findByRole('heading', { name: 'Thank you for your order!' })
     expect(service.createOrderRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         create_account: true,
@@ -822,7 +827,7 @@ describe('marketplace pages', () => {
     await userEvent.click(screen.getByLabelText(/i have read and agree/i))
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
-    await screen.findByRole('heading', { name: 'Your order request has been sent to the seller.' })
+    await screen.findByRole('heading', { name: 'Thank you for your order!' })
     expect(service.createOrderRequest).toHaveBeenCalledWith(
       expect.not.objectContaining({ create_account: true }),
     )
@@ -979,7 +984,7 @@ describe('marketplace pages', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
 
     await screen.findByRole('heading', {
-      name: 'Your order request has been sent to the seller.',
+      name: 'Thank you for your order!',
     })
     expect(service.createOrderRequest).toHaveBeenCalledTimes(2)
     expect(service.createOrderRequest).toHaveBeenNthCalledWith(

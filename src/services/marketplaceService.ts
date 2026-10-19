@@ -46,6 +46,7 @@ interface ApiShop {
   translations?: LocalizedFields
   phone?: string
   email?: string
+  google_review_url?: string
   website_url?: string
   social_links?: string[]
   address?: string
@@ -362,6 +363,7 @@ function normalizeShop(shop: ApiShop): Shop {
     phone: shop.phone,
     email: shop.email ?? shop.contact_email,
     websiteUrl: shop.website_url,
+    googleReviewUrl: shop.google_review_url,
     socialLinks: shop.social_links ?? [],
     address: shop.address ?? '',
     logoUrl: shop.logo_url,
@@ -818,7 +820,7 @@ export const marketplaceService = {
     apiRequest<void>(`/seller/campaigns/${id}/`, { method: 'DELETE' }),
 
   createOrderRequest: (order: OrderRequest) =>
-    withDevelopmentFallback(
+    withDevelopmentFallback<OrderConfirmation>(
       () =>
         apiRequest<OrderConfirmation>('/marketplace/orders/', {
           method: 'POST',

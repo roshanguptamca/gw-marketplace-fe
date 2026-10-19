@@ -38,6 +38,7 @@ export interface Shop {
   settingsTranslations?: LocalizedFields
   phone?: string
   email?: string
+  googleReviewUrl?: string
   websiteUrl?: string
   socialLinks?: string[]
   address?: string
@@ -340,6 +341,7 @@ export interface OrderRequest {
 }
 
 export interface OrderConfirmation {
+  google_review_url?: string
   id: number
   order_number: string
   shop_name: string

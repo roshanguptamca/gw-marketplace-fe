@@ -16,6 +16,7 @@ interface ShopDetailsForm {
   shopTypeNl: string
   phone: string
   email: string
+  googleReviewUrl: string
   websiteUrl: string
   socialLinksText: string
   address: string
@@ -39,6 +40,7 @@ function mapShopToForm(shop: Shop): ShopDetailsForm {
     phone: shop.phone || '',
     email: shop.email || shop.contactEmail || '',
     websiteUrl: shop.websiteUrl || '',
+    googleReviewUrl: shop.googleReviewUrl || '',
     socialLinksText: (shop.socialLinks || []).join('\n'),
     address: shop.address || '',
     city: shop.location || '',
@@ -124,6 +126,7 @@ export function SellerShopDetailsPage() {
         phone: formData.phone,
         email: formData.email,
         website_url: formData.websiteUrl,
+        google_review_url: formData.googleReviewUrl,
         social_links: socialLinks,
         address: formData.address,
         city: formData.city,
@@ -299,6 +302,20 @@ export function SellerShopDetailsPage() {
                 onChange={handleChange}
                 className="form-input"
               />
+            </div>
+            <div className="form-group">
+              <label htmlFor="googleReviewUrl">{t('googleReviewUrl')}</label>
+              <input
+                type="url"
+                id="googleReviewUrl"
+                name="googleReviewUrl"
+                value={formData.googleReviewUrl}
+                onChange={handleChange}
+                pattern="https://.*"
+                placeholder="https://g.page/r/.../review"
+                className="form-input"
+              />
+              <p className="form-hint">{t('googleReviewUrlHint')}</p>
             </div>
             <div className="form-group">
               <label htmlFor="websiteUrl">{t('sellerWebsiteSocialUrl')}</label>

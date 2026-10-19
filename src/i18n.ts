@@ -142,6 +142,11 @@ void i18n.use(initReactI18next).init({
         networkRequestError: 'A network error occurred. Check your connection and try again.',
         serverRequestError: 'The service is temporarily unavailable. Please try again later.',
         orderRequestReceived: 'Order request received',
+        thankYouOrder: 'Thank you for your order!',
+        reviewExperience: 'After you receive your order, we would love to hear about your experience.',
+        leaveGoogleReview: 'Leave a Google review',
+        googleReviewUrl: 'Google review link',
+        googleReviewUrlHint: 'Optional. Shown after checkout and in customer order emails. Leave blank to hide.',
         orderSent: 'Your order request has been sent to the seller.',
         noPayment:
           'No payment was collected. The seller will contact you to confirm fulfilment and payment.',
@@ -696,6 +701,11 @@ void i18n.use(initReactI18next).init({
           'Er is een netwerkfout opgetreden. Controleer je verbinding en probeer het opnieuw.',
         serverRequestError: 'De service is tijdelijk niet beschikbaar. Probeer het later opnieuw.',
         orderRequestReceived: 'Bestelling ontvangen',
+        thankYouOrder: 'Bedankt voor je bestelling!',
+        reviewExperience: 'Na je bestelling ontvangen te hebben, horen we graag je ervaring.',
+        leaveGoogleReview: 'Schrijf een Google-review',
+        googleReviewUrl: 'Google-reviewlink',
+        googleReviewUrlHint: 'Optioneel. Zichtbaar na het bestellen en in de bevestigingsmail. Laat leeg om te verbergen.',
         orderSent: 'Je bestelling is naar de verkoper verstuurd.',
         noPayment:
           'Er is geen betaling geïnd. De verkoper neemt contact met je op om de bestelling en betaling te bevestigen.',
