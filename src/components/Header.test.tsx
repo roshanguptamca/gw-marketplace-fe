@@ -50,6 +50,7 @@ describe('Header authentication menu', () => {
     renderHeader()
     expect(screen.getByRole('link', { name: /login/i })).toHaveAttribute('href', env.loginUrl)
     expect(screen.queryByRole('button', { name: 'User menu' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Seller Portal' })).not.toBeInTheDocument()
   })
 
   it('shows a Become a Seller CTA linking to main-site signup when logged out', () => {
@@ -77,6 +78,19 @@ describe('Header authentication menu', () => {
     expect(screen.getByRole('menuitem', { name: 'Logout' })).toBeInTheDocument()
   })
 
+  it('shows sellers a direct portal link without opening the profile menu', () => {
+    mockedUseAuth.mockReturnValue({ user: seller, loading: false, logout })
+    renderHeader()
+    expect(screen.getByRole('link', { name: 'Seller Portal' })).toHaveAttribute('href', '/seller')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  it('hides the direct seller link while authentication is loading', () => {
+    mockedUseAuth.mockReturnValue({ user: seller, loading: true, logout })
+    renderHeader()
+    expect(screen.queryByRole('link', { name: 'Seller Portal' })).not.toBeInTheDocument()
+  })
+
   it('calls the shared logout action from the user menu', async () => {
     mockedUseAuth.mockReturnValue({ user: seller, loading: false, logout })
     renderHeader()
@@ -95,6 +109,7 @@ describe('Header authentication menu', () => {
     await userEvent.click(screen.getByRole('button', { name: 'User menu' }))
     expect(screen.queryByRole('menuitem', { name: 'Become a Seller' })).not.toBeInTheDocument()
     expect(screen.queryByRole('menuitem', { name: 'Seller Portal' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Seller Portal' })).not.toBeInTheDocument()
   })
 
   it('updates the cart badge immediately after a product is added', async () => {
