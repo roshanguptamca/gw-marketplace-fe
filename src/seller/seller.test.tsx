@@ -352,6 +352,16 @@ describe('seller portal pages', () => {
     expect(screen.getByText('Campaigns')).toBeInTheDocument()
   })
 
+  it('lets mobile sellers expand navigation and closes it after a link is chosen', async () => {
+    renderPage(<SellerLayout />)
+    const toggle = screen.getByRole('button', { name: /Seller menu/ })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.click(screen.getByRole('link', { name: 'Scheduled menus' }))
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('uses theme-aware seller navigation styles', () => {
     document.documentElement.dataset.theme = 'light'
     const { unmount } = renderPage(<SellerLayout />)

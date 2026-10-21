@@ -84,7 +84,19 @@ export function ProductDetailsPage({ resolvedSlug }: { resolvedSlug?: string }) 
   )
 
   const handleAdd = () => {
-    addItem(product, quantity)
+    const menu = location.state as
+      { scheduledMenuId?: number; scheduledMenuTitle?: string } | undefined
+    if (
+      !addItem(
+        {
+          ...product,
+          scheduledMenuId: menu?.scheduledMenuId,
+          scheduledMenuTitle: menu?.scheduledMenuTitle,
+        },
+        quantity,
+      )
+    )
+      return
     analytics.event('add_to_cart', {
       item_id: product.id,
       value: product.price * quantity,

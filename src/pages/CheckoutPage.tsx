@@ -115,6 +115,7 @@ export function CheckoutPage() {
     shopGroups.map((group) => ({
       shopSlug: group.shopSlug,
       productIds: group.items.map((item) => item.product.id),
+      scheduledMenuId: group.items[0]?.product.scheduledMenuId,
     })),
     scheduleReload,
   )
@@ -130,6 +131,9 @@ export function CheckoutPage() {
   const isMultiShop = shopGroups.length > 1
   const continueShoppingLink = continueShoppingPath(shopGroups.map((group) => group.shopSlug))
   const methodFor = (slug: string): 'pickup' | 'delivery' =>
+    (items.some((item) => item.product.shopSlug === slug && item.product.scheduledMenuId)
+      ? 'pickup'
+      : undefined) ??
     fulfilmentSelections[slug] ??
     (shopsBySlug[slug]?.pickupAvailable !== false ? 'pickup' : 'delivery')
   const anyDelivery = shopGroups.some((group) => methodFor(group.shopSlug) === 'delivery')
@@ -230,6 +234,16 @@ export function CheckoutPage() {
         shopRefs.current[group.shopSlug]?.focus()
         return
       }
+      if (
+        group.items[0]?.product.scheduledMenuId &&
+        (!scheduleFor(group.shopSlug)?.schedulingEnabled ||
+          pickupSchedules[group.shopSlug]?.loading ||
+          pickupSchedules[group.shopSlug]?.error)
+      ) {
+        setError(t('menus.unavailable'))
+        shopRefs.current[group.shopSlug]?.focus()
+        return
+      }
       if (pickupSchedulingFor(group.shopSlug) && !selectedSlotFor(group.shopSlug)) {
         setError(t('choosePickupTime', { shop: shop.name }))
         shopRefs.current[group.shopSlug]?.scrollIntoView?.({ block: 'center' })
@@ -285,6 +299,9 @@ export function CheckoutPage() {
         const shopSlug = shopItems[0].product.shopSlug
         const order: OrderRequest = {
           shop_id: Number(shopId),
+          ...(shopItems[0].product.scheduledMenuId
+            ? { scheduled_menu_id: shopItems[0].product.scheduledMenuId }
+            : {}),
           customer_name: fields.fullName,
           customer_email: fields.email,
           customer_phone: fields.phone,
@@ -343,6 +360,10 @@ export function CheckoutPage() {
       if (caught instanceof ApiError && caught.code === 'ACCOUNT_ALREADY_EXISTS') {
         setErrorCode('ACCOUNT_ALREADY_EXISTS')
         setError(partialMessage + t('existingAccountMessage'))
+      } else if (caught instanceof ApiError && caught.code === 'SCHEDULED_MENU_UNAVAILABLE') {
+        setError(partialMessage + t('menus.unavailable'))
+        setPickupSelections({})
+        setScheduleReload((value) => value + 1)
       } else if (caught instanceof ApiError && caught.code === 'SHOP_NOT_ACCEPTING_ORDERS') {
         setError(partialMessage + t('sellerNotAcceptingOrders'))
         const group = shopGroups.find(
@@ -622,6 +643,12 @@ export function CheckoutPage() {
                 <legend>
                   {shop?.name ?? group.shopSlug} — {t('deliveryMethod')}
                 </legend>
+                {group.items[0]?.product.scheduledMenuTitle && (
+                  <p className="inline-note">
+                    {t('menus.selected')}:{' '}
+                    <strong>{group.items[0].product.scheduledMenuTitle}</strong> — {t('pickup')}
+                  </p>
+                )}
                 {!shop && <p>{t('loadingFulfilment')}</p>}
                 {shop?.pickupAvailable !== false && shop && (
                   <label>
@@ -645,7 +672,7 @@ export function CheckoutPage() {
                     </span>
                   </label>
                 )}
-                {shop?.deliveryAvailable === true && (
+                {shop?.deliveryAvailable === true && !group.items[0]?.product.scheduledMenuId && (
                   <label>
                     <input
                       type="radio"
