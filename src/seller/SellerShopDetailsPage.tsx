@@ -17,6 +17,7 @@ interface ShopDetailsForm {
   phone: string
   email: string
   googleReviewUrl: string
+  googlePlaceId: string
   websiteUrl: string
   socialLinksText: string
   address: string
@@ -41,6 +42,7 @@ function mapShopToForm(shop: Shop): ShopDetailsForm {
     email: shop.email || shop.contactEmail || '',
     websiteUrl: shop.websiteUrl || '',
     googleReviewUrl: shop.googleReviewUrl || '',
+    googlePlaceId: shop.googlePlaceId || '',
     socialLinksText: (shop.socialLinks || []).join('\n'),
     address: shop.address || '',
     city: shop.location || '',
@@ -127,6 +129,7 @@ export function SellerShopDetailsPage() {
         email: formData.email,
         website_url: formData.websiteUrl,
         google_review_url: formData.googleReviewUrl,
+        google_place_id: formData.googlePlaceId.trim(),
         social_links: socialLinks,
         address: formData.address,
         city: formData.city,
@@ -302,6 +305,29 @@ export function SellerShopDetailsPage() {
                 onChange={handleChange}
                 className="form-input"
               />
+            </div>
+            <div className="form-group">
+              <label htmlFor="googlePlaceId">{t('googlePlaceId')}</label>
+              <input
+                id="googlePlaceId"
+                name="googlePlaceId"
+                value={formData.googlePlaceId}
+                onChange={handleChange}
+                maxLength={255}
+                pattern="[A-Za-z0-9_-]+"
+                aria-describedby="google-place-id-hint"
+                className="form-input"
+              />
+              <p id="google-place-id-hint" className="form-hint">
+                {t('googlePlaceIdHint')}{' '}
+                <a
+                  href="https://developers.google.com/maps/documentation/places/web-service/place-id"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t('findGooglePlaceId')}
+                </a>
+              </p>
             </div>
             <div className="form-group">
               <label htmlFor="googleReviewUrl">{t('googleReviewUrl')}</label>

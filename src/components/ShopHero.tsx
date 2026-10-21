@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { Shop } from '../types/marketplace'
+import { ShopGoogleRating } from './ShopGoogleRating'
 import { WhatsAppGroupLink } from './ShopFulfilment'
 import {
   getShopBannerUrl,
@@ -34,6 +35,7 @@ export function ShopHero({ shop, onMoreDetails }: { shop: Shop; onMoreDetails?: 
         <div className="shop-hero__copy">
           <p className="eyebrow">{shopType || shop.location}</p>
           <h1>{shop.name}</h1>
+          <ShopGoogleRating shop={shop} />
           <p className="shop-hero__tagline">{shortDescription}</p>
           <WhatsAppGroupLink url={shop.whatsappGroupUrl} />
           {onMoreDetails && (

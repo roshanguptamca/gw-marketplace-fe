@@ -39,6 +39,7 @@ export interface Shop {
   phone?: string
   email?: string
   googleReviewUrl?: string
+  googlePlaceId?: string
   websiteUrl?: string
   socialLinks?: string[]
   address?: string
@@ -456,4 +457,10 @@ export interface AddressLookupResult {
   street: string
   city: string
   country: string
+}
+
+export interface GoogleShopRating {
+  rating: number | null
+  review_count: number | null
+  reviews_url: string | null
 }
