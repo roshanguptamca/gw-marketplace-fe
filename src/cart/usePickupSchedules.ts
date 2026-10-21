@@ -14,33 +14,29 @@ export interface PickupScheduleState {
  * lead times never leak between sellers.
  */
 export function usePickupSchedules(
-  groups: Array<{ shopSlug: string; productIds: string[] }>,
+  groups: Array<{ shopSlug: string; productIds: string[]; scheduledMenuId?: number }>,
   reloadKey = 0,
 ): Record<string, PickupScheduleState> {
   const [schedules, setSchedules] = useState<Record<string, PickupScheduleState>>({})
-  const requestKey = groups
-    .map((group) => `${group.shopSlug}:${[...group.productIds].sort().join(',')}`)
-    .sort()
-    .join('|')
+  const requestKey = JSON.stringify(
+    groups
+      .map((group) => ({ ...group, productIds: [...group.productIds].sort() }))
+      .sort((a, b) => a.shopSlug.localeCompare(b.shopSlug)),
+  )
 
   useEffect(() => {
     let active = true
-    const requests = requestKey
-      ? requestKey.split('|').map((entry) => {
-          const [shopSlug, ids] = entry.split(':')
-          return { shopSlug, productIds: ids ? ids.split(',') : [] }
-        })
-      : []
-    setSchedules((current) => {
+    const requests = JSON.parse(requestKey) as typeof groups
+    setSchedules(() => {
       const next: Record<string, PickupScheduleState> = {}
       requests.forEach(({ shopSlug }) => {
-        next[shopSlug] = { schedule: current[shopSlug]?.schedule ?? null, loading: true, error: '' }
+        next[shopSlug] = { schedule: null, loading: true, error: '' }
       })
       return next
     })
-    requests.forEach(({ shopSlug, productIds }) => {
+    requests.forEach(({ shopSlug, productIds, scheduledMenuId }) => {
       marketplaceService
-        .getPickupSchedule(shopSlug, productIds)
+        .getPickupSchedule(shopSlug, productIds, scheduledMenuId)
         .then((schedule) => {
           if (active) {
             setSchedules((current) => ({

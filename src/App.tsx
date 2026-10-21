@@ -22,6 +22,7 @@ import { SellerLayout } from './seller/SellerLayout'
 import { SellerDashboardPage } from './seller/SellerDashboardPage'
 import { SellerProductsPage } from './seller/SellerProductsPage'
 import { SellerProductFormPage } from './seller/SellerProductFormPage'
+import { SellerScheduledMenusPage } from './seller/SellerScheduledMenusPage'
 import { SellerOrdersPage } from './seller/SellerOrdersPage'
 import { SellerCouponsPage } from './seller/SellerCouponsPage'
 import { SellerCampaignsPage } from './seller/SellerCampaignsPage'
@@ -118,6 +119,7 @@ export function App() {
                   <Route path="products/:id/edit" element={<SellerProductFormPage />} />
                   <Route path="categories" element={<SellerCategoriesPage />} />
                   <Route path="orders" element={<SellerOrdersPage />} />
+                  <Route path="scheduled-menus" element={<SellerScheduledMenusPage />} />
                   <Route
                     path="orders/:id"
                     element={

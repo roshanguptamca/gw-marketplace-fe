@@ -24,7 +24,7 @@ export function ProductCard({ product }: { product: Product }) {
   const minimumQuantity = effectiveMinimumQuantity(product)
   const handleAdd = () => {
     const addedQuantity = items.some((item) => item.product.id === product.id) ? 1 : minimumQuantity
-    addItem(product)
+    if (!addItem(product)) return
     analytics.event('add_to_cart', {
       item_id: product.id,
       value: product.price,
@@ -39,7 +39,11 @@ export function ProductCard({ product }: { product: Product }) {
     <article className="product-card">
       <Link
         to={href}
-        state={{ returnTo }}
+        state={{
+          returnTo,
+          scheduledMenuId: product.scheduledMenuId,
+          scheduledMenuTitle: product.scheduledMenuTitle,
+        }}
         className="product-card__image-link"
         aria-label={`View ${product.name}`}
       >
@@ -53,8 +57,16 @@ export function ProductCard({ product }: { product: Product }) {
       </Link>
       <div className="product-card__body">
         <p className="product-card__category">{product.category}</p>
+        {product.scheduledMenuTitle && <p className="inline-note">{product.scheduledMenuTitle}</p>}
         <h3>
-          <Link to={href} state={{ returnTo }}>
+          <Link
+            to={href}
+            state={{
+              returnTo,
+              scheduledMenuId: product.scheduledMenuId,
+              scheduledMenuTitle: product.scheduledMenuTitle,
+            }}
+          >
             {product.name}
           </Link>
         </h3>
@@ -62,7 +74,11 @@ export function ProductCard({ product }: { product: Product }) {
           <Link
             className="product-card__seller"
             to={shopPath(product.shopSlug)}
-            state={{ returnTo }}
+            state={{
+              returnTo,
+              scheduledMenuId: product.scheduledMenuId,
+              scheduledMenuTitle: product.scheduledMenuTitle,
+            }}
             aria-label={t('visitSellerShop', { shop: product.shopName })}
           >
             {t('soldBy', { shop: product.shopName })}

@@ -13,6 +13,9 @@ import type {
   MarketplaceSearchFilters,
   MarketplaceSearchResult,
   GoogleShopRating,
+  ScheduledMenu,
+  ScheduledMenuInput,
+  MenuPreparationReport,
   OrderConfirmation,
   OrderRequest,
   Product,
@@ -524,6 +527,28 @@ export const marketplaceService = {
   getShopGoogleRating: (slug: string) =>
     apiRequest<GoogleShopRating>(`/marketplace/shops/${encodeURIComponent(slug)}/google-rating/`),
 
+  getScheduledMenus: (slug: string) =>
+    withDevelopmentFallback(
+      () =>
+        apiRequest<ScheduledMenu[]>(
+          `/marketplace/shops/${encodeURIComponent(slug)}/scheduled-menus/`,
+        ),
+      () => [],
+    ),
+  getSellerScheduledMenus: () => apiRequest<ScheduledMenu[]>('/seller/scheduled-menus/'),
+  createScheduledMenu: (data: ScheduledMenuInput) =>
+    apiRequest<ScheduledMenu>('/seller/scheduled-menus/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateScheduledMenu: (id: number, data: Partial<ScheduledMenuInput>) =>
+    apiRequest<ScheduledMenu>(`/seller/scheduled-menus/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  getMenuPreparation: (id: number) =>
+    apiRequest<MenuPreparationReport>(`/seller/scheduled-menus/${id}/preparation/`),
+
   async getShopBySlug(slug: string): Promise<Shop | null> {
     return withDevelopmentFallback(
       async () =>
@@ -607,10 +632,15 @@ export const marketplaceService = {
     )
   },
 
-  async getPickupSchedule(shopSlug: string, productIds: string[]): Promise<PickupSchedule> {
+  async getPickupSchedule(
+    shopSlug: string,
+    productIds: string[],
+    scheduledMenuId?: number,
+  ): Promise<PickupSchedule> {
     return withDevelopmentFallback(
       async () => {
         const query = new URLSearchParams({ product_ids: productIds.join(',') })
+        if (scheduledMenuId) query.set('scheduled_menu_id', String(scheduledMenuId))
         const response = await apiRequest<ApiPickupSchedule>(
           `/marketplace/shops/${encodeURIComponent(shopSlug)}/pickup-slots/?${query.toString()}`,
         )

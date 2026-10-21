@@ -1,15 +1,33 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 export function SellerLayout() {
   const { t } = useTranslation()
+  const [navigationOpen, setNavigationOpen] = useState(false)
   return (
     <main className="page-shell seller-shell">
       <aside className="seller-nav">
         <p className="eyebrow">{t('sellerPortal')}</p>
-        <h1>{t('sellerManageShop')}</h1>
+        <h2>{t('sellerManageShop')}</h2>
         <p className="seller-nav__lead">{t('sellerNavLead')}</p>
-        <nav aria-label={t('sellerNavigation')}>
+        <button
+          type="button"
+          className="seller-nav-toggle button button--ghost"
+          aria-expanded={navigationOpen}
+          aria-controls="seller-navigation-links"
+          onClick={() => setNavigationOpen((open) => !open)}
+        >
+          {t('menus.sellerMenu')} <span aria-hidden="true">{navigationOpen ? '▴' : '▾'}</span>
+        </button>
+        <nav
+          id="seller-navigation-links"
+          className={navigationOpen ? 'is-open' : ''}
+          aria-label={t('sellerNavigation')}
+          onClick={(event) => {
+            if ((event.target as HTMLElement).closest('a')) setNavigationOpen(false)
+          }}
+        >
           <div className="seller-nav-section">
             <p className="seller-nav-section-title">{t('sellerDashboard')}</p>
             <NavLink end to="/seller">
@@ -39,6 +57,7 @@ export function SellerLayout() {
           <div className="seller-nav-section">
             <p className="seller-nav-section-title">{t('sellerSales')}</p>
             <NavLink to="/seller/orders">{t('sellerOrders')}</NavLink>
+            <NavLink to="/seller/scheduled-menus">{t('menus.title')}</NavLink>
             <NavLink to="/seller/coupons">{t('sellerCoupons')}</NavLink>
             <NavLink to="/seller/campaigns">{t('sellerCampaigns')}</NavLink>
           </div>

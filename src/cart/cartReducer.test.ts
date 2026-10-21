@@ -85,3 +85,34 @@ describe('cart reducer', () => {
     )
   })
 })
+
+describe('scheduled menu cart isolation', () => {
+  const menuProduct = { ...productFixture, scheduledMenuId: 7, scheduledMenuTitle: 'Friday menu' }
+  it('does not silently mix regular and scheduled orders from the same shop', () => {
+    const state = { items: [{ product: productFixture, quantity: 1 }] }
+    expect(cartReducer(state, { type: 'add', product: menuProduct })).toBe(state)
+  })
+  it('replaces only the affected shop after explicit confirmation and retains the menu context', () => {
+    const other = { ...productFixture, id: 'other', shopSlug: 'other-shop' }
+    const state = {
+      items: [
+        { product: productFixture, quantity: 1 },
+        { product: other, quantity: 2 },
+      ],
+    }
+    const result = cartReducer(state, { type: 'add', product: menuProduct, replaceShop: true })
+    expect(result.items).toEqual([
+      { product: other, quantity: 2 },
+      { product: menuProduct, quantity: 1 },
+    ])
+  })
+  it('allows multiple products from the same menu and rejects another menu', () => {
+    const state = { items: [{ product: menuProduct, quantity: 1 }] }
+    expect(
+      cartReducer(state, { type: 'add', product: { ...menuProduct, id: 'another' } }).items,
+    ).toHaveLength(2)
+    expect(
+      cartReducer(state, { type: 'add', product: { ...menuProduct, scheduledMenuId: 8 } }),
+    ).toBe(state)
+  })
+})

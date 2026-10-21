@@ -7,6 +7,7 @@ import {
   useReducer,
   type ReactNode,
 } from 'react'
+import i18n from '../i18n'
 import type { Product } from '../types/marketplace'
 import { cartReducer, type CartState } from './cartReducer'
 
@@ -15,7 +16,7 @@ const STORAGE_KEY = 'guidewisey-marketplace-cart'
 interface CartContextValue extends CartState {
   itemCount: number
   subtotal: number
-  addItem: (product: Product, quantity?: number) => void
+  addItem: (product: Product, quantity?: number) => boolean
   updateQuantity: (productId: string, quantity: number) => void
   removeItem: (productId: string) => void
   clearCart: () => void
@@ -42,8 +43,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [state])
 
   const addItem = useCallback(
-    (product: Product, quantity?: number) => dispatch({ type: 'add', product, quantity }),
-    [],
+    (product: Product, quantity?: number) => {
+      const conflict = state.items.some(
+        (item) =>
+          item.product.shopSlug === product.shopSlug &&
+          item.product.scheduledMenuId !== product.scheduledMenuId,
+      )
+      if (conflict && !window.confirm(i18n.t('menus.replaceCart'))) return false
+      if (product.stock <= 0) return false
+      dispatch({ type: 'add', product, quantity, replaceShop: conflict })
+      return true
+    },
+    [state.items],
   )
   const updateQuantity = useCallback(
     (productId: string, quantity: number) => dispatch({ type: 'update', productId, quantity }),
