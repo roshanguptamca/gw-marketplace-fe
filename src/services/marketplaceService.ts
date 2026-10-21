@@ -12,6 +12,7 @@ import type {
   BuyerOrder,
   MarketplaceSearchFilters,
   MarketplaceSearchResult,
+  GoogleShopRating,
   OrderConfirmation,
   OrderRequest,
   Product,
@@ -47,6 +48,7 @@ interface ApiShop {
   phone?: string
   email?: string
   google_review_url?: string
+  google_place_id?: string
   website_url?: string
   social_links?: string[]
   address?: string
@@ -364,6 +366,7 @@ function normalizeShop(shop: ApiShop): Shop {
     email: shop.email ?? shop.contact_email,
     websiteUrl: shop.website_url,
     googleReviewUrl: shop.google_review_url,
+    googlePlaceId: shop.google_place_id,
     socialLinks: shop.social_links ?? [],
     address: shop.address ?? '',
     logoUrl: shop.logo_url,
@@ -517,6 +520,9 @@ export const marketplaceService = {
       () => mockSearch(filters),
     )
   },
+
+  getShopGoogleRating: (slug: string) =>
+    apiRequest<GoogleShopRating>(`/marketplace/shops/${encodeURIComponent(slug)}/google-rating/`),
 
   async getShopBySlug(slug: string): Promise<Shop | null> {
     return withDevelopmentFallback(

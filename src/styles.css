@@ -4201,3 +4201,63 @@ nav {
     align-items: center;
   }
 }
+
+/* Google content is visually separate from shop details; links sit below the stars. */
+.shop-google-rating {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 12px 0;
+  max-width: 100%;
+}
+.shop-google-rating__score {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+.shop-google-rating__stars {
+  display: inline-block;
+  position: relative;
+  color: #9ca3af;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+.shop-google-rating__fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  color: #fbbc04;
+}
+.shop-google-rating__attribution {
+  font-family: Arial, sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.shop-google-rating__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+.shop-google-rating__policy {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+.shop-google-rating a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 4px;
+}

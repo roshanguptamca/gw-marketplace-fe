@@ -466,8 +466,13 @@ describe('seller portal pages', () => {
     await screen.findByRole('heading', { name: 'Shop Details' })
     await userEvent.clear(screen.getByLabelText(/^Shop Name/i))
     await userEvent.type(screen.getByLabelText(/^Shop Name/i), 'Updated Seller Shop')
+    await userEvent.type(screen.getByLabelText('Google Place ID'), 'ChIJverified')
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
-    await waitFor(() => expect(service.updateSellerShop).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(service.updateSellerShop).toHaveBeenCalledWith(
+        expect.objectContaining({ google_place_id: 'ChIJverified' }),
+      ),
+    )
   })
 
   it('renders the delivery, hours, notification and preview sections', async () => {

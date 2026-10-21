@@ -193,6 +193,14 @@ void i18n.use(initReactI18next).init({
         reviewExperience:
           'After you receive your order, we would love to hear about your experience.',
         leaveGoogleReview: 'Leave a Google review',
+        googlePlaceId: 'Google Place ID',
+        googlePlaceIdHint:
+          'Optional. Connect your exact Google Business listing to show its live rating. Paste the Place ID, not a URL.',
+        findGooglePlaceId: 'Find your Place ID',
+        googleRatingLabel: '{{rating}} out of 5 on Google Maps, {{count}} reviews',
+        googleReviewCount: '{{count}} reviews',
+        readGoogleReviews: 'Read reviews on Google',
+        googleReviewPolicy: 'About Google reviews',
         googleReviewUrl: 'Google review link',
         googleReviewUrlHint:
           'Optional. Shown after checkout and in customer order emails. Leave blank to hide.',
@@ -800,6 +808,14 @@ void i18n.use(initReactI18next).init({
         thankYouOrder: 'Bedankt voor je bestelling!',
         reviewExperience: 'Na je bestelling ontvangen te hebben, horen we graag je ervaring.',
         leaveGoogleReview: 'Schrijf een Google-review',
+        googlePlaceId: 'Google Place-ID',
+        googlePlaceIdHint:
+          'Optioneel. Koppel je exacte Google-bedrijfsvermelding om de actuele beoordeling te tonen. Plak de Place-ID, geen URL.',
+        findGooglePlaceId: 'Vind je Place-ID',
+        googleRatingLabel: '{{rating}} van 5 op Google Maps, {{count}} reviews',
+        googleReviewCount: '{{count}} reviews',
+        readGoogleReviews: 'Lees reviews op Google',
+        googleReviewPolicy: 'Over Google-reviews',
         googleReviewUrl: 'Google-reviewlink',
         googleReviewUrlHint:
           'Optioneel. Zichtbaar na het bestellen en in de bevestigingsmail. Laat leeg om te verbergen.',
