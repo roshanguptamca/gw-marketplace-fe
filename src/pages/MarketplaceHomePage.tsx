@@ -107,7 +107,7 @@ export function MarketplaceHomePage() {
           <Link to="/shops">{t('allShops')}</Link>
         </nav>
         <p className="eyebrow">{t('shopSmall')}</p>
-        <h1>GuideWisey Marketplace</h1>
+        <h1>{t('discoverLocalShops')}</h1>
         <p>{t('homeIntro')}</p>
         {shops && shops.length > 0 && (
           <div className="home-shop-discovery">
