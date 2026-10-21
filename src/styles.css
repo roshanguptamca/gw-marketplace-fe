@@ -4034,3 +4034,125 @@ nav {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
   }
 }
+
+/* Compact marketplace navigation, with utilities anchored to the top corner. */
+.site-header__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  padding: 8px 16px;
+}
+.site-header .brand {
+  min-width: 0;
+}
+.site-header .brand > span:last-child {
+  font-size: clamp(0.8rem, 3vw, 1rem);
+}
+.header-utilities {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.site-header .language-switch {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.site-header .language-switch button {
+  min-width: 44px;
+  padding: 4px;
+  font-size: 1.25rem;
+}
+.site-header nav {
+  grid-column: 1 / -1;
+  gap: 8px;
+}
+.site-header .header-browse {
+  margin-right: auto;
+}
+.header-guest-menu {
+  position: relative;
+}
+.header-guest-menu__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.header-guest-menu__trigger::-webkit-details-marker {
+  display: none;
+}
+.site-header .header-actions {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 190px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px #0003;
+}
+.header-guest-menu:not(.is-open) .header-actions {
+  display: none;
+}
+.site-header .header-action {
+  white-space: nowrap;
+}
+@media (max-width: 599px) {
+  .site-header .brand > span:last-child {
+    max-width: 16ch;
+  }
+  .brand__logo {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+  }
+  .catalog-intro {
+    padding-block: 16px;
+  }
+  .catalog-intro h1 {
+    font-size: 1.7rem;
+    margin-top: 0;
+  }
+}
+@media (min-width: 1100px) {
+  .site-header__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 16px;
+    padding: 10px 20px;
+  }
+  .header-utilities {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .site-header nav {
+    grid-column: 2;
+    grid-row: 1;
+    flex-wrap: nowrap;
+  }
+  .site-header .header-browse {
+    margin-right: 0;
+  }
+  .header-guest-menu__trigger {
+    display: none;
+  }
+  .site-header .header-guest-menu .header-actions {
+    position: static;
+    display: flex;
+    flex-direction: row;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+}

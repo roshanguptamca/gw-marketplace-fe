@@ -80,7 +80,7 @@ describe('marketplace pages', () => {
 
   it('keeps seller shortcuts while removing the full seller section from products', async () => {
     renderPage(<MarketplaceHomePage />)
-    expect(screen.getByRole('heading', { name: 'GuideWisey Marketplace' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Discover local shops' })).toBeInTheDocument()
     expect(await screen.findByRole('link', { name: 'Test Shop' })).toHaveAttribute(
       'href',
       '/shop/test-shop',

@@ -62,6 +62,31 @@ export function Header() {
           />
           <span>{t('brand')}</span>
         </Link>
+        <div className="header-utilities">
+          <div className="language-switch" role="group" aria-label={t('language')}>
+            {(['en', 'nl'] as const).map((language) => (
+              <button
+                key={language}
+                type="button"
+                aria-pressed={i18n.resolvedLanguage === language}
+                aria-label={language === 'en' ? 'EN' : 'NL'}
+                title={language === 'en' ? 'English' : 'Nederlands'}
+                onClick={() => void i18n.changeLanguage(language)}
+              >
+                <span aria-hidden="true">{language === 'en' ? '🇬🇧' : '🇳🇱'}</span>
+              </button>
+            ))}
+          </div>
+          <button
+            className="theme-toggle"
+            type="button"
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            onClick={toggleTheme}
+          >
+            <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
+          </button>
+        </div>
         <nav aria-label="Main navigation">
           {rishiShop && <div id="rishi-header-chat" />}
           <Link to="/shops" className="header-browse">
@@ -96,27 +121,6 @@ export function Header() {
             <span className="header-cart-label">{t('cart')}</span>
             {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
           </Link>
-          <div className="language-switch" role="group" aria-label={t('language')}>
-            {(['en', 'nl'] as const).map((language) => (
-              <button
-                key={language}
-                type="button"
-                aria-pressed={i18n.language === language}
-                onClick={() => void i18n.changeLanguage(language)}
-              >
-                {language.toUpperCase()}
-              </button>
-            ))}
-          </div>
-          <button
-            className="theme-toggle"
-            type="button"
-            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            onClick={toggleTheme}
-          >
-            <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
-          </button>
           {!loading &&
             (user ? (
               <div className="user-menu" ref={menuRef}>
@@ -153,14 +157,29 @@ export function Header() {
                 )}
               </div>
             ) : (
-              <div className="header-actions">
-                <a className="header-action header-become-seller" href={env.sellerSignupUrl}>
-                  {t('becomeSeller')}
-                </a>
-                <a className="header-action header-login" href={env.loginUrl}>
-                  <span aria-hidden="true">○</span>
-                  {t('login')}
-                </a>
+              <div className={`header-guest-menu${menuOpen ? ' is-open' : ''}`} ref={menuRef}>
+                <button
+                  type="button"
+                  className="header-guest-menu__trigger"
+                  aria-label={t('navigationMenu')}
+                  aria-expanded={menuOpen}
+                  aria-controls="guest-navigation"
+                  onClick={() => setMenuOpen((open) => !open)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') setMenuOpen(false)
+                  }}
+                >
+                  ☰
+                </button>
+                <div className="header-actions" id="guest-navigation">
+                  <a className="header-action header-become-seller" href={env.sellerSignupUrl}>
+                    {t('becomeSeller')}
+                  </a>
+                  <a className="header-action header-login" href={env.loginUrl}>
+                    <span aria-hidden="true">○</span>
+                    {t('login')}
+                  </a>
+                </div>
               </div>
             ))}
         </nav>

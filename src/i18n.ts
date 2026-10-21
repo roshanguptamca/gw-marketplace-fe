@@ -12,6 +12,8 @@ void i18n.use(initReactI18next).init({
     en: {
       translation: {
         brand: 'GuideWisey Marketplace',
+        discoverLocalShops: 'Discover local shops',
+        navigationMenu: 'Open navigation menu',
         browse: 'Browse shops',
         cart: 'Cart',
         addToCart: 'Add to cart',
@@ -614,6 +616,8 @@ void i18n.use(initReactI18next).init({
     nl: {
       translation: {
         brand: 'GuideWisey Marketplace',
+        discoverLocalShops: 'Ontdek lokale winkels',
+        navigationMenu: 'Navigatiemenu openen',
         browse: 'Winkels bekijken',
         cart: 'Winkelwagen',
         addToCart: 'In winkelwagen',

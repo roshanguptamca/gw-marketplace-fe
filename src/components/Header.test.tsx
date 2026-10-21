@@ -46,15 +46,17 @@ describe('Header authentication menu', () => {
     void i18n.changeLanguage('en')
   })
 
-  it('shows the environment-aware login action when logged out', () => {
+  it('shows the environment-aware login action when logged out', async () => {
     renderHeader()
+    await userEvent.click(screen.getByLabelText('Open navigation menu'))
     expect(screen.getByRole('link', { name: /login/i })).toHaveAttribute('href', env.loginUrl)
     expect(screen.queryByRole('button', { name: 'User menu' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Seller Portal' })).not.toBeInTheDocument()
   })
 
-  it('shows a Become a Seller CTA linking to main-site signup when logged out', () => {
+  it('shows a Become a Seller CTA linking to main-site signup when logged out', async () => {
     renderHeader()
+    await userEvent.click(screen.getByLabelText('Open navigation menu'))
     expect(screen.getByRole('link', { name: 'Become a Seller' })).toHaveAttribute(
       'href',
       env.sellerSignupUrl,
