@@ -54,9 +54,11 @@ describe('Header authentication menu', () => {
     expect(screen.queryByRole('link', { name: 'Seller Portal' })).not.toBeInTheDocument()
   })
 
-  it('shows a Become a Seller CTA linking to main-site signup when logged out', async () => {
+  it('keeps Become a Seller outside the collapsed mobile menu', () => {
     renderHeader()
-    await userEvent.click(screen.getByLabelText('Open navigation menu'))
+    expect(
+      screen.getByRole('link', { name: 'Become a Seller' }).closest('.header-guest-menu'),
+    ).toBeNull()
     expect(screen.getByRole('link', { name: 'Become a Seller' })).toHaveAttribute(
       'href',
       env.sellerSignupUrl,
@@ -130,11 +132,11 @@ describe('Header authentication menu', () => {
 
   it('switches between dark and light themes and persists the choice', async () => {
     renderHeader()
-    const toggle = screen.getByRole('button', { name: 'Switch to light mode' })
+    const toggle = screen.getAllByRole('button', { name: 'Switch to light mode' })[0]
     await userEvent.click(toggle)
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe('light'))
     expect(localStorage.getItem('guidewisey-marketplace-theme')).toBe('light')
-    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Switch to dark mode' })[0]).toBeInTheDocument()
   })
 
   it('switches EN/NL immediately and persists the selected language', async () => {

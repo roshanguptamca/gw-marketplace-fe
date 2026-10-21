@@ -49,6 +49,18 @@ export function Header() {
     }
   }, [])
 
+  const themeButton = (
+    <button
+      className="theme-toggle"
+      type="button"
+      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      onClick={toggleTheme}
+    >
+      <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
+    </button>
+  )
+
   return (
     <header className="site-header" ref={headerRef}>
       <div className="site-header__inner">
@@ -77,21 +89,18 @@ export function Header() {
               </button>
             ))}
           </div>
-          <button
-            className="theme-toggle"
-            type="button"
-            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            onClick={toggleTheme}
-          >
-            <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
-          </button>
+          <span className="header-desktop-theme">{themeButton}</span>
         </div>
         <nav aria-label="Main navigation">
           {rishiShop && <div id="rishi-header-chat" />}
           <Link to="/shops" className="header-browse">
             {t('browse')}
           </Link>
+          {!loading && !user && (
+            <a className="header-action header-become-seller" href={env.sellerSignupUrl}>
+              {t('becomeSeller')}
+            </a>
+          )}
           {!loading && user?.is_seller && (
             <Link to="/seller" className="header-action header-seller-portal">
               {t('sellerPortal')}
@@ -150,6 +159,9 @@ export function Header() {
                         {t('sellerPortal')}
                       </Link>
                     )}
+                    <div className="header-mobile-theme" role="none">
+                      {themeButton}
+                    </div>
                     <button role="menuitem" onClick={() => void logout()}>
                       {t('logout')}
                     </button>
@@ -172,9 +184,7 @@ export function Header() {
                   ☰
                 </button>
                 <div className="header-actions" id="guest-navigation">
-                  <a className="header-action header-become-seller" href={env.sellerSignupUrl}>
-                    {t('becomeSeller')}
-                  </a>
+                  <div className="header-mobile-theme">{themeButton}</div>
                   <a className="header-action header-login" href={env.loginUrl}>
                     <span aria-hidden="true">○</span>
                     {t('login')}
