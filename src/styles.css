@@ -4156,3 +4156,48 @@ nav {
     background: transparent;
   }
 }
+
+/* Prioritize seller signup; secondary appearance settings live in the mobile menu. */
+.header-desktop-theme {
+  display: none;
+}
+.header-mobile-theme {
+  display: flex;
+  align-items: center;
+}
+.header-mobile-theme .theme-toggle {
+  width: 100%;
+}
+.site-header .header-become-seller {
+  font-size: 0.8rem;
+  padding-inline: 10px;
+}
+.header-guest-menu__trigger {
+  color: var(--ink);
+  background: var(--surface-subtle);
+}
+@media (min-width: 1100px) {
+  .header-desktop-theme {
+    display: inline-flex;
+  }
+  .header-mobile-theme {
+    display: none;
+  }
+}
+@media (max-width: 599px) {
+  .site-header nav {
+    gap: 4px;
+  }
+  .site-header .header-browse {
+    max-width: 9ch;
+    font-size: 0.8rem;
+    line-height: 1.2;
+  }
+  .site-header .header-become-seller {
+    font-size: 0.75rem;
+    padding-inline: 8px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
