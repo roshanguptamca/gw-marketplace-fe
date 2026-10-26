@@ -11,6 +11,19 @@ export function OrderInvoices({ orderId }: { orderId: number }) {
   )
   const [downloading, setDownloading] = useState<string | null>(null)
   const [downloadError, setDownloadError] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
+  const refresh = async () => {
+    setRefreshing(true)
+    setDownloadError('')
+    try {
+      await marketplaceService.refreshOrderInvoice(orderId)
+      setRetry((value) => value + 1)
+    } catch (caught) {
+      setDownloadError(caught instanceof Error ? caught.message : 'Could not refresh invoice.')
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   const download = async (invoice: Invoice) => {
     setDownloading(invoice.id)
@@ -27,6 +40,9 @@ export function OrderInvoices({ orderId }: { orderId: number }) {
   return (
     <section className="form-section" aria-label="Invoices">
       <h3>Invoices / Facturen</h3>
+      <button type="button" className="button button--ghost" disabled={refreshing} onClick={() => void refresh()}>
+        {refreshing ? "Refreshing..." : "Request updated invoice / Nieuwe factuur aanvragen"}
+      </button>
       {loading && <p role="status">Loading invoices...</p>}
       {error && (
         <div role="alert">
