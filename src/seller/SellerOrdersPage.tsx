@@ -38,6 +38,18 @@ export function SellerOrdersPage() {
   const [discountTitle, setDiscountTitle] = useState('')
   const [discountAmount, setDiscountAmount] = useState('0.00')
   const [saving, setSaving] = useState(false)
+  const [resendingId, setResendingId] = useState<number | null>(null)
+  const resend = async (id: number) => {
+    setResendingId(id)
+    setStatus('')
+    try {
+      await marketplaceService.resendOrderInvoice(id)
+    } catch (error) {
+      setStatus(getApiErrorMessage(error, 'Could not resend invoice', apiErrorFallbacks))
+    } finally {
+      setResendingId(null)
+    }
+  }
   const saveDiscount = async () => {
     if (editingId === null) return
     setSaving(true)
@@ -155,6 +167,9 @@ export function SellerOrdersPage() {
                     )}
                   </td>
                   <td>
+                    <button type="button" className="button button--ghost" disabled={resendingId !== null} onClick={() => void resend(order.id)}>
+                      {resendingId === order.id ? 'Sending...' : 'Regenerate & resend invoice'}
+                    </button>
                     {nextOptions.length > 0 && (
                       <select
                         aria-label={t('sellerUpdateStatusForOrder', {
