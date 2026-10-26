@@ -179,9 +179,9 @@ export interface SellerOrder {
 }
 
 export const ORDER_STATUS_TRANSITIONS: Record<string, string[]> = {
-  pending: ['accepted', 'rejected', 'cancelled'],
-  accepted: ['preparing', 'cancelled'],
-  preparing: ['ready', 'cancelled'],
+  pending: ['accepted', 'completed', 'rejected', 'cancelled'],
+  accepted: ['preparing', 'completed', 'cancelled'],
+  preparing: ['ready', 'completed', 'cancelled'],
   ready: ['out_for_delivery', 'completed'],
   out_for_delivery: ['completed'],
 }
