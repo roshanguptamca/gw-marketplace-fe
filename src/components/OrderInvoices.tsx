@@ -59,7 +59,7 @@ export function OrderInvoices({ orderId }: { orderId: number }) {
             <strong>{invoice.shop_name}</strong>
             <p>{invoice.invoice_number}</p>
             <p>
-              {invoice.issue_date} | {invoice.currency} {invoice.total_inc_vat} incl. VAT
+              {invoice.issue_date} | {invoice.currency} {invoice.current_total ?? invoice.total_inc_vat} incl. VAT
             </p>
           </div>
           <button
