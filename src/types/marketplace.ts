@@ -138,6 +138,8 @@ export interface Invoice {
   issue_date: string
   currency: string
   total_inc_vat: string
+  current_total?: string
+  manual_discount_title?: string
 }
 
 export interface User {
@@ -406,6 +408,8 @@ export interface BuyerOrder {
   payment_status: string
   subtotal: string
   discount_total: string
+  manual_discount_title?: string
+  manual_discount_amount?: string
   delivery_fee: string
   total: string
   price_breakdown?: {
