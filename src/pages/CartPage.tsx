@@ -18,8 +18,10 @@ import {
   sellingFormatLabel,
 } from '../utils/productUnits'
 
-function quantityOptions(minimum: number, stock: number, current: number): number[] {
-  const last = Math.max(Math.min(stock, Math.max(minimum + 9, 10)), current)
+export function quantityOptions(minimum: number, stock: number, current: number): number[] {
+  // The same cart dropdown serves mobile and desktop. Show up to 50,
+  // respecting available stock and the product's minimum-order rules.
+  const last = Math.max(Math.min(stock, Math.max(minimum, 50)), current)
   return Array.from({ length: Math.max(last - minimum + 1, 1) }, (_, index) => minimum + index)
 }
 
