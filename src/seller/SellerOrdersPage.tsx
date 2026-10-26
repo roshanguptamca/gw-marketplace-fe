@@ -40,6 +40,25 @@ export function SellerOrdersPage() {
   const [discountAmount, setDiscountAmount] = useState('0.00')
   const [saving, setSaving] = useState(false)
   const [resendingId, setResendingId] = useState<number | null>(null)
+  const [downloadingId, setDownloadingId] = useState<number | null>(null)
+  const downloadInvoice = async (id: number) => {
+    setDownloadingId(id)
+    setStatus('')
+    setNotice('')
+    try {
+      const invoices = await marketplaceService.getOrderInvoices(id)
+      const invoice = invoices[0]
+      if (!invoice) {
+        setStatus(t('sellerInvoiceUnavailable'))
+        return
+      }
+      await marketplaceService.downloadInvoice(invoice)
+    } catch (error) {
+      setStatus(getApiErrorMessage(error, t('sellerInvoiceDownloadFailed'), apiErrorFallbacks))
+    } finally {
+      setDownloadingId(null)
+    }
+  }
   const resend = async (id: number) => {
     setResendingId(id)
     setStatus('')
@@ -171,6 +190,9 @@ export function SellerOrdersPage() {
                     )}
                   </td>
                   <td>
+                    <button type="button" className="button button--ghost" disabled={downloadingId !== null} onClick={() => void downloadInvoice(order.id)}>
+                      {downloadingId === order.id ? t('sellerInvoiceDownloading') : t('sellerInvoiceDownload')}
+                    </button>
                     <button type="button" className="button button--ghost" disabled={resendingId !== null} onClick={() => void resend(order.id)}>
                       {resendingId === order.id ? t('sellerInvoiceSending') : t('sellerInvoiceResend')}
                     </button>
