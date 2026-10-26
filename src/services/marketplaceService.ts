@@ -671,6 +671,10 @@ export const marketplaceService = {
   getBuyerOrders: () => apiRequest<BuyerOrder[]>('/buyer/orders/'),
   getBuyerOrder: (id: number | string) =>
     apiRequest<BuyerOrder>(`/buyer/orders/${encodeURIComponent(String(id))}/`),
+  refreshOrderInvoice: (id: number | string) =>
+    apiRequest<Invoice>(`/marketplace/orders/${encodeURIComponent(String(id))}/invoices/refresh/`, { method: 'POST' }),
+  resendOrderInvoice: (id: number | string) =>
+    apiRequest<Invoice>(`/marketplace/orders/${encodeURIComponent(String(id))}/invoices/resend/`, { method: 'POST' }),
   getOrderInvoices: (id: number | string) =>
     apiRequest<Invoice[]>(`/marketplace/orders/${encodeURIComponent(String(id))}/invoices/`),
   downloadInvoice: async (invoice: Invoice) => {
