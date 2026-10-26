@@ -34,6 +34,24 @@ export function SellerOrdersPage() {
     [refreshKey, query, selectedStatus],
   )
   const [status, setStatus] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [discountTitle, setDiscountTitle] = useState('')
+  const [discountAmount, setDiscountAmount] = useState('0.00')
+  const [saving, setSaving] = useState(false)
+  const saveDiscount = async () => {
+    if (editingId === null) return
+    setSaving(true)
+    setStatus('')
+    try {
+      await marketplaceService.updateSellerManualDiscount(editingId, discountTitle, discountAmount)
+      setEditingId(null)
+      setRefreshKey((value) => value + 1)
+    } catch (error) {
+      setStatus(getApiErrorMessage(error, 'Could not save discount', apiErrorFallbacks))
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const filteredOrders = useMemo(() => data ?? [], [data])
 
@@ -103,6 +121,7 @@ export function SellerOrdersPage() {
               <th>{t('sellerCustomer')}</th>
               <th>{t('sellerStatus')}</th>
               <th>{t('sellerTotal')}</th>
+              <th>Manual discount</th>
               <th></th>
             </tr>
           </thead>
@@ -121,6 +140,20 @@ export function SellerOrdersPage() {
                     })}
                   </td>
                   <td>€{order.total}</td>
+                  <td>
+                    {editingId === order.id ? (
+                      <div className="form-group">
+                        <input className="form-input" aria-label="Discount title" maxLength={120} placeholder="Diwali Discount" value={discountTitle} onChange={(event) => setDiscountTitle(event.target.value)} />
+                        <input className="form-input" aria-label="Discount amount EUR" type="number" min="0" step="0.01" value={discountAmount} onChange={(event) => setDiscountAmount(event.target.value)} />
+                        <button type="button" disabled={saving || !discountTitle.trim() && Number(discountAmount) > 0} onClick={() => void saveDiscount()}>Save</button>
+                        <button type="button" disabled={saving} onClick={() => setEditingId(null)}>Cancel</button>
+                      </div>
+                    ) : (
+                      <button type="button" className="button button--ghost" onClick={() => { setEditingId(order.id); setDiscountTitle(order.manual_discount_title ?? ''); setDiscountAmount(order.manual_discount_amount ?? '0.00') }}>
+                        {order.manual_discount_title ? `${order.manual_discount_title}: €${order.manual_discount_amount}` : 'Add discount'}
+                      </button>
+                    )}
+                  </td>
                   <td>
                     {nextOptions.length > 0 && (
                       <select
