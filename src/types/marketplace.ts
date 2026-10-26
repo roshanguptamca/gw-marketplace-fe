@@ -169,6 +169,10 @@ export interface SellerOrder {
   customer_name: string
   status: string
   total: string
+  subtotal?: string
+  discount_total?: string
+  manual_discount_title?: string
+  manual_discount_amount?: string
   created_at: string
 }
 
