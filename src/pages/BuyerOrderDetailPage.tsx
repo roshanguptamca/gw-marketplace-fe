@@ -193,7 +193,7 @@ export function BuyerOrderDetailPage() {
             </div>
             {Number(displayOrder.discount_total) > 0 && (
               <div>
-                <dt>{t('discount')}</dt>
+                <dt>{displayOrder.manual_discount_title || t('discount')}</dt>
                 <dd>-{money(displayOrder.discount_total)}</dd>
               </div>
             )}

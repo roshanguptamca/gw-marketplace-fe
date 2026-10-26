@@ -34,6 +34,39 @@ export function SellerOrdersPage() {
     [refreshKey, query, selectedStatus],
   )
   const [status, setStatus] = useState('')
+  const [notice, setNotice] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [discountTitle, setDiscountTitle] = useState('')
+  const [discountAmount, setDiscountAmount] = useState('0.00')
+  const [saving, setSaving] = useState(false)
+  const [resendingId, setResendingId] = useState<number | null>(null)
+  const resend = async (id: number) => {
+    setResendingId(id)
+    setStatus('')
+    setNotice('')
+    try {
+      await marketplaceService.resendOrderInvoice(id)
+      setNotice(t('sellerInvoiceResentSuccess'))
+    } catch (error) {
+      setStatus(getApiErrorMessage(error, t('sellerInvoiceResendFailed'), apiErrorFallbacks))
+    } finally {
+      setResendingId(null)
+    }
+  }
+  const saveDiscount = async () => {
+    if (editingId === null) return
+    setSaving(true)
+    setStatus('')
+    try {
+      await marketplaceService.updateSellerManualDiscount(editingId, discountTitle, discountAmount)
+      setEditingId(null)
+      setRefreshKey((value) => value + 1)
+    } catch (error) {
+      setStatus(getApiErrorMessage(error, t('sellerDiscountSaveFailed'), apiErrorFallbacks))
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const filteredOrders = useMemo(() => data ?? [], [data])
 
@@ -94,7 +127,8 @@ export function SellerOrdersPage() {
           {getApiErrorMessage(error, t('sellerOrdersLoadFailed'), apiErrorFallbacks)}
         </p>
       )}
-      {status && <p className="inline-error">{status}</p>}
+      {status && <p className="inline-error" role="alert">{status}</p>}
+      {notice && <p role="status">{notice}</p>}
       <div className="seller-table-wrap">
         <table className="seller-table">
           <thead>
@@ -103,6 +137,7 @@ export function SellerOrdersPage() {
               <th>{t('sellerCustomer')}</th>
               <th>{t('sellerStatus')}</th>
               <th>{t('sellerTotal')}</th>
+              <th>{t('sellerManualDiscount')}</th>
               <th></th>
             </tr>
           </thead>
@@ -122,6 +157,23 @@ export function SellerOrdersPage() {
                   </td>
                   <td>€{order.total}</td>
                   <td>
+                    {editingId === order.id ? (
+                      <div className="form-group">
+                        <input className="form-input" aria-label={t('sellerDiscountTitle')} maxLength={120} placeholder="Diwali Discount" value={discountTitle} onChange={(event) => setDiscountTitle(event.target.value)} />
+                        <input className="form-input" aria-label={t('sellerDiscountAmount')} type="number" min="0" step="0.01" value={discountAmount} onChange={(event) => setDiscountAmount(event.target.value)} />
+                        <button type="button" disabled={saving || !discountTitle.trim() && Number(discountAmount) > 0} onClick={() => void saveDiscount()}>{t('sellerDiscountSave')}</button>
+                        <button type="button" disabled={saving} onClick={() => setEditingId(null)}>{t('sellerDiscountCancel')}</button>
+                      </div>
+                    ) : (
+                      <button type="button" className="button button--ghost" onClick={() => { setEditingId(order.id); setDiscountTitle(order.manual_discount_title ?? ''); setDiscountAmount(order.manual_discount_amount ?? '0.00') }}>
+                        {order.manual_discount_title ? `${order.manual_discount_title}: €${order.manual_discount_amount}` : t('sellerDiscountAdd')}
+                      </button>
+                    )}
+                  </td>
+                  <td>
+                    <button type="button" className="button button--ghost" disabled={resendingId !== null} onClick={() => void resend(order.id)}>
+                      {resendingId === order.id ? t('sellerInvoiceSending') : t('sellerInvoiceResend')}
+                    </button>
                     {nextOptions.length > 0 && (
                       <select
                         aria-label={t('sellerUpdateStatusForOrder', {

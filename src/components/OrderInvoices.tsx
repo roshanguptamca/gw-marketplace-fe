@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
 import type { Invoice } from '../types/marketplace'
 
 export function OrderInvoices({ orderId }: { orderId: number }) {
+  const { t } = useTranslation()
   const [retry, setRetry] = useState(0)
   const { data, loading, error } = useMarketplaceData(
     () => marketplaceService.getOrderInvoices(orderId),
@@ -11,6 +13,19 @@ export function OrderInvoices({ orderId }: { orderId: number }) {
   )
   const [downloading, setDownloading] = useState<string | null>(null)
   const [downloadError, setDownloadError] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
+  const refresh = async () => {
+    setRefreshing(true)
+    setDownloadError('')
+    try {
+      await marketplaceService.refreshOrderInvoice(orderId)
+      setRetry((value) => value + 1)
+    } catch (caught) {
+      setDownloadError(caught instanceof Error ? caught.message : t('buyerInvoiceRefreshFailed'))
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   const download = async (invoice: Invoice) => {
     setDownloading(invoice.id)
@@ -27,6 +42,9 @@ export function OrderInvoices({ orderId }: { orderId: number }) {
   return (
     <section className="form-section" aria-label="Invoices">
       <h3>Invoices / Facturen</h3>
+      <button type="button" className="button button--ghost" disabled={refreshing} onClick={() => void refresh()}>
+        {refreshing ? t('buyerInvoiceRefreshing') : t('buyerInvoiceRefresh')}
+      </button>
       {loading && <p role="status">Loading invoices...</p>}
       {error && (
         <div role="alert">
@@ -43,7 +61,7 @@ export function OrderInvoices({ orderId }: { orderId: number }) {
             <strong>{invoice.shop_name}</strong>
             <p>{invoice.invoice_number}</p>
             <p>
-              {invoice.issue_date} | {invoice.currency} {invoice.total_inc_vat} incl. VAT
+              {invoice.issue_date} | {invoice.currency} {invoice.current_total ?? invoice.total_inc_vat} incl. VAT
             </p>
           </div>
           <button

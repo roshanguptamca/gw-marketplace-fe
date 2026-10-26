@@ -671,6 +671,10 @@ export const marketplaceService = {
   getBuyerOrders: () => apiRequest<BuyerOrder[]>('/buyer/orders/'),
   getBuyerOrder: (id: number | string) =>
     apiRequest<BuyerOrder>(`/buyer/orders/${encodeURIComponent(String(id))}/`),
+  refreshOrderInvoice: (id: number | string) =>
+    apiRequest<Invoice>(`/marketplace/orders/${encodeURIComponent(String(id))}/invoices/refresh/`, { method: 'POST' }),
+  resendOrderInvoice: (id: number | string) =>
+    apiRequest<Invoice>(`/marketplace/orders/${encodeURIComponent(String(id))}/invoices/resend/`, { method: 'POST' }),
   getOrderInvoices: (id: number | string) =>
     apiRequest<Invoice[]>(`/marketplace/orders/${encodeURIComponent(String(id))}/invoices/`),
   downloadInvoice: async (invoice: Invoice) => {
@@ -699,6 +703,11 @@ export const marketplaceService = {
     apiRequest<ApiProduct[]>(`/seller/products/${buildSellerQuery(filters)}`),
   getSellerOrders: (filters: SellerListFilters = {}) =>
     apiRequest<SellerOrder[]>(`/seller/orders/${buildSellerQuery(filters)}`),
+  updateSellerManualDiscount: (id: number, title: string, amount: string) =>
+    apiRequest<SellerOrder>(`/seller/orders/${id}/manual-discount/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ title, amount }),
+    }),
   updateSellerOrderStatus: (id: number, status: string) =>
     apiRequest<SellerOrder>(`/seller/orders/${id}/status/`, {
       method: 'PATCH',
