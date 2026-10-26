@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useMarketplaceData } from '../hooks/useMarketplaceData'
 import { marketplaceService } from '../services/marketplaceService'
 import type { Invoice } from '../types/marketplace'
 
 export function OrderInvoices({ orderId }: { orderId: number }) {
+  const { t } = useTranslation()
   const [retry, setRetry] = useState(0)
   const { data, loading, error } = useMarketplaceData(
     () => marketplaceService.getOrderInvoices(orderId),
@@ -19,7 +21,7 @@ export function OrderInvoices({ orderId }: { orderId: number }) {
       await marketplaceService.refreshOrderInvoice(orderId)
       setRetry((value) => value + 1)
     } catch (caught) {
-      setDownloadError(caught instanceof Error ? caught.message : 'Could not refresh invoice.')
+      setDownloadError(caught instanceof Error ? caught.message : t('buyerInvoiceRefreshFailed'))
     } finally {
       setRefreshing(false)
     }
@@ -41,7 +43,7 @@ export function OrderInvoices({ orderId }: { orderId: number }) {
     <section className="form-section" aria-label="Invoices">
       <h3>Invoices / Facturen</h3>
       <button type="button" className="button button--ghost" disabled={refreshing} onClick={() => void refresh()}>
-        {refreshing ? "Refreshing..." : "Request updated invoice / Nieuwe factuur aanvragen"}
+        {refreshing ? t('buyerInvoiceRefreshing') : t('buyerInvoiceRefresh')}
       </button>
       {loading && <p role="status">Loading invoices...</p>}
       {error && (
