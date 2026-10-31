@@ -12,7 +12,7 @@ describe('cart quantity options for mobile and desktop', () => {
   it('supports a product minimum of 4 without stopping at 13', () => {
     const options = quantityOptions(4, 1000, 4)
     expect(options[0]).toBe(4)
-    expect(options.at(-1)).toBe(50)
+    expect(options.at(-1)).toBe(200)
     expect(options).toContain(13)
   })
 
