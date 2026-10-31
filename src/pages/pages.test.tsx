@@ -28,6 +28,7 @@ vi.mock('../services/marketplaceService', () => ({
     getShopBySlug: vi.fn(),
     getShopCategories: vi.fn(),
     getShopProducts: vi.fn(),
+    getScheduledMenus: vi.fn(),
     getProductDetails: vi.fn(),
     getProducts: vi.fn(),
     getCategories: vi.fn(),
@@ -49,6 +50,7 @@ describe('marketplace pages', () => {
     service.getShopBySlug.mockResolvedValue(shopFixture)
     service.getShopCategories.mockResolvedValue([{ slug: 'home', name: 'Home', productCount: 1 }])
     service.getShopProducts.mockResolvedValue([productFixture])
+    service.getScheduledMenus.mockResolvedValue([])
     service.getProductDetails.mockResolvedValue(productFixture)
     service.getProducts.mockResolvedValue([productFixture])
     service.getCategories.mockResolvedValue([{ slug: 'spices', name: 'Spices', productCount: 3 }])
@@ -1101,6 +1103,44 @@ describe('marketplace pages', () => {
       expect(screen.getByTestId('product-line-total')).toHaveTextContent('€10.00')
     })
 
+    it('preserves scheduled-menu context through checkout and uses its pickup schedule', async () => {
+      service.getPickupSchedule.mockResolvedValue(schedule)
+      localStorage.setItem(
+        'guidewisey-marketplace-cart',
+        JSON.stringify({
+          items: [
+            {
+              product: {
+                ...packProductFixture,
+                scheduledMenuId: 7,
+                scheduledMenuTitle: 'Friday special',
+              },
+              quantity: 5,
+            },
+          ],
+        }),
+      )
+      renderPage(<CheckoutPage />)
+      expect(await screen.findByTestId('required-preparation')).toBeInTheDocument()
+      expect(service.getPickupSchedule).toHaveBeenCalledWith('test-shop', ['product-pack'], 7)
+      await fillContact()
+      await userEvent.selectOptions(screen.getByLabelText(/^Pickup date/), '2026-10-03')
+      await userEvent.selectOptions(
+        screen.getByLabelText(/^Pickup time/),
+        '2026-10-03T14:30:00+02:00',
+      )
+      await userEvent.click(screen.getByRole('button', { name: 'Submit order request' }))
+      await waitFor(() =>
+        expect(service.createOrderRequest).toHaveBeenCalledWith(
+          expect.objectContaining({
+            scheduled_menu_id: 7,
+            order_type: 'pickup',
+            pickup_slot_start: '2026-10-03T14:30:00+02:00',
+          }),
+        ),
+      )
+    })
+
     it('explains unit calculations and rule problems in the cart', async () => {
       localStorage.setItem(
         'guidewisey-marketplace-cart',
@@ -1130,7 +1170,11 @@ describe('marketplace pages', () => {
       expect(await screen.findByTestId('required-preparation')).toHaveTextContent(
         'Required preparation: 2 days',
       )
-      expect(service.getPickupSchedule).toHaveBeenCalledWith('test-shop', ['product-pack'])
+      expect(service.getPickupSchedule).toHaveBeenCalledWith(
+        'test-shop',
+        ['product-pack'],
+        undefined,
+      )
       expect(screen.getByText(/5 packs × 2 pieces \(10 pieces\)/)).toBeInTheDocument()
       await fillContact()
       expect(screen.getByLabelText(/^Pickup date/)).toBeRequired()

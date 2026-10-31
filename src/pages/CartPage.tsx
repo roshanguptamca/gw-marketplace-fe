@@ -67,6 +67,12 @@ export function CartPage() {
             const shop = shopsBySlug[group.shopSlug]
             return (
               <div className="cart-shop-group" key={group.shopSlug}>
+                {group.items[0]?.product.scheduledMenuTitle && (
+                  <p className="inline-note">
+                    {t('menus.selected')}:{' '}
+                    <strong>{group.items[0].product.scheduledMenuTitle}</strong>
+                  </p>
+                )}
                 {isMultiShop && (
                   <div className="cart-shop-group__header">
                     <h2>{shop?.name ?? group.shopSlug}</h2>
@@ -75,8 +81,12 @@ export function CartPage() {
                 )}
                 {Number(shop?.minimumOrderAmount ?? 0) > 0 && (
                   <div className="shop-minimum">
-                    <p>{t('productsSubtotal')} {formatPrice(group.subtotal, currency)}</p>
-                    <p>{t('minimumOrder')} {formatPrice(Number(shop?.minimumOrderAmount), currency)}</p>
+                    <p>
+                      {t('productsSubtotal')} {formatPrice(group.subtotal, currency)}
+                    </p>
+                    <p>
+                      {t('minimumOrder')} {formatPrice(Number(shop?.minimumOrderAmount), currency)}
+                    </p>
                     {Math.round(group.subtotal * 100) <
                       Math.round(Number(shop?.minimumOrderAmount) * 100) && (
                       <p>
@@ -118,14 +128,14 @@ export function CartPage() {
                         {violations.map((violation) => (
                           <p className="cart-item__rules" role="alert" key={violation.code}>
                             {i18n.language === 'nl'
-                              ? describeProductRuleViolation(
+                              ? (describeProductRuleViolation(
                                   product,
                                   quantity,
                                   violation.code,
                                   product.currency,
                                   (key, values) => t(key, values),
                                   i18n.language,
-                                ) ?? violation.message
+                                ) ?? violation.message)
                               : violation.message}
                           </p>
                         ))}

@@ -296,6 +296,8 @@ export interface OrderingRules {
 }
 
 export interface Product {
+  scheduledMenuId?: number
+  scheduledMenuTitle?: string
   id: string
   shopId?: string
   shopSlug: string
@@ -330,6 +332,7 @@ export interface Product {
 
 export interface OrderRequest {
   shop_id: number
+  scheduled_menu_id?: number
   customer_name: string
   customer_email: string
   customer_phone: string
@@ -471,4 +474,49 @@ export interface GoogleShopRating {
   rating: number | null
   review_count: number | null
   reviews_url: string | null
+}
+
+export interface ScheduledMenuInput {
+  title: string
+  description: string
+  products: number[]
+  pickup_date: string
+  pickup_start: string
+  pickup_end: string
+  order_deadline: string
+  slot_minutes: number
+  capacity: number
+  slot_capacity: number
+  active: boolean
+}
+export interface ScheduledMenu extends ScheduledMenuInput {
+  id: number
+  remaining_capacity: number
+  timezone: string
+  is_open: boolean
+}
+export interface PreparationQuantity {
+  product_name: string
+  sku: string
+  selling_unit: string
+  units_per_pack: number | null
+  weight_value: string | null
+  weight_unit: string
+  quantity: number
+  physical_quantity: number | null
+  total_weight_value: string | null
+}
+export interface MenuPreparationReport {
+  menu: ScheduledMenu
+  confirmed_quantities: PreparationQuantity[]
+  pending_quantities: PreparationQuantity[]
+  pickups: Array<{
+    order_number: string
+    customer_name: string
+    pickup_slot_start: string
+    pickup_slot_end: string
+    status: string
+    payment_status: string
+    items: Array<{ product_name: string; quantity: number; sku: string }>
+  }>
 }

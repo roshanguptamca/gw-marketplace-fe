@@ -7,7 +7,7 @@ export interface CartState {
 
 export type CartAction =
   | { type: 'hydrate'; items: CartItem[] }
-  | { type: 'add'; product: Product; quantity?: number }
+  | { type: 'add'; product: Product; quantity?: number; replaceShop?: boolean }
   | { type: 'update'; productId: string; quantity: number }
   | { type: 'remove'; productId: string }
   | { type: 'clear' }
@@ -18,6 +18,16 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
       return { items: action.items.filter((item) => item.quantity > 0) }
     case 'add': {
       if (action.product.stock <= 0) return state
+      const conflict = state.items.some(
+        (item) =>
+          item.product.shopSlug === action.product.shopSlug &&
+          item.product.scheduledMenuId !== action.product.scheduledMenuId,
+      )
+      if (conflict && !action.replaceShop) return state
+      if (conflict)
+        state = {
+          items: state.items.filter((item) => item.product.shopSlug !== action.product.shopSlug),
+        }
       const minimum = effectiveMinimumQuantity(action.product)
       const quantity = Math.max(1, action.quantity ?? 1)
       const existing = state.items.find((item) => item.product.id === action.product.id)
