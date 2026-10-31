@@ -19,9 +19,9 @@ import {
 } from '../utils/productUnits'
 
 export function quantityOptions(minimum: number, stock: number, current: number): number[] {
-  // The same cart dropdown serves mobile and desktop. Show up to 50,
+  // The same cart dropdown serves mobile and desktop. Show up to 200,
   // respecting available stock and the product's minimum-order rules.
-  const last = Math.max(Math.min(stock, Math.max(minimum, 50)), current)
+  const last = Math.max(Math.min(stock, Math.max(minimum, 200)), current)
   return Array.from({ length: Math.max(last - minimum + 1, 1) }, (_, index) => minimum + index)
 }
 
