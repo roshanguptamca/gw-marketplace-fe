@@ -54,12 +54,16 @@ describe('Header authentication menu', () => {
     expect(screen.queryByRole('link', { name: 'Seller Portal' })).not.toBeInTheDocument()
   })
 
-  it('keeps Become a Seller outside the collapsed mobile menu', () => {
+  it('keeps seller signup accessible on desktop and in the compact mobile menu', async () => {
     renderHeader()
-    expect(
-      screen.getByRole('link', { name: 'Become a Seller' }).closest('.header-guest-menu'),
-    ).toBeNull()
-    expect(screen.getByRole('link', { name: 'Become a Seller' })).toHaveAttribute(
+    const links = screen.getAllByRole('link', { name: 'Become a Seller' })
+    expect(links).toHaveLength(2)
+    expect(links.find((link) => !link.closest('.header-guest-menu'))).toHaveAttribute(
+      'href',
+      env.sellerSignupUrl,
+    )
+    await userEvent.click(screen.getByLabelText('Open navigation menu'))
+    expect(links.find((link) => link.closest('.header-guest-menu'))).toHaveAttribute(
       'href',
       env.sellerSignupUrl,
     )

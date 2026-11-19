@@ -185,6 +185,9 @@ export function Header() {
                 </button>
                 <div className="header-actions" id="guest-navigation">
                   <div className="header-mobile-theme">{themeButton}</div>
+                  <a className="header-action header-mobile-seller" href={env.sellerSignupUrl}>
+                    {t('becomeSeller')}
+                  </a>
                   <a className="header-action header-login" href={env.loginUrl}>
                     <span aria-hidden="true">○</span>
                     {t('login')}

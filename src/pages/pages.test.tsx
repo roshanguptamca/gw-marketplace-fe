@@ -104,6 +104,28 @@ describe('marketplace pages', () => {
     expect(await screen.findByRole('heading', { name: 'Test Product' })).toBeInTheDocument()
   })
 
+  it('shows the full catalogue when featured products exist and filters it in place', async () => {
+    service.getShopProducts.mockResolvedValueOnce([
+      productFixture,
+      { ...productFixture, id: 'rice-1', name: 'Jeera Rice', category: 'Rice', featured: false },
+    ])
+    renderPage(<ShopStorefrontPage resolvedSlug="test-shop" />)
+    expect(await screen.findByRole('heading', { name: 'All products' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Jeera Rice' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Test Product' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Rice' }))
+    expect(screen.queryByRole('heading', { name: 'Test Product' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Jeera Rice' })).toBeInTheDocument()
+    await userEvent.type(
+      screen.getByRole('searchbox', { name: 'Search products in this shop' }),
+      'missing',
+    )
+    expect(screen.getByRole('heading', { name: 'No products found' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Reset filters' }))
+    expect(screen.getByRole('heading', { name: 'Test Product' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Jeera Rice' })).toBeInTheDocument()
+  })
+
   it('shows shop details in a popup from the banner instead of a full summary block', async () => {
     const { container } = renderPage(<ShopStorefrontPage resolvedSlug="test-shop" />)
     const shopHero = await screen.findByRole('heading', { name: 'Test Shop' })
