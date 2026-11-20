@@ -35,9 +35,11 @@ export function ShopHero({ shop, onMoreDetails }: { shop: Shop; onMoreDetails?: 
         <div className="shop-hero__copy">
           <p className="eyebrow">{shopType || shop.location}</p>
           <h1>{shop.name}</h1>
-          <ShopGoogleRating shop={shop} />
-          <p className="shop-hero__tagline">{shortDescription}</p>
-          <WhatsAppGroupLink url={shop.whatsappGroupUrl} />
+          <div className={onMoreDetails ? 'shop-hero__secondary' : undefined}>
+            <ShopGoogleRating shop={shop} />
+            <p className="shop-hero__tagline">{shortDescription}</p>
+            <WhatsAppGroupLink url={shop.whatsappGroupUrl} />
+          </div>
           {onMoreDetails && (
             <button
               type="button"

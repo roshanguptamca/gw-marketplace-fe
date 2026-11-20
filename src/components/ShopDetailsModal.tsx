@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Shop } from '../types/marketplace'
+import { ShopGoogleRating } from './ShopGoogleRating'
 import { ShopFulfilment } from './ShopFulfilment'
 import { localizedText } from '../utils/localizedText'
 
@@ -26,7 +27,12 @@ export function ShopDetailsModal({
   }, [open, onClose])
 
   if (!open) return null
-  const description = localizedText(shop.description, shop.translations, 'description', i18n.language)
+  const description = localizedText(
+    shop.description,
+    shop.translations,
+    'description',
+    i18n.language,
+  )
   const shortDescription =
     localizedText(shop.shortDescription, shop.translations, 'short_description', i18n.language) ||
     description
@@ -56,6 +62,7 @@ export function ShopDetailsModal({
           <section className="shop-details-modal__card">
             <h3>{t('about')}</h3>
             <p>{description}</p>
+            <ShopGoogleRating shop={shop} />
             <dl className="shop-details-modal__list">
               <div>
                 <dt>{t('category')}</dt>
