@@ -39,8 +39,10 @@ for (const width of [320, 390, 600, 601, 768, 1152, 1440]) {
     expect(bounds.contentBottom).toBeLessThanOrEqual(bounds.bannerBottom)
     expect(bounds.bannerTop).toBeGreaterThanOrEqual(bounds.navigationBottom)
     expect(bounds.overflow).toBe(false)
+    const screenshotPath = testInfo.outputPath('storefront-layout.png')
+    await page.screenshot({ path: screenshotPath })
     await testInfo.attach('storefront-layout', {
-      body: await page.screenshot(),
+      path: screenshotPath,
       contentType: 'image/png',
     })
     if (width > 600) {
