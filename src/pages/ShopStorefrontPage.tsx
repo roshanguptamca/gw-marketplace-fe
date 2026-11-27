@@ -1,3 +1,4 @@
+import { ShopPageNavigation } from '../components/ShopPageNavigation'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useParams } from 'react-router-dom'
@@ -65,6 +66,7 @@ export function ShopStorefrontPage({ resolvedSlug }: { resolvedSlug?: string }) 
         />
       </div>
       <ShopHero shop={shop} onMoreDetails={() => setDetailsOpen(true)} />
+      <ShopPageNavigation shopSlug={slug} featured />
       {slug === 'rishi-kitchen' && <RishiKitchenVoiceAssistant logoUrl={shop.logoUrl} />}
       <ShopDetailsModal shop={shop} open={detailsOpen} onClose={() => setDetailsOpen(false)} />
       <section

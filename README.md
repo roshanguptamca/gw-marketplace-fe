@@ -54,13 +54,13 @@ add an entry such as `127.0.0.1 rishikitchen.localhost` to the machine's hosts f
 
 ## Environment
 
-| Variable                 | Purpose                                                |
-| ------------------------ | ------------------------------------------------------ |
-| `VITE_APP_ENV`           | `local` or `production`; controls safe URL defaults    |
-| `VITE_API_BASE_URL`      | Backend origin; the client appends `/api` when needed  |
-| `VITE_MAIN_FRONTEND_URL` | Main GuideWisey frontend used for login                |
-| `VITE_MARKETPLACE_URL`   | Marketplace origin used for authentication return URLs |
-| `VITE_USE_MOCK_API`      | `true` explicitly enables local catalog mocks          |
+| Variable                 | Purpose                                                   |
+| ------------------------ | --------------------------------------------------------- |
+| `VITE_APP_ENV`           | `local` or `production`; controls safe URL defaults       |
+| `VITE_API_BASE_URL`      | Backend origin; the client appends `/api` when needed     |
+| `VITE_MAIN_FRONTEND_URL` | Main GuideWisey frontend used for login                   |
+| `VITE_MARKETPLACE_URL`   | Marketplace origin used for authentication return URLs    |
+| `VITE_USE_MOCK_API`      | `true` explicitly enables local catalog mocks             |
 | `VITE_GA_MEASUREMENT_ID` | GA4 measurement ID; production defaults to `G-8RD04CNBFV` |
 
 Local development uses ports 8000, 3000, and 3002 for the backend, main frontend, and marketplace.
@@ -194,3 +194,28 @@ Vercel detects Vite and uses:
 
 Set production environment variables in Vercel before deploying. For another static host, publish
 `dist` and configure an SPA fallback from all unknown paths to `/index.html`.
+
+## Seller pages and menus
+
+Seller Portal → **Pages & menus** manages menu, party enquiry and information
+pages. Titles, URLs, descriptions, selected products, navigation positions,
+publication, featured strips and deadlines are configuration from the backend.
+No published configuration means no additional shop navigation or promotion.
+Customers can share `/shop/{shopSlug}/pages/{pageSlug}` URLs; seller subdomains
+use `/pages/{pageSlug}`. Drafts and hidden pages are unavailable publicly.
+
+Menu quantities use the existing basket and product minimum/stock rules. Enquiry
+forms persist quote requests in this seller's dashboard and collect no payment.
+English and Dutch UI labels are provided. Seller-written content stays as entered.
+
+Deploy the matching `gw-backend` branch `feat/seller-pages-menus` and run migration
+0024 **before** deploying this frontend. A menu deadline closes that page; it does
+not remove those products from the ordinary catalogue or configure checkout slots.
+See the backend's `docs/marketplace-seller-pages.md` for the API contract.
+
+Run `npm run test:e2e:pages` for API-backed browser fixtures covering 320, 390,
+768 and 1440px, menu baskets, party requests, no configuration, hidden URLs,
+server errors, seller creation/duplication/publication/deletion. These checks run
+in CI alongside the existing hero regression checks. CI uploads screenshots in
+`storefront-layout-results`. An optional `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`
+selects a locally installed browser; CI uses Playwright's pinned Chromium.

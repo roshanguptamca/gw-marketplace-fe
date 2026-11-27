@@ -1,15 +1,31 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 export function SellerLayout() {
   const { t } = useTranslation()
+  const [navigationOpen, setNavigationOpen] = useState(false)
   return (
     <main className="page-shell seller-shell">
       <aside className="seller-nav">
         <p className="eyebrow">{t('sellerPortal')}</p>
         <h1>{t('sellerManageShop')}</h1>
         <p className="seller-nav__lead">{t('sellerNavLead')}</p>
-        <nav aria-label={t('sellerNavigation')}>
+        <button
+          type="button"
+          className="button button--ghost seller-nav__toggle"
+          aria-expanded={navigationOpen}
+          aria-controls="seller-navigation"
+          onClick={() => setNavigationOpen((open) => !open)}
+        >
+          {t('sellerNavigation')} {navigationOpen ? '▴' : '▾'}
+        </button>
+        <nav
+          id="seller-navigation"
+          className={navigationOpen ? 'seller-navigation--open' : ''}
+          aria-label={t('sellerNavigation')}
+          onClick={() => setNavigationOpen(false)}
+        >
           <div className="seller-nav-section">
             <p className="seller-nav-section-title">{t('sellerDashboard')}</p>
             <NavLink end to="/seller">
@@ -27,6 +43,7 @@ export function SellerLayout() {
             <NavLink to="/seller/shop-orders">{t('sellerOrderSettings')}</NavLink>
             <NavLink to="/seller/shop-billing">{t('sellerBillingInvoices')}</NavLink>
             <NavLink to="/seller/shop-notifications">{t('sellerNotifications')}</NavLink>
+            <NavLink to="/seller/pages">{t('pagesMenus')}</NavLink>
             <NavLink to="/seller/shop-preview">{t('sellerPublicPreview')}</NavLink>
           </div>
 

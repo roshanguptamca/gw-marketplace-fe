@@ -27,6 +27,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Check storefront layout on mobile, tablet and desktop
         run: npx playwright test tests/e2e/shop-hero-layout.spec.ts --workers=1
+      - name: Check seller pages, menu ordering and quote forms
+        run: npx playwright test --config playwright.shop-pages.config.ts --workers=1
       - name: Upload storefront layout results
         if: always()
         uses: actions/upload-artifact@v4
