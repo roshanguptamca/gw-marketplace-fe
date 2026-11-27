@@ -1,3 +1,5 @@
+import { ShopCustomPage } from './pages/ShopCustomPage'
+import { SellerPagesPage } from './seller/SellerPagesPage'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AnalyticsRouteTracker } from './analytics/AnalyticsRouteTracker'
 import { CartProvider } from './cart/CartContext'
@@ -53,6 +55,10 @@ export function App() {
                   <>
                     <Route index element={<ShopStorefrontPage resolvedSlug={hostnameShopSlug} />} />
                     <Route
+                      path="pages/:pageSlug"
+                      element={<ShopCustomPage resolvedSlug={hostnameShopSlug} />}
+                    />
+                    <Route
                       path="products"
                       element={<ProductListingPage resolvedSlug={hostnameShopSlug} />}
                     />
@@ -66,6 +72,7 @@ export function App() {
                     <Route index element={<MarketplaceHomePage />} />
                     <Route path="shops" element={<ShopsPage />} />
                     <Route path="shop/:shopSlug" element={<ShopStorefrontPage />} />
+                    <Route path="shop/:shopSlug/pages/:pageSlug" element={<ShopCustomPage />} />
                     <Route path="shop/:shopSlug/products" element={<ProductListingPage />} />
                     <Route
                       path="shop/:shopSlug/products/:productId"
@@ -129,6 +136,7 @@ export function App() {
                     }
                   />
                   <Route path="coupons" element={<SellerCouponsPage />} />
+                  <Route path="pages" element={<SellerPagesPage />} />
                   <Route path="campaigns" element={<SellerCampaignsPage />} />
                   <Route path="settings" element={<SellerSettingsPage />} />
                   <Route

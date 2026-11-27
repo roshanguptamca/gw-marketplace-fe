@@ -472,3 +472,41 @@ export interface GoogleShopRating {
   review_count: number | null
   reviews_url: string | null
 }
+
+export interface ShopPageInput {
+  slug: string
+  title: string
+  kind: 'menu' | 'enquiry' | 'information'
+  description: string
+  fulfilment_notes: string
+  cover_url: string
+  is_published: boolean
+  is_featured: boolean
+  position: number
+  order_deadline: string | null
+  product_ids: number[]
+}
+
+export interface ShopPage extends ShopPageInput {
+  id: number
+  ordering_open: boolean
+}
+
+export interface ShopEnquiryInput {
+  customer_name: string
+  email: string
+  phone: string
+  event_date: string
+  guests: number
+  message: string
+  product_ids: number[]
+  privacy_accepted: boolean
+}
+
+export interface ShopEnquiry extends Omit<ShopEnquiryInput, 'privacy_accepted'> {
+  id: number
+  page: number | null
+  page_title: string
+  status: string
+  created_at: string
+}

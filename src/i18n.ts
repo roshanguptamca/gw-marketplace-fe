@@ -1,3 +1,4 @@
+import { shopPagesEn, shopPagesNl } from './shopPagesI18n'
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
@@ -11,6 +12,7 @@ void i18n.use(initReactI18next).init({
   resources: {
     en: {
       translation: {
+        ...shopPagesEn,
         brand: 'GuideWisey Marketplace',
         discoverLocalShops: 'Discover local shops',
         navigationMenu: 'Open navigation menu',
@@ -641,6 +643,7 @@ void i18n.use(initReactI18next).init({
     },
     nl: {
       translation: {
+        ...shopPagesNl,
         brand: 'GuideWisey Marketplace',
         discoverLocalShops: 'Ontdek lokale winkels',
         navigationMenu: 'Navigatiemenu openen',
